@@ -409,7 +409,7 @@ void perfmon_print_results()
 		    case BARCELONA:	
 
 		    case SHANGHAI:	
-			perfmon_print_results_k10(&thread_data[i], group_set, time);
+			perfmon_print_results_k10(&thread_data[thread_id], group_set, time);
 			break;
 
 		    default:	
@@ -424,9 +424,9 @@ void perfmon_print_results()
     }
 
     if ( num_threads > 1) {
-    printf(HLINE);
-    printf("==== SUMMARY RESULTS ====\n");
-    printf(HLINE);
+	printf(HLINE);
+	printf("==== SUMMARY RESULTS ====\n");
+	printf(HLINE);
 	printf ("[%d] RDTSC Cycles: %llu \n",summary.cpu_id,summary.cycles);
 	for (i=0;i<NUM_PMC;i++) {
 	    if (thread_data[0].counters[i].init == TRUE) {
@@ -434,9 +434,9 @@ void perfmon_print_results()
 	    }
 	}
 
-    printf(HLINE);
-    printf("==== Derived Metrics ====\n");
-    printf(HLINE);
+	printf(HLINE);
+	printf("==== Derived Metrics ====\n");
+	printf(HLINE);
 	time = (float)summary.cycles/(float)cpuid_info.clock;
 	printf ("[%d] Execution time: %e sec \n",summary.cpu_id,time);
 	switch ( cpuid_info.family ) {
@@ -484,7 +484,7 @@ void perfmon_print_results()
 	    default:	
 		break;
 	}
-    printf(HLINE);
+	printf(HLINE);
     }
 }
 

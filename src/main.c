@@ -19,7 +19,6 @@ printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t verbose output\n"); \
 printf("-i\t print cpu info\n"); \
-printf("-p\t pin to specific core \n"); \
 printf("-m\t use markers inside code \n"); \
 printf("-g\t performance group [STD FLOPS_SP L1 L2 L3 MEM DATA BRANCH TLB CPI] or event tag\n"); \
 printf("-t\t comma separated core ids to measure\n\n"); \
@@ -37,7 +36,6 @@ int main (int argc, char** argv)
     int c;
     char * cmd_str;
     char * custom_event;
-    cpu_set_t set;
     perfmon_group_t group= STD;
     char *token, *saveptr, *str;
     char *delimiter = ",";
@@ -108,9 +106,6 @@ int main (int argc, char** argv)
 		opt_info = 1;
 		perfmon_verbose = 1;
 		break;
-	    case 'p':
-		cpu_id = atoi(optarg);
-		break;
 	    case '?':
 		if (isprint (optopt))
 		    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
@@ -153,17 +148,7 @@ int main (int argc, char** argv)
     }
 
     cmd_str = (char*) malloc((strlen(argv[optind])+200)*sizeof(char));
-
-    if(!opt_threaded) {
-	sprintf(cmd_str,"taskset 0x%08lx %s",(1UL<<cpu_id),argv[optind]);
-	CPU_ZERO(&set);
-	CPU_SET(cpu_id,&set);
-	sched_setaffinity(0, sizeof(cpu_set_t), &set);
-	num_threads = 1;
-	threads[0]=0;
-    } else {
-	sprintf(cmd_str,"%s",argv[optind]);
-    }
+    sprintf(cmd_str,"%s",argv[optind]);
 
     if (perfmon_verbose) printf("Executing: %s \n",cmd_str);
 
