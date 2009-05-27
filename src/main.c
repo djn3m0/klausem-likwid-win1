@@ -167,6 +167,7 @@ int main (int argc, char** argv)
     if (!opt_use_marker) perfmon_start_all_counters();
     system(cmd_str);
     perfmon_stop_all_counters();
+    if (opt_use_marker) perfmon_get_cycles();
     perfmon_print_results();
 
     return EXIT_SUCCESS;

@@ -1,7 +1,11 @@
+#include <stdlib.h>
+#include <stdio.h>
+
 #include <types.h>
 #include <cpuid.h>
 #include <msr.h>
 #include <registers.h>
+#include <perfmon.h>
 
 void perfmon_marker_start_counters(int cpu_id)
 {
@@ -120,5 +124,15 @@ void perfmon_marker_stop_counters(int cpu_id)
     }
 
 }
+
+void perfmon_marker_set_cycles(uint64 cycles)
+{
+    FILE *file;
+
+    file = fopen("/tmp/perfmon_cycles.txt","w");
+    fprintf(file,"%llu",cycles);
+    fclose(file);
+}
+
 
 

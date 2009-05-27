@@ -491,7 +491,22 @@ void perfmon_print_results()
 void perfmon_set_cycles(uint64 cycles)
 {
     summary.cycles = cycles;
+}
 
+
+
+void perfmon_get_cycles()
+{
+    FILE *file;
+
+    file = fopen("/tmp/perfmon_cycles.txt","r");
+     if (!file) {
+      fprintf (stderr, "Could not open file  for read!\n" );
+      exit (EXIT_FAILURE);
+    }
+
+    fscanf(file,"%llu",&summary.cycles);
+    fclose(file);
 }
 
 void perfmon_setup_group(perfmon_group_t group)

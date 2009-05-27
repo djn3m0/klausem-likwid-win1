@@ -12,8 +12,12 @@ extern void perfmon_stop_all_counters (void);
 extern void perfmon_start_counters (int thread_id);
 extern void perfmon_stop_counters (int thread_id);
 extern void perfmon_print_results(void);
+extern void perfmon_get_cycles(void);
+extern void perfmon_set_cycles(uint64);
+
 
 extern void perfmon_marker_start_counters(int core_id);
 extern void perfmon_marker_stop_counters(int core_id);
+extern void perfmon_marker_set_cycles(uint64 cycles);
 
 #endif /*PERFMON_H*/
