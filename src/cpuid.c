@@ -18,6 +18,7 @@ static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
 
 cpu_info cpuid_info;
+static int lock = 0;
 
 
 extern uint64 rdtsc(void);
@@ -44,7 +45,11 @@ static uint64 get_cpu_speed(void)
 void cpuid_init (void)
 {
     uint32 eax, ebx, ecx, edx;
-    cpuid_info.features = (char*) malloc(20*sizeof(char));
+
+    if (lock) return;
+
+    printf("Init cpuid\n");
+    lock =1;
 
     asm( "movl $0x01, %%eax\n\t "
 	    "cpuid\n\t"
@@ -114,11 +119,14 @@ void cpuid_init (void)
 
     /* check for features */
 
+    /*
+    cpuid_info.features = (char*) malloc(20*sizeof(char));
     if (edx & (1<<25)) strcpy(cpuid_info.features, "SSE ");
     if (edx & (1<<26)) strcat(cpuid_info.features, "SSE2 ");
     if (ecx & (1<<0))  strcat(cpuid_info.features, "SSE3 ");
     if (ecx & (1<<19)) strcat(cpuid_info.features, "SSE4.1 ");
     if (ecx & (1<<20)) strcat(cpuid_info.features, "SSE4.2 ");
+    */
 
     if( cpuid_info.family == P6_FAMILY) {
 	/* check performance monitor features */
