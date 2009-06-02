@@ -506,9 +506,8 @@ void perfmon_get_cycles()
     }
 
     fscanf(file,"%llu",&summary.cycles);
-    /*
     fclose(file);
-    */
+    remove("/tmp/perfmon_cycles.txt");
 }
 
 void perfmon_setup_group(perfmon_group_t group)
