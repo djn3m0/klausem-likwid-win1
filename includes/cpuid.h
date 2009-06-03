@@ -7,6 +7,7 @@
 #define CORE2_65  0x0FU
 #define CORE2_45  0x17U
 #define NEHALEM   0x1AU
+#define XEON_MP   0x1DU
 #define BARCELONA 0x02U
 #define SHANGHAI  0x04U
 

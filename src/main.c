@@ -127,9 +127,7 @@ int main (int argc, char** argv)
 	printf("CPU family:\t%u \n",cpuid_info.family);
 	printf("CPU model:\t%u \n", cpuid_info.model);
 	printf("CPU stepping:\t%u \n", cpuid_info.stepping);
-	/*
 	printf("CPU features:\t%s \n", cpuid_info.features);
-	*/
 
 	if( cpuid_info.family == P6_FAMILY) {
 	    printf(HLINE);

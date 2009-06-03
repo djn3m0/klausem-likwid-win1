@@ -14,6 +14,7 @@ static char* core_duo_str = "Intel Core Duo processor";
 static char* core_2a_str = "Intel Core 2 65nm processor";
 static char* core_2b_str = "Intel Core 2 45nm processor";
 static char* nehalem_str = "Intel Core i7 processor";
+static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
 
@@ -48,7 +49,6 @@ void cpuid_init (void)
 
     if (lock) return;
 
-    printf("Init cpuid\n");
     lock =1;
 
     asm( "movl $0x01, %%eax\n\t "
@@ -88,6 +88,10 @@ void cpuid_init (void)
 		case NEHALEM:	
 		    cpuid_info.name = nehalem_str;
 		    break;
+		    
+		case XEON_MP:	
+		    cpuid_info.name = xeon_mp_string;
+		    break;
 
 		default:	
 		    break;
@@ -119,14 +123,12 @@ void cpuid_init (void)
 
     /* check for features */
 
-    /*
-    cpuid_info.features = (char*) malloc(20*sizeof(char));
+    cpuid_info.features = (char*) malloc(100*sizeof(char));
     if (edx & (1<<25)) strcpy(cpuid_info.features, "SSE ");
     if (edx & (1<<26)) strcat(cpuid_info.features, "SSE2 ");
     if (ecx & (1<<0))  strcat(cpuid_info.features, "SSE3 ");
     if (ecx & (1<<19)) strcat(cpuid_info.features, "SSE4.1 ");
     if (ecx & (1<<20)) strcat(cpuid_info.features, "SSE4.2 ");
-    */
 
     if( cpuid_info.family == P6_FAMILY) {
 	/* check performance monitor features */
