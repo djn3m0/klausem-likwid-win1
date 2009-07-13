@@ -131,7 +131,7 @@ Example:
 ### C4  Naming conventions
 
 1. The identifier of every globally symbol has to begin with a prefix that is unique to the module.
-2. The module prefix consists of the uppercase module name and is separated by one underscore.
+2. The module prefix consists of the module name and is separated by one underscore.
 3. The names of variables, constants, and functions are to begin with a lowercase letter.
 4. In names which consist of more than one word, the words are written together and each word that follows is begun with an uppercase letter.
 5. Apart from suffixes and prefixes Symbol names should not contain underscores.

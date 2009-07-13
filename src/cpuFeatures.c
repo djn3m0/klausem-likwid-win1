@@ -1,132 +1,218 @@
+/*
+ * ===========================================================================
+ *
+ *       Filename:  cpuFeatures.c
+ *
+ *    Description:  Implementation of cpuFeatures Module.
+ *                  Provides an API to read out and print the IA32_MISC_ENABLE
+ *                  model specific register on Intel x86 processors.
+ *                  Allows to turn on and off the Hardware prefetcher
+ *                  available.
+ *
+ *        Version:  1.0
+ *        Created:  07/05/2009
+ *       Revision:  none
+ *
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  HPCUtil
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ * ===========================================================================
+ */
+
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
+
 #include <types.h>
 #include <msr.h>
 #include <textcolor.h>
 #include <cpuFeatures.h>
 
+
+/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
+
 #define MSR_IA32_MISC_ENABLE      0x1A0
 
-void cpuFeatures_print(void)
+#define PRINT_VALUE(color,string)  \
+    color_on(BRIGHT,(color));      \
+    printf("string\n");            \
+    color_reset()
+
+
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+void
+cpuFeatures_print(const int cpu)
 {
-    uint64 flags = readMSR(0,MSR_IA32_MISC_ENABLE);
+    uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
 
     printf(HLINE);
     printf("Fast-Strings: \t\t\t");
-    if (flags & 1) {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
+    if (flags & 1)
+    {
+        PRINT_VALUE(GREEN,enabled);
     }
+    else
+    {
+        PRINT_VALUE(RED,disabled);
+    }
+
     printf("Automatic Thermal Control: \t");
-    if (flags & (1ULL<<3)) {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
+    if (flags & (1ULL<<3))
+    {
+        PRINT_VALUE(GREEN,enabled);
     }
+    else
+    {
+        PRINT_VALUE(RED,disabled);
+    }
+
     printf("Performance monitoring: \t");
-    if (flags & (1ULL<<7)) {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
+    if (flags & (1ULL<<7))
+    {
+        PRINT_VALUE(GREEN,enabled);
     }
+    else
+    {
+        PRINT_VALUE(RED,disabled);
+    }
+
     printf("Hardware Prefetcher: \t\t");
-    if (flags & (1ULL<<9)) {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
+    if (flags & (1ULL<<9)) 
+    {
+        PRINT_VALUE(RED,disabled);
     }
+    else
+    {
+        PRINT_VALUE(GREEN,enabled);
+    }
+
     printf("PEBS: \t\t\t\t");
-    if (flags & (1ULL<<12)) {
-	color_on(BRIGHT,RED);printf("not supported\n");color_reset();
-    } else {
-	color_on(BRIGHT,GREEN);printf("supported\n");color_reset();
+    if (flags & (1ULL<<12)) 
+    {
+        PRINT_VALUE(RED,notsupported);
     }
+    else
+    {
+        PRINT_VALUE(GREEN,supported);
+    }
+
     printf("Intel Enhanced SpeedStep: \t");
-    if (flags & (1ULL<<16)) {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
+    if (flags & (1ULL<<16)) 
+    {
+        PRINT_VALUE(GREEN,enabled);
     }
+    else
+    {
+        PRINT_VALUE(RED,disabled);
+    }
+
     printf("Adjacent Cache Line Prefetch: \t");
-    if (flags & (1ULL<<19)) {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
+    if (flags & (1ULL<<19)) 
+    {
+        PRINT_VALUE(RED,disabled);
     }
+    else
+    {
+        PRINT_VALUE(GREEN,enabled);
+    }
+
     printf("DCU Prefetcher: \t\t");
-    if (flags & (1ULL<<37)) {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
+    if (flags & (1ULL<<37)) 
+    {
+        PRINT_VALUE(RED,disabled);
     }
+    else
+    {
+        PRINT_VALUE(GREEN,enabled);
+    }
+
     printf("Intel Dynamic Acceleration: \t");
-    if (flags & (1ULL<<38)) {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
+    if (flags & (1ULL<<38)) 
+    {
+        PRINT_VALUE(RED,disabled);
     }
+    else 
+    {
+        PRINT_VALUE(GREEN,enabled);
+    }
+
     printf("IP Prefetcher: \t\t\t");
-    if (flags & (1ULL<<39)) {
-	color_on(BRIGHT,RED);printf("disabled\n");color_reset();
-    } else {
-	color_on(BRIGHT,GREEN);printf("enabled\n");color_reset();
+    if (flags & (1ULL<<39)) 
+    {
+        PRINT_VALUE(RED,disabled);
+    }
+    else
+    {
+        PRINT_VALUE(GREEN,enabled);
     }
     printf(HLINE);
 }
 
-void cpuFeatures_enable(cpuFeatureType type)
+void 
+cpuFeatures_enable(const int cpu, const CpuFeature type)
 {
-    uint64 flags = readMSR(0,MSR_IA32_MISC_ENABLE);
+    uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
 
-    switch ( type ) {
-	case HW_PREFETCHER:	
-	    flags &= ~(1ULL<<9);
-	    break;
+    switch ( type )
+    {
+        case HW_PREFETCHER:
+            flags &= ~(1ULL<<9);
+            break;
 
-	case CL_PREFETCHER:	
-	    flags &= ~(1ULL<<19);
-	    break;
+        case CL_PREFETCHER:
+            flags &= ~(1ULL<<19);
+            break;
 
-	case DCU_PREFETCHER:	
-	    flags &= ~(1ULL<<37);
-	    break;
+        case DCU_PREFETCHER:
+            flags &= ~(1ULL<<37);
+            break;
 
-	case IP_PREFETCHER:	
-	    flags &= ~(1ULL<<39);
-	    break;
+        case IP_PREFETCHER:
+            flags &= ~(1ULL<<39);
+            break;
 
-	default:	
-	    break;
+        default:
+            printf("ERROR: CpuFeature not supported!");
+            break;
     }
 
+    writeMSR(cpu, MSR_IA32_MISC_ENABLE, flags);
 }
 
 
-void cpuFeatures_disable(cpuFeatureType type)
+void
+cpuFeatures_disable(const int cpu, const CpuFeature type)
 {
-    uint64 flags = readMSR(0,MSR_IA32_MISC_ENABLE);
+    uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
 
-    switch ( type ) {
-	case HW_PREFETCHER:	
-	    flags |= (1ULL<<9);
-	    break;
+    switch ( type ) 
+    {
+        case HW_PREFETCHER:
+            flags |= (1ULL<<9);
+            break;
 
-	case CL_PREFETCHER:	
-	    flags |= (1ULL<<19);
-	    break;
+        case CL_PREFETCHER:
+            flags |= (1ULL<<19);
+            break;
 
-	case DCU_PREFETCHER:	
-	    flags |= (1ULL<<37);
-	    break;
+        case DCU_PREFETCHER:
+            flags |= (1ULL<<37);
+            break;
 
-	case IP_PREFETCHER:	
-	    flags |= (1ULL<<39);
-	    break;
+        case IP_PREFETCHER:
+            flags |= (1ULL<<39);
+            break;
 
-	default:	
-	    break;
+        default:
+            printf("ERROR: CpuFeature not supported!");
+            break;
     }
 
+    writeMSR(cpu, MSR_IA32_MISC_ENABLE, flags);
 }
 
