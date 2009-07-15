@@ -6,12 +6,12 @@ TARGET	   = hpcUtil
 TARGET_LIB = libhpcUtil.a
 BUILD_DIR  = ./$(TAG)
 SRC_DIR    = ./src
-MAKE_DIR   = ./make
+MAKE_DIR   = ./
 Q         ?= @
 
 #DO NOT EDIT BELOW
 include $(MAKE_DIR)/include_$(TAG).mk
-INCLUDES  += -I./includes
+INCLUDES  += -I./src/includes
 DEFINES   += -D$(ARCH)
 
 VPATH     = $(SRC_DIR)
