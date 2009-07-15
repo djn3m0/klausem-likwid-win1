@@ -1,3 +1,28 @@
+/*
+ * ===========================================================================
+ *
+ *       Filename:  cpuid.h
+ *
+ *    Description:  Header File cpuid Module. 
+ *                  Reads out cpuid information and initilaizes a global 
+ *                  data structure cpuid_info.
+ *
+ *        Version:  1.0
+ *        Created:  07/15/2009
+ *       Revision:  none
+ *
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  none
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ * ===========================================================================
+ */
+
+/** \file cpuid.h
+ * Header of cpuid module
+ *
+ */
 #ifndef CPUID_H
 #define CPUID_H
 #include <types.h>
@@ -15,9 +40,22 @@
 #define  NETBURST_FAMILY  0xFU
 #define  K10_FAMILY  0x10U
 
-extern cpu_info cpuid_info;
+/** Structure holding cpuid information
+ *
+ */
+extern CpuInfo cpuid_info;
 
-extern uint64 rdtsc (void);
+/** Init routine to intialize global structure.
+ *
+ *  Initializes: 
+ *  - cpu family
+ *  - cpu model
+ *  - cpu stepping
+ *  - cpu clock
+ *  - Instruction Set Extension Flags
+ *  - Performance counter features (Intel P6 only)
+ *
+ */
 extern void cpuid_init (void);
 
 #endif /*CPUID_H*/

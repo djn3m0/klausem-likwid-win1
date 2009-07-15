@@ -3,7 +3,7 @@
 
 #include <types.h>
 
-extern uint64 readMSR(int cpu, uint32 reg);
-extern void writeMSR(int cpu, uint32 reg, uint64 data);
+extern uint64_t readMSR(int cpu, uint32_t reg);
+extern void writeMSR(int cpu, uint32_t reg, uint64_t data);
 
 #endif /*MSR_H*/

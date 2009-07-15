@@ -1,5 +1,4 @@
 TAG = GCC
-ARCH = CORE2 #ONE OF CORE2, NEHALEM
 
 #CONFIGURE BUILD SYSTEM
 TARGET	   = hpcUtil
@@ -12,11 +11,9 @@ Q         ?= @
 #DO NOT EDIT BELOW
 include $(MAKE_DIR)/include_$(TAG).mk
 INCLUDES  += -I./src/includes
-DEFINES   += -D$(ARCH)
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
-OBJ      += $(patsubst $(SRC_DIR)/%.pas, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.pas))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
@@ -34,11 +31,6 @@ $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
 	$(Q)$(CC) -c  $(CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
-
-$(BUILD_DIR)/%.o:  %.pas
-	@echo "===>  ASSEMBLE  $@"
-	$(Q)$(PAS) -i x86-64 -o $(BUILD_DIR)/$*.s $<  '$(DEFINES)'
-	$(Q)$(AS) $(ASFLAGS)  $(BUILD_DIR)/$*.s -o $@
 
 
 $(BUILD_DIR):

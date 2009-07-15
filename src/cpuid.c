@@ -40,26 +40,26 @@ CpuInfo cpuid_info;
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static const char* pentium_m_str = "Intel Pentium M processor";
-static const char* core_duo_str = "Intel Core Duo processor";
-static const char* core_2a_str = "Intel Core 2 65nm processor";
-static const char* core_2b_str = "Intel Core 2 45nm processor";
-static const char* nehalem_str = "Intel Core i7 processor";
-static const char* xeon_mp_string = "Intel Xeon MP processor";
-static const char* barcelona_str = "AMD Barcelona processor";
-static const char* shanghai_str = "AMD Shanghai processor";
+static char* pentium_m_str = "Intel Pentium M processor";
+static char* core_duo_str = "Intel Core Duo processor";
+static char* core_2a_str = "Intel Core 2 65nm processor";
+static char* core_2b_str = "Intel Core 2 45nm processor";
+static char* nehalem_str = "Intel Core i7 processor";
+static char* xeon_mp_string = "Intel Xeon MP processor";
+static char* barcelona_str = "AMD Barcelona processor";
+static char* shanghai_str = "AMD Shanghai processor";
 static int lock = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static uint64
+static uint64_t
 get_cpu_speed(void)
 {
-    uint64 tsc1, tsc2;
+    uint64_t tsc1, tsc2;
     struct timeval tv1;
     struct timeval tv2;
     struct timezone tzp;
-    struct timespec delay = { 0, 200000000 };  //  calibration time: 200 ms
+    struct timespec delay = { 0, 200000000 };  /* calibration time: 200 ms */
 
     tsc1 = rdtsc();
     gettimeofday( &tv1, &tzp);
@@ -77,7 +77,7 @@ get_cpu_speed(void)
 void
 cpuid_init (void)
 {
-    uint32 eax, ebx, ecx, edx;
+    uint32_t eax, ebx, ecx, edx;
 
     if (lock) return;
     lock =1;

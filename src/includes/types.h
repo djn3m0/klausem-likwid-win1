@@ -1,6 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <stdint.h>
+
 #ifndef MIN
 #define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
@@ -14,23 +16,24 @@
 #define HLINE "-------------------------------------------------------------\n"
 #define SLINE "*************************************************************\n"
 
-typedef unsigned char uint8 ;
-typedef unsigned short uint16 ;
-typedef unsigned int uint32;
-typedef unsigned long long uint64;
-
 typedef struct cpu_info {
-    uint32 family;
-    uint32 model;
-    uint32 stepping;
-    uint64 clock;
+    uint32_t family;
+    uint32_t model;
+    uint32_t stepping;
+    uint64_t clock;
     char*  name;
     char*  features;
-    uint32 perf_version;
-    uint32 perf_num_ctr;
-    uint32 perf_width_ctr;
-    uint32 perf_num_fixed_ctr;
-} cpu_info;
+    uint32_t perf_version;
+    uint32_t perf_num_ctr;
+    uint32_t perf_width_ctr;
+    uint32_t perf_num_fixed_ctr;
+} CpuInfo;
+
+typedef union
+{  
+    uint64_t int64;
+    struct {uint32_t lo, hi;} int32;
+} TscCounter;
 
 typedef enum perfmon_index {
     PMC0 = 0,
@@ -45,7 +48,7 @@ typedef enum perfmon_index {
     PMCU5,
     PMCU6,
     PMCU7,
-    NUM_PMC} perfmon_counter_index_t;
+    NUM_PMC} PerfmonCounterIndex;
 
 typedef enum perfmon_group {
     NOGROUP = 0,
@@ -58,41 +61,47 @@ typedef enum perfmon_group {
     DATA,
     BRANCH,
     CPI,
-    TLB} perfmon_group_t;
+    TLB} PerfmonGroup;
 
 typedef enum perfmon_vendor {
     INTEL = 0,
     AMD,
-    NUM_VENDORS} perfmon_vendors_t;
+    NUM_VENDORS} PerfmonVendors;
 
 typedef enum perfmon_model {
     CORE2_ARCH = 0,
     NEHALEM_ARCH,
-    NUM_MODELS} perfmon_model_t;
+    NUM_MODELS} PerfmonModel;
+
+typedef enum cpuFeaturesEnum {
+    HW_PREFETCHER=0,
+    CL_PREFETCHER,
+    DCU_PREFETCHER,
+    IP_PREFETCHER} CpuFeature;
 
 typedef struct perfmon_event {
-    uint32 event_id;
-    uint32 umask;
-} perfmon_event_t;
+    uint32_t event_id;
+    uint32_t umask;
+} PerfmonEvent;
 
 typedef struct perfmon_hash_entry {
     char*  key;
-    perfmon_event_t  event;
-} perfmon_hash_entry_t;
+    PerfmonEvent  event;
+} PerfmonHashEntry;
 
 typedef struct perfmon_counter {
     char*  label;
     int  init;
-    uint64  config_reg;
-    uint64  counter_reg;
-} perfmon_counter_t;
+    uint64_t  config_reg;
+    uint64_t  counter_reg;
+} PerfmonCounter;
 
 typedef struct perfmon_thread {
     int cpu_id;
-    uint64 cycles;
-    perfmon_counter_t counters[NUM_PMC];
-    uint64 pc[NUM_PMC];
-} perfmon_thread_t;
+    uint64_t cycles;
+    PerfmonCounter counters[NUM_PMC];
+    uint64_t pc[NUM_PMC];
+} PerfmonThread;
 
 
 #endif /*TYPES_H*/

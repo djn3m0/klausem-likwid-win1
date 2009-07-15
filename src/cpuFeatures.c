@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <types.h>
 #include <msr.h>
@@ -46,7 +47,7 @@
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
-cpuFeatures_print(const int cpu)
+cpuFeatures_print(int cpu)
 {
     uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
 
@@ -154,7 +155,7 @@ cpuFeatures_print(const int cpu)
 }
 
 void 
-cpuFeatures_enable(const int cpu, const CpuFeature type)
+cpuFeatures_enable(int cpu, CpuFeature type)
 {
     uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
 
@@ -186,7 +187,7 @@ cpuFeatures_enable(const int cpu, const CpuFeature type)
 
 
 void
-cpuFeatures_disable(const int cpu, const CpuFeature type)
+cpuFeatures_disable(int cpu, CpuFeature type)
 {
     uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
 
