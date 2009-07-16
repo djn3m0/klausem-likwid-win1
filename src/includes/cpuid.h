@@ -47,7 +47,7 @@ extern CpuInfo cpuid_info;
 
 /** Init routine to intialize global structure.
  *
- *  Initializes: 
+ *  Determines: 
  *  - cpu family
  *  - cpu model
  *  - cpu stepping

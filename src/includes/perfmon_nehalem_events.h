@@ -1,518 +1,518 @@
 #define NUM_ARCH_EVENTS_NEHALEM 257
 
-static perfmon_hash_entry_t  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
-{"LOAD_BLOCK_STD",
-	{0x03,0x01}}
-,{"LOAD_BLOCK_ADDRESS_OFFSET",
-	{0x03,0x04}}
-,{"SB_DRAIN_CYCLES",
-	{0x04,0x01}}
-,{"STORE_BLOCK_NOT_STA",
-	{0x06,0x01}}
-,{"STORE_BLOCK_STA",
-	{0x06,0x02}}
-,{"STORE_BLOCK_AT_RET",
-	{0x06,0x04}}
-,{"STORE_BLOCK_L1D_BLOCK",
-	{0x06,0x08}}
-,{"STORE_BLOCK_ANY",
-	{0x06,0x0F}}
-,{"PARTIAL_ADDRESS_ALIAS",
-	{0x07,0x01}}
-,{"DTLB_MISSES_ANY",
-	{0x08,0x01}}
-,{"DTLB_MISSES_MISS_LD",
-	{0x08,0x02}}
-,{"MEM_INST_RETIRED_LOADS",
-	{0x0B,0x01}}
-,{"MEM_INST_RETIRED_STORES",
-	{0x0B,0x02}}
-,{"FP_COMP_OPS_EXE_X87",
-	{0x10,0x01}}
-,{"FP_COMP_OPS_EXE_MMX",
-	{0x10,0x02}}
-,{"FP_COMP_OPS_EXE_SSE_FP",
-	{0x10,0x04}}
-,{"FP_COMP_OPS_EXE_SSE2_INTEGER",
-	{0x10,0x08}}
-,{"FP_COMP_OPS_EXE_SSE_FP_PACKED",
-	{0x10,0x10}}
-,{"FP_COMP_OPS_EXE_SSE_FP_SCALAR",
-	{0x10,0x20}}
-,{"FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION",
-	{0x10,0x40}}
-,{"FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION",
-	{0x10,0x80}}
-,{"UOPS_ISSUED_ANY",
-	{0x0E,0x01}}
-,{"UOPS_ISSUED_STALLED_CYCLES",
-	{0x0E,0x01}}
-,{"UOPS_ISSUED_FUSED",
-	{0x0E,0x02}}
-,{"SIMD_INT_128_PACKED_MPY",
-	{0x12,0x01}}
-,{"SIMD_INT_128_PACKED_SHIFT",
-	{0x12,0x02}}
-,{"SIMD_INT_128_PACK",
-	{0x12,0x04}}
-,{"SIMD_INT_128_UNPACK",
-	{0x12,0x08}}
-,{"SIMD_INT_128_PACKED_LOGICAL",
-	{0x12,0x10}}
-,{"SIMD_INT_128_PACKED_ARITH",
-	{0x12,0x20}}
-,{"SIMD_INT_128_SHUFFLE_MOVE",
-	{0x12,0x40}}
-,{"L2_RQSTS_LD_HIT",
-	{0x24,0x01}}
-,{"L2_RQSTS_LD_MISS",
-	{0x24,0x02}}
-,{"L2_RQSTS_LOADS",
-	{0x24,0x03}}
-,{"L2_RQSTS_RFO_HIT",
-	{0x24,0x04}}
-,{"L2_RQSTS_RFO_MISS",
-	{0x24,0x08}}
-,{"L2_RQSTS_RFOS",
-	{0x24,0x0C}}
-,{"L2_RQSTS_IFETCH_HIT",
-	{0x24,0x10}}
-,{"L2_RQSTS_IFETCH_MISS",
-	{0x24,0x20}}
-,{"L2_RQSTS_IFETCHES",
-	{0x24,0x30}}
-,{"L2_RQSTS_PREFETCH_HIT",
-	{0x24,0x40}}
-,{"L2_RQSTS_PREFETCH_MISS",
-	{0x24,0x80}}
-,{"L2_RQSTS_PREFETCHES",
-	{0x24,0xC0}}
-,{"L2_RQSTS_MISS",
-	{0x24,0xAA}}
-,{"L2_RQSTS_REFERENCES",
-	{0x24,0xFF}}
-,{"L2_DATA_RQSTS_DEMAND_I_STATE",
-	{0x26,0x01}}
-,{"L2_DATA_RQSTS_DEMAND_S_STATE",
-	{0x26,0x02}}
-,{"L2_DATA_RQSTS_DEMAND_E_STATE",
-	{0x26,0x04}}
-,{"L2_DATA_RQSTS_DEMAND_M_STATE",
-	{0x26,0x08}}
-,{"L2_DATA_RQSTS_DEMAND_MESI",
-	{0x26,0x0F}}
-,{"L2_DATA_RQSTS_DEMAND_PREFETCH_I_STATE",
-	{0x26,0x10}}
-,{"L2_DATA_RQSTS_DEMAND_PREFETCH_S_STATE",
-	{0x26,0x20}}
-,{"L2_DATA_RQSTS_DEMAND_PREFETCH_E_STATE",
-	{0x26,0x40}}
-,{"L2_DATA_RQSTS_DEMAND_PREFETCH_M_STATE",
-	{0x26,0x80}}
-,{"L2_DATA_RQSTS_DEMAND_PREFETCH_MESI",
-	{0x26,0xF0}}
-,{"L2_DATA_RQSTS_DEMAND_PREFETCH_ANY",
-	{0x26,0xFF}}
-,{"L2_WRITE_RFO_I_STATE",
-	{0x27,0x01}}
-,{"L2_WRITE_RFO_S_STATE",
-	{0x27,0x02}}
-,{"L2_WRITE_RFO_E_STATE",
-	{0x27,0x04}}
-,{"L2_WRITE_RFO_M_STATE",
-	{0x27,0x08}}
-,{"L2_WRITE_RFO_HIT",
-	{0x27,0x0E}}
-,{"L2_WRITE_RFO_MESI",
-	{0x27,0x0F}}
-,{"L2_WRITE_LOCK_I_STATE",
-	{0x27,0x10}}
-,{"L2_WRITE_LOCK_S_STATE",
-	{0x27,0x20}}
-,{"L2_WRITE_LOCK_E_STATE",
-	{0x27,0x40}}
-,{"L2_WRITE_LOCK_M_STATE",
-	{0x27,0x80}}
-,{"L2_WRITE_LOCK_HIT",
-	{0x27,0xE0}}
-,{"L2_WRITE_LOCK_MESI",
-	{0x27,0xF0}}
-,{"L1D_WB_L2_I_STATE",
-	{0x28,0x01}}
-,{"L1D_WB_L2_S_STATE",
-	{0x28,0x02}}
-,{"L1D_WB_L2_E_STATE",
-	{0x28,0x04}}
-,{"L1D_WB_L2_M_STATE",
-	{0x28,0x08}}
-,{"L1D_WB_L2_MESI",
-	{0x28,0x0F}}
-,{"L1D_CACHE_LD_I_STATE",
-	{0x40,0x01}}
-,{"L1D_CACHE_LD_S_STATE",
-	{0x40,0x02}}
-,{"L1D_CACHE_LD_E_STATE",
-	{0x40,0x04}}
-,{"L1D_CACHE_LD_M_STATE",
-	{0x40,0x08}}
-,{"L1D_CACHE_LD_MESI",
-	{0x40,0x0F}}
-,{"L1D_CACHE_ST_I_STATE",
-	{0x41,0x01}}
-,{"L1D_CACHE_ST_S_STATE",
-	{0x41,0x02}}
-,{"L1D_CACHE_ST_E_STATE",
-	{0x41,0x04}}
-,{"L1D_CACHE_ST_M_STATE",
-	{0x41,0x08}}
-,{"L1D_CACHE_ST_MESI",
-	{0x41,0x0F}}
-,{"L1D_CACHE_LOCK_HIT",
-	{0x42,0x01}}
-,{"L1D_CACHE_LOCK_S_STATE",
-	{0x42,0x02}}
-,{"L1D_CACHE_LOCK_E_STATE",
-	{0x42,0x04}}
-,{"L1D_CACHE_LOCK_M_STATE",
-	{0x42,0x08}}
-,{"L1D_ALL_REF_ANY",
-	{0x43,0x01}}
-,{"L1D_ALL_REF_CACHEABLE",
-	{0x43,0x02}}
-,{"L1D_PEND_MISS_LOAD_BUFFERS_FULL",
-	{0x48,0x02}}
-,{"DTLB_MISSES_ANY",
-	{0x49,0x01}}
-,{"DTLB_MISSES_WALK_COMPLETED",
-	{0x49,0x02}}
-,{"DTLB_MISSES_STLB_HIT",
-	{0x49,0x10}}
-,{"DTLB_MISSES_PDE_MISS",
-	{0x49,0x20}}
-,{"DTLB_MISSES_PDP_MISS",
-	{0x49,0x40}}
-,{"DTLB_MISSES_LARGE_WALK_COMPLETED",
-	{0x49,0x80}}
-,{"SSE_MEM_EXEC_NTA",
-	{0x4B,0x01}}
-,{"SSE_MEM_EXEC_STREAMING_STORES",
-	{0x4B,0x08}}
-,{"LOAD_HIT_PRE",
-	{0x4C,0x01}}
-,{"L1D_PREFETCH_REQUESTS",
-	{0x4E,0x01}}
-,{"L1D_PREFETCH_MISS",
-	{0x4E,0x02}}
-,{"L1D_PREFETCH_TRIGGERS",
-	{0x4E,0x04}}
-,{"L1D_REPL",
-	{0x51,0x01}}
-,{"L1D_M_REPL",
-	{0x51,0x02}}
-,{"L1D_M_EVICT",
-	{0x51,0x04}}
-,{"L1D_M_SNOOP_EVICT",
-	{0x51,0x08}}
-,{"IO_TRANSACTIONS",
-	{0x6C,0x01}}
-,{"BR_INST_EXEC_COND",
-	{0x88,0x01}}
-,{"BR_INST_EXEC_DIRECT",
-	{0x88,0x02}}
-,{"BR_INST_EXEC_INDIRECT_NON_CALL",
-	{0x88,0x04}}
-,{"BR_INST_EXEC_NON_CALLS",
-	{0x88,0x07}}
-,{"BR_INST_EXEC_RETURN_NEAR",
-	{0x88,0x08}}
-,{"BR_INST_EXEC_DIRECT_NEAR_CALL",
-	{0x88,0x10}}
-,{"BR_INST_EXEC_INDIRECT_NEAR_CALL",
-	{0x88,0x20}}
-,{"BR_INST_EXEC_NEAR_CALLS",
-	{0x88,0x30}}
-,{"BR_INST_EXEC_TAKEN",
-	{0x88,0x40}}
-,{"BR_INST_EXEC_ANY",
-	{0x88,0x7F}}
-,{"BR_MISP_EXEC_COND",
-	{0x89,0x01}}
-,{"BR_MISP_EXEC_DIRECT",
-	{0x89,0x02}}
-,{"BR_MISP_EXEC_INDIRECT_NON_CALL",
-	{0x89,0x04}}
-,{"BR_MISP_EXEC_NON_CALLS",
-	{0x89,0x07}}
-,{"BR_MISP_EXEC_RETURN_NEAR",
-	{0x89,0x08}}
-,{"BR_MISP_EXEC_DIRECT_NEAR_CALL",
-	{0x89,0x10}}
-,{"BR_MISP_EXEC_INDIRECT_NEAR_CALL",
-	{0x89,0x20}}
-,{"BR_MISP_EXEC_NEAR_CALLS",
-	{0x89,0x30}}
-,{"BR_MISP_EXEC_TAKEN",
-	{0x89,0x40}}
-,{"BR_MISP_EXEC_ANY",
-	{0x89,0x7F}}
-,{"RESOURCE_STALLS_ANY",
-	{0x89,0x01}}
-,{"RESOURCE_STALLS_LOAD",
-	{0x89,0x02}}
-,{"RESOURCE_STALLS_RS_FULL",
-	{0x89,0x04}}
-,{"RESOURCE_STALLS_STORE",
-	{0x89,0x08}}
-,{"RESOURCE_STALLS_ROB_FULL",
-	{0x89,0x10}}
-,{"RESOURCE_STALLS_FPCW",
-	{0x89,0x20}}
-,{"RESOURCE_STALLS_MXCSR",
-	{0x89,0x40}}
-,{"RESOURCE_STALLS_OTHER",
-	{0x89,0x80}}
-,{"UOPS_EXECUTED_PORT0",
-	{0xB1,0x01}}
-,{"UOPS_EXECUTED_PORT1",
-	{0xB1,0x02}}
-,{"UOPS_EXECUTED_PORT2_CORE",
-	{0xB1,0x04}}
-,{"UOPS_EXECUTED_PORT3_CORE",
-	{0xB1,0x08}}
-,{"UOPS_EXECUTED_PORT4_CORE",
-	{0xB1,0x10}}
-,{"UOPS_EXECUTED_PORT5",
-	{0xB1,0x20}}
-,{"UOPS_EXECUTED_PORT015",
-	{0xB1,0x40}}
-,{"UOPS_EXECUTED_PORT234",
-	{0xB1,0x80}}
-,{"INST_RETIRED_ANY_P",
-	{0xC0,0x01}}
-,{"INST_RETIRED_X87",
-	{0xC0,0x02}}
-,{"UOPS_RETIRED_ANY",
-	{0xC0,0x01}}
-,{"UOPS_RETIRED_RETIRE_SLOTS",
-	{0xC0,0x02}}
-,{"UOPS_RETIRED_MACRO_FUSED",
-	{0xC0,0x04}}
-,{"BR_INST_RETIRED_ALL_BRANCHES",
-	{0xC4,0x01}}
-,{"BR_INST_RETIRED_CONDITIONAL",
-	{0xC4,0x01}}
-,{"BR_INST_RETIRED_NEAR_CALL",
-	{0xC4,0x01}}
-,{"BR_INST_RETIRED_ALL_BRANCHES",
-	{0xC4,0x01}}
-,{"BR_MISP_RETIRED_ALL_BRANCHES",
-	{0xC5,0x00}}
-,{"BR_MISP_RETIRED_NEAR_CALL",
-	{0xC5,0x02}}
-,{"SSEX_UOPS_RETIRED_PACKED_SINGLE",
-	{0xC7,0x01}}
-,{"SSEX_UOPS_RETIRED_SCALAR_SINGLE",
-	{0xC7,0x02}}
-,{"SSEX_UOPS_RETIRED_PACKED_DOUBLE",
-	{0xC7,0x04}}
-,{"SSEX_UOPS_RETIRED_SCALAR_DOUBLE",
-	{0xC7,0x08}}
-,{"SSEX_UOPS_RETIRED_VECTOR_INTEGER",
-	{0xC7,0x10}}
-,{"MEM_LOAD_RETIRED_L1D_HIT",
-	{0xCB,0x01}}
-,{"MEM_LOAD_RETIRED_L2_HIT",
-	{0xCB,0x02}}
-,{"MEM_LOAD_RETIRED_L3_UNSHARED_HIT",
-	{0xCB,0x04}}
-,{"MEM_LOAD_RETIRED_OTHER_CORE_L2_HIT_HITM",
-	{0xCB,0x08}}
-,{"MEM_LOAD_RETIRED_L3_MISS",
-	{0xCB,0x10}}
-,{"MEM_LOAD_RETIRED_HIT_LFB",
-	{0xCB,0x40}}
-,{"MEM_LOAD_RETIRED_DTLB_MISS",
-	{0xCB,0x80}}
-,{"L2_TRANSACTIONS_LOAD",
-	{0xF0,0x01}}
-,{"L2_TRANSACTIONS_RFO",
-	{0xF0,0x02}}
-,{"L2_TRANSACTIONS_IFETCH",
-	{0xF0,0x04}}
-,{"L2_TRANSACTIONS_PREFETCH",
-	{0xF0,0x08}}
-,{"L2_TRANSACTIONS_L1D_WB",
-	{0xF0,0x10}}
-,{"L2_TRANSACTIONS_L1D_FILL",
-	{0xF0,0x20}}
-,{"L2_TRANSACTIONS_L1D_WB",
-	{0xF0,0x40}}
-,{"L2_TRANSACTIONS_L1D_ANY",
-	{0xF0,0x80}}
-,{"L2_LINES_IN_S_STATE",
-	{0xF1,0x02}}
-,{"L2_LINES_IN_E_STATE",
-	{0xF1,0x04}}
-,{"L2_LINES_IN_ANY",
-	{0xF1,0x07}}
-,{"L2_LINES_OUT_DEMAND_CLEAN",
-	{0xF2,0x01}}
-,{"L2_LINES_OUT_DEMAND_DIRTY",
-	{0xF2,0x02}}
-,{"L2_LINES_OUT_PREFETCH_CLEAN",
-	{0xF2,0x04}}
-,{"L2_LINES_OUT_PREFETCH_DIRTY",
-	{0xF2,0x08}}
-,{"L2_LINES_OUT_ANY",
-	{0xF2,0x0F}}
-,{"L2_HW_PREFETCH_HIT",
-	{0xF3,0x01}}
-,{"L2_HW_PREFETCH_ALLOC",
-	{0xF3,0x02}}
-,{"L2_HW_PREFETCH_DATA_TRIGGER",
-	{0xF3,0x04}}
-,{"L2_HW_PREFETCH_CODE_TRIGGER",
-	{0xF3,0x08}}
-,{"L2_HW_PREFETCH_DCA_TRIGGER",
-	{0xF3,0x10}}
-,{"L2_HW_PREFETCH_KICK_START",
-	{0xF3,0x20}}
-,{"SQ_MISC_PROMOTION",
-	{0xF4,0x01}}
-,{"SQ_MISC_PROMOTION_POST_GO",
-	{0xF4,0x02}}
-,{"SQ_MISC_LRU_HINTS",
-	{0xF4,0x04}}
-,{"SQ_MISC_FILL_DROPPED",
-	{0xF4,0x08}}
-,{"SQ_MISC_SPLIT_LOCK",
-	{0xF4,0x10}}
-,{"SQ_FULL_STALL_CYCLES",
-	{0xF6,0x01}}
-,{"FP_ASSIST_ALL",
-	{0xF7,0x01}}
-,{"FP_ASSIST_OUTPUT",
-	{0xF7,0x02}}
-,{"FP_ASSIST_INPUT",
-	{0xF7,0x04}}
-,{"SIMD_INT_64_PACKED_MPY",
-	{0xFD,0x01}}
-,{"SIMD_INT_64_PACKED_SHIFT",
-	{0xFD,0x02}}
-,{"SIMD_INT_64_PACK",
-	{0xFD,0x04}}
-,{"SIMD_INT_64_UNPACK",
-	{0xFD,0x08}}
-,{"SIMD_INT_64_PACKED_LOGICAL",
-	{0xFD,0x10}}
-,{"SIMD_INT_64_PACKED_ARITH",
-	{0xFD,0x20}}
-,{"SIMD_INT_64_SHUFFLE_MOVE",
-	{0xFD,0x40}}
-,{"UNC_GQ_CYCLES_FULL_READ_TRACKER",
-	{0x00,0x01}}
-,{"UNC_GQ_CYCLES_FULL_WRITE_TRACKER",
-	{0x00,0x02}}
-,{"UNC_GQ_CYCLES_FULL_PEER_PROBE_TRACKER",
-	{0x00,0x04}}
-,{"UNC_GQ_CYCLES_NOT_EMPTY_READ_TRACKER",
-	{0x01,0x01}}
-,{"UNC_GQ_CYCLES_NOT_EMPTY_WRITE_TRACKER",
-	{0x01,0x02}}
-,{"UNC_GQ_CYCLES_NOT_EMPTY_PEER_PROBE_TRACKER",
-	{0x01,0x04}}
-,{"UNC_GQ_ALLOC_READ_TRACKER",
-	{0x03,0x01}}
-,{"UNC_GQ_ALLOC_RT_L3_MISS",
-	{0x03,0x02}}
-,{"UNC_GQ_ALLOC_RT_TO_L3_RESP",
-	{0x03,0x04}}
-,{"UNC_GQ_ALLOC_RT_TO_RTID_ACQUIRED",
-	{0x03,0x08}}
-,{"UNC_GQ_ALLOC_WT_TO_RTID_ACQUIRED",
-	{0x03,0x10}}
-,{"UNC_GQ_ALLOC_WRITE_TRACKER",
-	{0x03,0x20}}
-,{"UNC_GQ_ALLOC_PEER_PROBE_TRACKER",
-	{0x03,0x40}}
-,{"UNC_GQ_DATA_FROM_QPI",
-	{0x04,0x01}}
-,{"UNC_GQ_DATA_FROM_QMC",
-	{0x04,0x02}}
-,{"UNC_GQ_DATA_FROM_L3",
-	{0x04,0x04}}
-,{"UNC_GQ_DATA_FROM_CORES_02",
-	{0x04,0x08}}
-,{"UNC_GQ_DATA_FROM_CORES_13",
-	{0x04,0x10}}
-,{"UNC_GQ_DATA_TO_QPI_QMC",
-	{0x05,0x01}}
-,{"UNC_GQ_DATA_TO_L3",
-	{0x05,0x02}}
-,{"UNC_GQ_DATA_TO_CORES",
-	{0x05,0x04}}
-,{"UNC_SNP_RESP_TO_LOCAL_HOME_I_STATE",
-	{0x06,0x01}}
-,{"UNC_SNP_RESP_TO_LOCAL_HOME_S_STATE",
-	{0x06,0x02}}
-,{"UNC_SNP_RESP_TO_LOCAL_HOME_FWD_S_STATE",
-	{0x06,0x04}}
-,{"UNC_SNP_RESP_TO_LOCAL_HOME_FWD_I_STATE",
-	{0x06,0x08}}
-,{"UNC_SNP_RESP_TO_LOCAL_HOME_CONFLICT",
-	{0x06,0x10}}
-,{"UNC_SNP_RESP_TO_LOCAL_HOME_WB",
-	{0x06,0x20}}
-,{"UNC_SNP_RESP_TO_REMOTE_HOME_I_STATE",
-	{0x07,0x01}}
-,{"UNC_SNP_RESP_TO_REMOTE_HOME_S_STATE",
-	{0x07,0x02}}
-,{"UNC_SNP_RESP_TO_REMOTE_HOME_FWD_S_STATE",
-	{0x07,0x04}}
-,{"UNC_SNP_RESP_TO_REMOTE_HOME_FWD_I_STATE",
-	{0x07,0x08}}
-,{"UNC_SNP_RESP_TO_REMOTE_HOME_CONFLICT",
-	{0x07,0x10}}
-,{"UNC_SNP_RESP_TO_REMOTE_HOME_WB",
-	{0x07,0x20}}
-,{"UNC_SNP_RESP_TO_REMOTE_HOME_HITM",
-	{0x07,0x24}}
-,{"UNC_L3_HITS_READ",
-	{0x08,0x01}}
-,{"UNC_L3_HITS_WRITE",
-	{0x08,0x02}}
-,{"UNC_L3_HITS_PROBE",
-	{0x08,0x04}}
-,{"UNC_L3_HITS_ANY",
-	{0x08,0x03}}
-,{"UNC_L3_MISS_READ",
-	{0x09,0x01}}
-,{"UNC_L3_MISS_WRITE",
-	{0x09,0x02}}
-,{"UNC_L3_MISS_PROBE",
-	{0x09,0x04}}
-,{"UNC_L3_MISS_ANY",
-	{0x09,0x03}}
-,{"UNC_L3_LINES_IN_M_STATE",
-	{0x0A,0x01}}
-,{"UNC_L3_LINES_IN_E_STATE",
-	{0x0A,0x02}}
-,{"UNC_L3_LINES_IN_S_STATE",
-	{0x0A,0x04}}
-,{"UNC_L3_LINES_IN_F_STATE",
-	{0x0A,0x08}}
-,{"UNC_L3_LINES_IN_ANY",
-	{0x0A,0x0F}}
-,{"UNC_L3_LINES_OUT_M_STATE",
-	{0x0B,0x01}}
-,{"UNC_L3_LINES_OUT_E_STATE",
-	{0x0B,0x02}}
-,{"UNC_L3_LINES_OUT_S_STATE",
-	{0x0B,0x04}}
-,{"UNC_L3_LINES_OUT_I_STATE",
-	{0x0B,0x08}}
-,{"UNC_L3_LINES_OUT_F_STATE",
-	{0x0B,0x10}}
-,{"UNC_L3_LINES_OUT_ANY",
-	{0x0B,0x1F}}
+static PerfmonHashEntry  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
+    {"LOAD_BLOCK_STD",
+        {0x03,0x01}}
+    ,{"LOAD_BLOCK_ADDRESS_OFFSET",
+        {0x03,0x04}}
+    ,{"SB_DRAIN_CYCLES",
+        {0x04,0x01}}
+    ,{"STORE_BLOCK_NOT_STA",
+        {0x06,0x01}}
+    ,{"STORE_BLOCK_STA",
+        {0x06,0x02}}
+    ,{"STORE_BLOCK_AT_RET",
+        {0x06,0x04}}
+    ,{"STORE_BLOCK_L1D_BLOCK",
+        {0x06,0x08}}
+    ,{"STORE_BLOCK_ANY",
+        {0x06,0x0F}}
+    ,{"PARTIAL_ADDRESS_ALIAS",
+        {0x07,0x01}}
+    ,{"DTLB_MISSES_ANY",
+        {0x08,0x01}}
+    ,{"DTLB_MISSES_MISS_LD",
+        {0x08,0x02}}
+    ,{"MEM_INST_RETIRED_LOADS",
+        {0x0B,0x01}}
+    ,{"MEM_INST_RETIRED_STORES",
+        {0x0B,0x02}}
+    ,{"FP_COMP_OPS_EXE_X87",
+        {0x10,0x01}}
+    ,{"FP_COMP_OPS_EXE_MMX",
+        {0x10,0x02}}
+    ,{"FP_COMP_OPS_EXE_SSE_FP",
+        {0x10,0x04}}
+    ,{"FP_COMP_OPS_EXE_SSE2_INTEGER",
+        {0x10,0x08}}
+    ,{"FP_COMP_OPS_EXE_SSE_FP_PACKED",
+        {0x10,0x10}}
+    ,{"FP_COMP_OPS_EXE_SSE_FP_SCALAR",
+        {0x10,0x20}}
+    ,{"FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION",
+        {0x10,0x40}}
+    ,{"FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION",
+        {0x10,0x80}}
+    ,{"UOPS_ISSUED_ANY",
+        {0x0E,0x01}}
+    ,{"UOPS_ISSUED_STALLED_CYCLES",
+        {0x0E,0x01}}
+    ,{"UOPS_ISSUED_FUSED",
+        {0x0E,0x02}}
+    ,{"SIMD_INT_128_PACKED_MPY",
+        {0x12,0x01}}
+    ,{"SIMD_INT_128_PACKED_SHIFT",
+        {0x12,0x02}}
+    ,{"SIMD_INT_128_PACK",
+        {0x12,0x04}}
+    ,{"SIMD_INT_128_UNPACK",
+        {0x12,0x08}}
+    ,{"SIMD_INT_128_PACKED_LOGICAL",
+        {0x12,0x10}}
+    ,{"SIMD_INT_128_PACKED_ARITH",
+        {0x12,0x20}}
+    ,{"SIMD_INT_128_SHUFFLE_MOVE",
+        {0x12,0x40}}
+    ,{"L2_RQSTS_LD_HIT",
+        {0x24,0x01}}
+    ,{"L2_RQSTS_LD_MISS",
+        {0x24,0x02}}
+    ,{"L2_RQSTS_LOADS",
+        {0x24,0x03}}
+    ,{"L2_RQSTS_RFO_HIT",
+        {0x24,0x04}}
+    ,{"L2_RQSTS_RFO_MISS",
+        {0x24,0x08}}
+    ,{"L2_RQSTS_RFOS",
+        {0x24,0x0C}}
+    ,{"L2_RQSTS_IFETCH_HIT",
+        {0x24,0x10}}
+    ,{"L2_RQSTS_IFETCH_MISS",
+        {0x24,0x20}}
+    ,{"L2_RQSTS_IFETCHES",
+        {0x24,0x30}}
+    ,{"L2_RQSTS_PREFETCH_HIT",
+        {0x24,0x40}}
+    ,{"L2_RQSTS_PREFETCH_MISS",
+        {0x24,0x80}}
+    ,{"L2_RQSTS_PREFETCHES",
+        {0x24,0xC0}}
+    ,{"L2_RQSTS_MISS",
+        {0x24,0xAA}}
+    ,{"L2_RQSTS_REFERENCES",
+        {0x24,0xFF}}
+    ,{"L2_DATA_RQSTS_DEMAND_I_STATE",
+        {0x26,0x01}}
+    ,{"L2_DATA_RQSTS_DEMAND_S_STATE",
+        {0x26,0x02}}
+    ,{"L2_DATA_RQSTS_DEMAND_E_STATE",
+        {0x26,0x04}}
+    ,{"L2_DATA_RQSTS_DEMAND_M_STATE",
+        {0x26,0x08}}
+    ,{"L2_DATA_RQSTS_DEMAND_MESI",
+        {0x26,0x0F}}
+    ,{"L2_DATA_RQSTS_DEMAND_PREFETCH_I_STATE",
+        {0x26,0x10}}
+    ,{"L2_DATA_RQSTS_DEMAND_PREFETCH_S_STATE",
+        {0x26,0x20}}
+    ,{"L2_DATA_RQSTS_DEMAND_PREFETCH_E_STATE",
+        {0x26,0x40}}
+    ,{"L2_DATA_RQSTS_DEMAND_PREFETCH_M_STATE",
+        {0x26,0x80}}
+    ,{"L2_DATA_RQSTS_DEMAND_PREFETCH_MESI",
+        {0x26,0xF0}}
+    ,{"L2_DATA_RQSTS_DEMAND_PREFETCH_ANY",
+        {0x26,0xFF}}
+    ,{"L2_WRITE_RFO_I_STATE",
+        {0x27,0x01}}
+    ,{"L2_WRITE_RFO_S_STATE",
+        {0x27,0x02}}
+    ,{"L2_WRITE_RFO_E_STATE",
+        {0x27,0x04}}
+    ,{"L2_WRITE_RFO_M_STATE",
+        {0x27,0x08}}
+    ,{"L2_WRITE_RFO_HIT",
+        {0x27,0x0E}}
+    ,{"L2_WRITE_RFO_MESI",
+        {0x27,0x0F}}
+    ,{"L2_WRITE_LOCK_I_STATE",
+        {0x27,0x10}}
+    ,{"L2_WRITE_LOCK_S_STATE",
+        {0x27,0x20}}
+    ,{"L2_WRITE_LOCK_E_STATE",
+        {0x27,0x40}}
+    ,{"L2_WRITE_LOCK_M_STATE",
+        {0x27,0x80}}
+    ,{"L2_WRITE_LOCK_HIT",
+        {0x27,0xE0}}
+    ,{"L2_WRITE_LOCK_MESI",
+        {0x27,0xF0}}
+    ,{"L1D_WB_L2_I_STATE",
+        {0x28,0x01}}
+    ,{"L1D_WB_L2_S_STATE",
+        {0x28,0x02}}
+    ,{"L1D_WB_L2_E_STATE",
+        {0x28,0x04}}
+    ,{"L1D_WB_L2_M_STATE",
+        {0x28,0x08}}
+    ,{"L1D_WB_L2_MESI",
+        {0x28,0x0F}}
+    ,{"L1D_CACHE_LD_I_STATE",
+        {0x40,0x01}}
+    ,{"L1D_CACHE_LD_S_STATE",
+        {0x40,0x02}}
+    ,{"L1D_CACHE_LD_E_STATE",
+        {0x40,0x04}}
+    ,{"L1D_CACHE_LD_M_STATE",
+        {0x40,0x08}}
+    ,{"L1D_CACHE_LD_MESI",
+        {0x40,0x0F}}
+    ,{"L1D_CACHE_ST_I_STATE",
+        {0x41,0x01}}
+    ,{"L1D_CACHE_ST_S_STATE",
+        {0x41,0x02}}
+    ,{"L1D_CACHE_ST_E_STATE",
+        {0x41,0x04}}
+    ,{"L1D_CACHE_ST_M_STATE",
+        {0x41,0x08}}
+    ,{"L1D_CACHE_ST_MESI",
+        {0x41,0x0F}}
+    ,{"L1D_CACHE_LOCK_HIT",
+        {0x42,0x01}}
+    ,{"L1D_CACHE_LOCK_S_STATE",
+        {0x42,0x02}}
+    ,{"L1D_CACHE_LOCK_E_STATE",
+        {0x42,0x04}}
+    ,{"L1D_CACHE_LOCK_M_STATE",
+        {0x42,0x08}}
+    ,{"L1D_ALL_REF_ANY",
+        {0x43,0x01}}
+    ,{"L1D_ALL_REF_CACHEABLE",
+        {0x43,0x02}}
+    ,{"L1D_PEND_MISS_LOAD_BUFFERS_FULL",
+        {0x48,0x02}}
+    ,{"DTLB_MISSES_ANY",
+        {0x49,0x01}}
+    ,{"DTLB_MISSES_WALK_COMPLETED",
+        {0x49,0x02}}
+    ,{"DTLB_MISSES_STLB_HIT",
+        {0x49,0x10}}
+    ,{"DTLB_MISSES_PDE_MISS",
+        {0x49,0x20}}
+    ,{"DTLB_MISSES_PDP_MISS",
+        {0x49,0x40}}
+    ,{"DTLB_MISSES_LARGE_WALK_COMPLETED",
+        {0x49,0x80}}
+    ,{"SSE_MEM_EXEC_NTA",
+        {0x4B,0x01}}
+    ,{"SSE_MEM_EXEC_STREAMING_STORES",
+        {0x4B,0x08}}
+    ,{"LOAD_HIT_PRE",
+        {0x4C,0x01}}
+    ,{"L1D_PREFETCH_REQUESTS",
+        {0x4E,0x01}}
+    ,{"L1D_PREFETCH_MISS",
+        {0x4E,0x02}}
+    ,{"L1D_PREFETCH_TRIGGERS",
+        {0x4E,0x04}}
+    ,{"L1D_REPL",
+        {0x51,0x01}}
+    ,{"L1D_M_REPL",
+        {0x51,0x02}}
+    ,{"L1D_M_EVICT",
+        {0x51,0x04}}
+    ,{"L1D_M_SNOOP_EVICT",
+        {0x51,0x08}}
+    ,{"IO_TRANSACTIONS",
+        {0x6C,0x01}}
+    ,{"BR_INST_EXEC_COND",
+        {0x88,0x01}}
+    ,{"BR_INST_EXEC_DIRECT",
+        {0x88,0x02}}
+    ,{"BR_INST_EXEC_INDIRECT_NON_CALL",
+        {0x88,0x04}}
+    ,{"BR_INST_EXEC_NON_CALLS",
+        {0x88,0x07}}
+    ,{"BR_INST_EXEC_RETURN_NEAR",
+        {0x88,0x08}}
+    ,{"BR_INST_EXEC_DIRECT_NEAR_CALL",
+        {0x88,0x10}}
+    ,{"BR_INST_EXEC_INDIRECT_NEAR_CALL",
+        {0x88,0x20}}
+    ,{"BR_INST_EXEC_NEAR_CALLS",
+        {0x88,0x30}}
+    ,{"BR_INST_EXEC_TAKEN",
+        {0x88,0x40}}
+    ,{"BR_INST_EXEC_ANY",
+        {0x88,0x7F}}
+    ,{"BR_MISP_EXEC_COND",
+        {0x89,0x01}}
+    ,{"BR_MISP_EXEC_DIRECT",
+        {0x89,0x02}}
+    ,{"BR_MISP_EXEC_INDIRECT_NON_CALL",
+        {0x89,0x04}}
+    ,{"BR_MISP_EXEC_NON_CALLS",
+        {0x89,0x07}}
+    ,{"BR_MISP_EXEC_RETURN_NEAR",
+        {0x89,0x08}}
+    ,{"BR_MISP_EXEC_DIRECT_NEAR_CALL",
+        {0x89,0x10}}
+    ,{"BR_MISP_EXEC_INDIRECT_NEAR_CALL",
+        {0x89,0x20}}
+    ,{"BR_MISP_EXEC_NEAR_CALLS",
+        {0x89,0x30}}
+    ,{"BR_MISP_EXEC_TAKEN",
+        {0x89,0x40}}
+    ,{"BR_MISP_EXEC_ANY",
+        {0x89,0x7F}}
+    ,{"RESOURCE_STALLS_ANY",
+        {0x89,0x01}}
+    ,{"RESOURCE_STALLS_LOAD",
+        {0x89,0x02}}
+    ,{"RESOURCE_STALLS_RS_FULL",
+        {0x89,0x04}}
+    ,{"RESOURCE_STALLS_STORE",
+        {0x89,0x08}}
+    ,{"RESOURCE_STALLS_ROB_FULL",
+        {0x89,0x10}}
+    ,{"RESOURCE_STALLS_FPCW",
+        {0x89,0x20}}
+    ,{"RESOURCE_STALLS_MXCSR",
+        {0x89,0x40}}
+    ,{"RESOURCE_STALLS_OTHER",
+        {0x89,0x80}}
+    ,{"UOPS_EXECUTED_PORT0",
+        {0xB1,0x01}}
+    ,{"UOPS_EXECUTED_PORT1",
+        {0xB1,0x02}}
+    ,{"UOPS_EXECUTED_PORT2_CORE",
+        {0xB1,0x04}}
+    ,{"UOPS_EXECUTED_PORT3_CORE",
+        {0xB1,0x08}}
+    ,{"UOPS_EXECUTED_PORT4_CORE",
+        {0xB1,0x10}}
+    ,{"UOPS_EXECUTED_PORT5",
+        {0xB1,0x20}}
+    ,{"UOPS_EXECUTED_PORT015",
+        {0xB1,0x40}}
+    ,{"UOPS_EXECUTED_PORT234",
+        {0xB1,0x80}}
+    ,{"INST_RETIRED_ANY_P",
+        {0xC0,0x01}}
+    ,{"INST_RETIRED_X87",
+        {0xC0,0x02}}
+    ,{"UOPS_RETIRED_ANY",
+        {0xC0,0x01}}
+    ,{"UOPS_RETIRED_RETIRE_SLOTS",
+        {0xC0,0x02}}
+    ,{"UOPS_RETIRED_MACRO_FUSED",
+        {0xC0,0x04}}
+    ,{"BR_INST_RETIRED_ALL_BRANCHES",
+        {0xC4,0x01}}
+    ,{"BR_INST_RETIRED_CONDITIONAL",
+        {0xC4,0x01}}
+    ,{"BR_INST_RETIRED_NEAR_CALL",
+        {0xC4,0x01}}
+    ,{"BR_INST_RETIRED_ALL_BRANCHES",
+        {0xC4,0x01}}
+    ,{"BR_MISP_RETIRED_ALL_BRANCHES",
+        {0xC5,0x00}}
+    ,{"BR_MISP_RETIRED_NEAR_CALL",
+        {0xC5,0x02}}
+    ,{"SSEX_UOPS_RETIRED_PACKED_SINGLE",
+        {0xC7,0x01}}
+    ,{"SSEX_UOPS_RETIRED_SCALAR_SINGLE",
+        {0xC7,0x02}}
+    ,{"SSEX_UOPS_RETIRED_PACKED_DOUBLE",
+        {0xC7,0x04}}
+    ,{"SSEX_UOPS_RETIRED_SCALAR_DOUBLE",
+        {0xC7,0x08}}
+    ,{"SSEX_UOPS_RETIRED_VECTOR_INTEGER",
+        {0xC7,0x10}}
+    ,{"MEM_LOAD_RETIRED_L1D_HIT",
+        {0xCB,0x01}}
+    ,{"MEM_LOAD_RETIRED_L2_HIT",
+        {0xCB,0x02}}
+    ,{"MEM_LOAD_RETIRED_L3_UNSHARED_HIT",
+        {0xCB,0x04}}
+    ,{"MEM_LOAD_RETIRED_OTHER_CORE_L2_HIT_HITM",
+        {0xCB,0x08}}
+    ,{"MEM_LOAD_RETIRED_L3_MISS",
+        {0xCB,0x10}}
+    ,{"MEM_LOAD_RETIRED_HIT_LFB",
+        {0xCB,0x40}}
+    ,{"MEM_LOAD_RETIRED_DTLB_MISS",
+        {0xCB,0x80}}
+    ,{"L2_TRANSACTIONS_LOAD",
+        {0xF0,0x01}}
+    ,{"L2_TRANSACTIONS_RFO",
+        {0xF0,0x02}}
+    ,{"L2_TRANSACTIONS_IFETCH",
+        {0xF0,0x04}}
+    ,{"L2_TRANSACTIONS_PREFETCH",
+        {0xF0,0x08}}
+    ,{"L2_TRANSACTIONS_L1D_WB",
+        {0xF0,0x10}}
+    ,{"L2_TRANSACTIONS_L1D_FILL",
+        {0xF0,0x20}}
+    ,{"L2_TRANSACTIONS_L1D_WB",
+        {0xF0,0x40}}
+    ,{"L2_TRANSACTIONS_L1D_ANY",
+        {0xF0,0x80}}
+    ,{"L2_LINES_IN_S_STATE",
+        {0xF1,0x02}}
+    ,{"L2_LINES_IN_E_STATE",
+        {0xF1,0x04}}
+    ,{"L2_LINES_IN_ANY",
+        {0xF1,0x07}}
+    ,{"L2_LINES_OUT_DEMAND_CLEAN",
+        {0xF2,0x01}}
+    ,{"L2_LINES_OUT_DEMAND_DIRTY",
+        {0xF2,0x02}}
+    ,{"L2_LINES_OUT_PREFETCH_CLEAN",
+        {0xF2,0x04}}
+    ,{"L2_LINES_OUT_PREFETCH_DIRTY",
+        {0xF2,0x08}}
+    ,{"L2_LINES_OUT_ANY",
+        {0xF2,0x0F}}
+    ,{"L2_HW_PREFETCH_HIT",
+        {0xF3,0x01}}
+    ,{"L2_HW_PREFETCH_ALLOC",
+        {0xF3,0x02}}
+    ,{"L2_HW_PREFETCH_DATA_TRIGGER",
+        {0xF3,0x04}}
+    ,{"L2_HW_PREFETCH_CODE_TRIGGER",
+        {0xF3,0x08}}
+    ,{"L2_HW_PREFETCH_DCA_TRIGGER",
+        {0xF3,0x10}}
+    ,{"L2_HW_PREFETCH_KICK_START",
+        {0xF3,0x20}}
+    ,{"SQ_MISC_PROMOTION",
+        {0xF4,0x01}}
+    ,{"SQ_MISC_PROMOTION_POST_GO",
+        {0xF4,0x02}}
+    ,{"SQ_MISC_LRU_HINTS",
+        {0xF4,0x04}}
+    ,{"SQ_MISC_FILL_DROPPED",
+        {0xF4,0x08}}
+    ,{"SQ_MISC_SPLIT_LOCK",
+        {0xF4,0x10}}
+    ,{"SQ_FULL_STALL_CYCLES",
+        {0xF6,0x01}}
+    ,{"FP_ASSIST_ALL",
+        {0xF7,0x01}}
+    ,{"FP_ASSIST_OUTPUT",
+        {0xF7,0x02}}
+    ,{"FP_ASSIST_INPUT",
+        {0xF7,0x04}}
+    ,{"SIMD_INT_64_PACKED_MPY",
+        {0xFD,0x01}}
+    ,{"SIMD_INT_64_PACKED_SHIFT",
+        {0xFD,0x02}}
+    ,{"SIMD_INT_64_PACK",
+        {0xFD,0x04}}
+    ,{"SIMD_INT_64_UNPACK",
+        {0xFD,0x08}}
+    ,{"SIMD_INT_64_PACKED_LOGICAL",
+        {0xFD,0x10}}
+    ,{"SIMD_INT_64_PACKED_ARITH",
+        {0xFD,0x20}}
+    ,{"SIMD_INT_64_SHUFFLE_MOVE",
+        {0xFD,0x40}}
+    ,{"UNC_GQ_CYCLES_FULL_READ_TRACKER",
+        {0x00,0x01}}
+    ,{"UNC_GQ_CYCLES_FULL_WRITE_TRACKER",
+        {0x00,0x02}}
+    ,{"UNC_GQ_CYCLES_FULL_PEER_PROBE_TRACKER",
+        {0x00,0x04}}
+    ,{"UNC_GQ_CYCLES_NOT_EMPTY_READ_TRACKER",
+        {0x01,0x01}}
+    ,{"UNC_GQ_CYCLES_NOT_EMPTY_WRITE_TRACKER",
+        {0x01,0x02}}
+    ,{"UNC_GQ_CYCLES_NOT_EMPTY_PEER_PROBE_TRACKER",
+        {0x01,0x04}}
+    ,{"UNC_GQ_ALLOC_READ_TRACKER",
+        {0x03,0x01}}
+    ,{"UNC_GQ_ALLOC_RT_L3_MISS",
+        {0x03,0x02}}
+    ,{"UNC_GQ_ALLOC_RT_TO_L3_RESP",
+        {0x03,0x04}}
+    ,{"UNC_GQ_ALLOC_RT_TO_RTID_ACQUIRED",
+        {0x03,0x08}}
+    ,{"UNC_GQ_ALLOC_WT_TO_RTID_ACQUIRED",
+        {0x03,0x10}}
+    ,{"UNC_GQ_ALLOC_WRITE_TRACKER",
+        {0x03,0x20}}
+    ,{"UNC_GQ_ALLOC_PEER_PROBE_TRACKER",
+        {0x03,0x40}}
+    ,{"UNC_GQ_DATA_FROM_QPI",
+        {0x04,0x01}}
+    ,{"UNC_GQ_DATA_FROM_QMC",
+        {0x04,0x02}}
+    ,{"UNC_GQ_DATA_FROM_L3",
+        {0x04,0x04}}
+    ,{"UNC_GQ_DATA_FROM_CORES_02",
+        {0x04,0x08}}
+    ,{"UNC_GQ_DATA_FROM_CORES_13",
+        {0x04,0x10}}
+    ,{"UNC_GQ_DATA_TO_QPI_QMC",
+        {0x05,0x01}}
+    ,{"UNC_GQ_DATA_TO_L3",
+        {0x05,0x02}}
+    ,{"UNC_GQ_DATA_TO_CORES",
+        {0x05,0x04}}
+    ,{"UNC_SNP_RESP_TO_LOCAL_HOME_I_STATE",
+        {0x06,0x01}}
+    ,{"UNC_SNP_RESP_TO_LOCAL_HOME_S_STATE",
+        {0x06,0x02}}
+    ,{"UNC_SNP_RESP_TO_LOCAL_HOME_FWD_S_STATE",
+        {0x06,0x04}}
+    ,{"UNC_SNP_RESP_TO_LOCAL_HOME_FWD_I_STATE",
+        {0x06,0x08}}
+    ,{"UNC_SNP_RESP_TO_LOCAL_HOME_CONFLICT",
+        {0x06,0x10}}
+    ,{"UNC_SNP_RESP_TO_LOCAL_HOME_WB",
+        {0x06,0x20}}
+    ,{"UNC_SNP_RESP_TO_REMOTE_HOME_I_STATE",
+        {0x07,0x01}}
+    ,{"UNC_SNP_RESP_TO_REMOTE_HOME_S_STATE",
+        {0x07,0x02}}
+    ,{"UNC_SNP_RESP_TO_REMOTE_HOME_FWD_S_STATE",
+        {0x07,0x04}}
+    ,{"UNC_SNP_RESP_TO_REMOTE_HOME_FWD_I_STATE",
+        {0x07,0x08}}
+    ,{"UNC_SNP_RESP_TO_REMOTE_HOME_CONFLICT",
+        {0x07,0x10}}
+    ,{"UNC_SNP_RESP_TO_REMOTE_HOME_WB",
+        {0x07,0x20}}
+    ,{"UNC_SNP_RESP_TO_REMOTE_HOME_HITM",
+        {0x07,0x24}}
+    ,{"UNC_L3_HITS_READ",
+        {0x08,0x01}}
+    ,{"UNC_L3_HITS_WRITE",
+        {0x08,0x02}}
+    ,{"UNC_L3_HITS_PROBE",
+        {0x08,0x04}}
+    ,{"UNC_L3_HITS_ANY",
+        {0x08,0x03}}
+    ,{"UNC_L3_MISS_READ",
+        {0x09,0x01}}
+    ,{"UNC_L3_MISS_WRITE",
+        {0x09,0x02}}
+    ,{"UNC_L3_MISS_PROBE",
+        {0x09,0x04}}
+    ,{"UNC_L3_MISS_ANY",
+        {0x09,0x03}}
+    ,{"UNC_L3_LINES_IN_M_STATE",
+        {0x0A,0x01}}
+    ,{"UNC_L3_LINES_IN_E_STATE",
+        {0x0A,0x02}}
+    ,{"UNC_L3_LINES_IN_S_STATE",
+        {0x0A,0x04}}
+    ,{"UNC_L3_LINES_IN_F_STATE",
+        {0x0A,0x08}}
+    ,{"UNC_L3_LINES_IN_ANY",
+        {0x0A,0x0F}}
+    ,{"UNC_L3_LINES_OUT_M_STATE",
+        {0x0B,0x01}}
+    ,{"UNC_L3_LINES_OUT_E_STATE",
+        {0x0B,0x02}}
+    ,{"UNC_L3_LINES_OUT_S_STATE",
+        {0x0B,0x04}}
+    ,{"UNC_L3_LINES_OUT_I_STATE",
+        {0x0B,0x08}}
+    ,{"UNC_L3_LINES_OUT_F_STATE",
+        {0x0B,0x10}}
+    ,{"UNC_L3_LINES_OUT_ANY",
+        {0x0B,0x1F}}
 };

@@ -5,9 +5,9 @@
 
 int baseCycles=0;
 float cpuclock=0.0F;
-static uint64 cycle_overhead;
+static uint64_t cycle_overhead;
 
-inline uint64 rdtsc(void)
+inline uint64_t rdtsc(void)
 {
    unsigned int tsc_low, tsc_high;
 
@@ -18,13 +18,13 @@ inline uint64 rdtsc(void)
         :
         : "%eax", "%edx");      
 
-   return (uint64)tsc_high << 32 | (uint64)tsc_low;
+   return (uint64_t)tsc_high << 32 | (uint64_t)tsc_low;
 }
 
 
 void initTimer(void )
 {
-    uint64 start,stop;
+    uint64_t start,stop;
 #if 0
     baseCycles = cyclesForCpuId();
     cpuclock = cpuClockFrequency();

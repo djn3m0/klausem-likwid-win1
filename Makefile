@@ -1,55 +1,77 @@
 TAG = GCC
 
 #CONFIGURE BUILD SYSTEM
-TARGET	   = hpcUtil
 TARGET_LIB = libhpcUtil.a
 BUILD_DIR  = ./$(TAG)
 SRC_DIR    = ./src
+DOC_DIR    = ./doc
 MAKE_DIR   = ./
+MKD        = $(PERL) ext/perl/mkd2html.pl
 Q         ?= @
 
 #DO NOT EDIT BELOW
 include $(MAKE_DIR)/include_$(TAG).mk
 INCLUDES  += -I./src/includes
 
-VPATH     = $(SRC_DIR)
+VPATH     = $(SRC_DIR) $(DOC_DIR)/mkd
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+MKD_SRC   = $(patsubst $(DOC_DIR)/mkd/%.mkd, $(DOC_DIR)/%.html,$(wildcard $(DOC_DIR)/mkd/*.mkd))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
-all: $(TARGET)  $(TARGET_LIB)
+all: perfCtr cpuFeatures  $(TARGET_LIB)
 
-$(TARGET): $(BUILD_DIR) $(OBJ)
-	@echo "===>  LINKING  $(TARGET)"
-	$(Q)${CC} ${LFLAGS} -o $(TARGET) $(OBJ) $(LIBS)
+perfCtr: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/PerfCtr/perfCtrMain.c
+	@echo "===>  LINKING  $@"
+	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/PerfCtr/perfCtrMain.c $(OBJ) $(LIBS)
+
+cpuFeatures: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/CpuFeatures/cpuFeaturesMain.c
+	@echo "===>  LINKING  $@"
+	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/CpuFeatures/cpuFeaturesMain.c $(OBJ) $(LIBS)
 
 $(TARGET_LIB): $(BUILD_DIR) $(OBJ)
 	@echo "===>  CREATE LIB  $(TARGET_LIB)"
 	$(Q)${AR} -cq $(TARGET_LIB) $(filter-out $(BUILD_DIR)/main.o,$(OBJ))
 
+doc: doxygen $(MKD_SRC)
+
+doxygen:
+	@echo "===>  BUILD DOXYGEN"
+	$(Q)$(DOXYGEN) $(DOC_DIR)/Doxyfile
+
+$(BUILD_DIR):
+	@mkdir $(BUILD_DIR)
+
+
+#PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
 	$(Q)$(CC) -c  $(CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
+$(DOC_DIR)/%.html:  %.mkd
+	@echo "===>  BUILD DOC  $@"
+	$(Q)$(MKD)  $<  $@ test
 
-$(BUILD_DIR):
-	@mkdir $(BUILD_DIR)
 
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean dist-clean
+.PHONY: clean distclean
 
 clean:
 	@echo "===>  CLEAN"
 	@rm -rf $(BUILD_DIR)
 
-dist-clean:
+distclean:
 	@echo "===>  DIST CLEAN"
 	@rm -rf $(BUILD_DIR)
-	@rm -f $(TARGET)
+	@rm -f perfCtr
+	@rm -f cpuFeatures
+	@rm -rf $(DOC_DIR)/doxygen
+	@rm -f $(DOC_DIR)/*.html
+	@rm -f $(DOC_DIR)/doxygen.log
 	@rm -f $(TARGET_LIB)
 

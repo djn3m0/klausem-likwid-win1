@@ -26,7 +26,10 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <fcntl.h>
+
+#include <msr.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -77,7 +80,7 @@ msr_read(const int cpu, uint32_t reg)
 }
 
 void 
-msr_write(const int cpu, uint32 reg, uint64 data)
+msr_write(const int cpu, uint32_t reg, uint64_t data)
 {
     int  fd;
     char msr_file_name[64];

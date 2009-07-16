@@ -40,7 +40,7 @@
 
 #define PRINT_VALUE(color,string)  \
     color_on(BRIGHT,(color));      \
-    printf("string\n");            \
+    printf(#string"\n");            \
     color_reset()
 
 
@@ -49,7 +49,7 @@
 void
 cpuFeatures_print(int cpu)
 {
-    uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
+    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
 
     printf(HLINE);
     printf("Fast-Strings: \t\t\t");
@@ -157,63 +157,75 @@ cpuFeatures_print(int cpu)
 void 
 cpuFeatures_enable(int cpu, CpuFeature type)
 {
-    uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
+    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
 
     switch ( type )
     {
         case HW_PREFETCHER:
+            printf("HW_PREFETCHER:\t");
             flags &= ~(1ULL<<9);
             break;
 
         case CL_PREFETCHER:
+            printf("CL_PREFETCHER:\t");
             flags &= ~(1ULL<<19);
             break;
 
         case DCU_PREFETCHER:
+            printf("DCU_PREFETCHER:\t");
             flags &= ~(1ULL<<37);
             break;
 
         case IP_PREFETCHER:
+            printf("IP_PREFETCHER:\t");
             flags &= ~(1ULL<<39);
             break;
 
         default:
-            printf("ERROR: CpuFeature not supported!");
+            printf("ERROR: CpuFeature not supported!\n");
             break;
     }
+    PRINT_VALUE(GREEN,enabled);
+    printf("\n");
 
-    writeMSR(cpu, MSR_IA32_MISC_ENABLE, flags);
+    msr_write(cpu, MSR_IA32_MISC_ENABLE, flags);
 }
 
 
 void
 cpuFeatures_disable(int cpu, CpuFeature type)
 {
-    uint64_t flags = readMSR(cpu, MSR_IA32_MISC_ENABLE);
+    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
 
     switch ( type ) 
     {
         case HW_PREFETCHER:
+            printf("HW_PREFETCHER:\t");
             flags |= (1ULL<<9);
             break;
 
         case CL_PREFETCHER:
+            printf("CL_PREFETCHER:\t");
             flags |= (1ULL<<19);
             break;
 
         case DCU_PREFETCHER:
+            printf("DCU_PREFETCHER:\t");
             flags |= (1ULL<<37);
             break;
 
         case IP_PREFETCHER:
+            printf("IP_PREFETCHER:\t");
             flags |= (1ULL<<39);
             break;
 
         default:
-            printf("ERROR: CpuFeature not supported!");
+            printf("ERROR: CpuFeature not supported!\n");
             break;
     }
+    PRINT_VALUE(RED,disabled);
+    printf("\n");
 
-    writeMSR(cpu, MSR_IA32_MISC_ENABLE, flags);
+    msr_write(cpu, MSR_IA32_MISC_ENABLE, flags);
 }
 

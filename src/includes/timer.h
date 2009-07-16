@@ -10,9 +10,9 @@ typedef struct time {
 } TimerData;
 
 typedef struct cycles {
-    uint64 start;
-    uint64 stop;
-    uint64 over;
+    uint64_t start;
+    uint64_t stop;
+    uint64_t over;
 } CyclesData;
 
 /* 
@@ -60,7 +60,7 @@ extern float printtimer(TimerData* );
  *                Overhead must be determined by user.
  * =====================================================================================
  */
-extern void readCycles(uint64* );
+extern void readCycles(uint64_t* );
 
 
 /* 
