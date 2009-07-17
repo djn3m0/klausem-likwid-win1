@@ -48,6 +48,7 @@ static char* nehalem_str = "Intel Core i7 processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
+static char* istanbul_str = "AMD Istanbul processor";
 static int lock = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -144,6 +145,10 @@ cpuid_init (void)
 
                 case SHANGHAI:
                     cpuid_info.name = shanghai_str;
+                    break;
+
+                case ISTANBUL:
+                    cpuid_info.name = istanbul_str;
                     break;
 
                 default:

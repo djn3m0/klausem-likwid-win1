@@ -7,13 +7,12 @@
 
 #include <types.h>
 #include <cpuid.h>
-#include <cpuFeatures.h>
 #include <perfmon.h>
 
 #define MAX_NUM_THREADS 100
 
 #define HELP_MSG \
-    printf("hpcUtil --  Version 0.3\n"); \
+    printf("perfCtr --  Version 0.4\n"); \
 printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
@@ -163,7 +162,6 @@ int main (int argc, char** argv)
             printf("PERFMON number of counters:\t%u \n",cpuid_info.perf_num_ctr);
             printf("PERFMON width of counters:\t%u \n",cpuid_info.perf_width_ctr);
             printf("PERFMON number of fixed counters:\t%u \n",cpuid_info.perf_num_fixed_ctr);
-            cpuFeatures_print(0);
         }
     }
     printf(HLINE);

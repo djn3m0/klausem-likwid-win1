@@ -139,6 +139,8 @@ initThread(int thread_id, int cpu_id)
                 case BARCELONA:
 
                 case SHANGHAI:
+
+                case ISTANBUL:
                     perfmon_init_k10(&threadData[thread_id]);
                     break;
 
@@ -248,6 +250,8 @@ setupGroupThread(int thread_id, PerfmonGroup group)
                 case BARCELONA:
 
                 case SHANGHAI:
+
+                case ISTANBUL:
                     perfmon_setup_group_k10(thread_id,groupSet);
                     break;
 
@@ -346,6 +350,8 @@ startCountersThread(int thread_id)
                 case BARCELONA:
 
                 case SHANGHAI:
+
+                case ISTANBUL:
 
                     for (i=0;i<NUM_PMC;i++) 
                     {
@@ -533,6 +539,8 @@ perfmon_printResults()
                     case BARCELONA:
 
                     case SHANGHAI:
+
+                    case ISTANBUL:
                         perfmon_print_results_k10(&threadData[thread_id], groupSet, time);
                         break;
 
@@ -615,6 +623,8 @@ perfmon_printResults()
                     case BARCELONA:
 
                     case SHANGHAI:
+
+                    case ISTANBUL:
                         perfmon_print_results_k10(&summary, groupSet, time);
                         break;
 
@@ -786,6 +796,8 @@ perfmon_init(int numThreads_local, int threads[])
                 case BARCELONA:
 
                 case SHANGHAI:
+
+                case ISTANBUL:
                     eventHash = k10_arch_events;
                     num_arch_events = NUM_ARCH_EVENTS_K10;
                     break;

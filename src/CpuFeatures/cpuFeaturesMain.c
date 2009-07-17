@@ -25,15 +25,9 @@ exit(0);
 int main (int argc, char** argv)
 { 
     int optInfo = 0;
-    int optThreaded = 0;
-    int optUncoreEvent = 0;
     int optSetFeature = 0;
     int cpuId = 0;
     int c;
-    char * cmd_str;
-    char * customEvent;
-    char *token, *saveptr, *str;
-    char *delimiter = ",";
     CpuFeature feature;
 
     if (argc ==  1) { HELP_MSG }

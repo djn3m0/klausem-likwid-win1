@@ -35,10 +35,11 @@
 #define XEON_MP   0x1DU
 #define BARCELONA 0x02U
 #define SHANGHAI  0x04U
+#define ISTANBUL  0x08U
 
 #define  P6_FAMILY        0x6U
 #define  NETBURST_FAMILY  0xFU
-#define  K10_FAMILY  0x10U
+#define  K10_FAMILY       0x10U
 
 /** Structure holding cpuid information
  *

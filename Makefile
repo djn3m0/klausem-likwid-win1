@@ -12,6 +12,8 @@ Q         ?= @
 #DO NOT EDIT BELOW
 include $(MAKE_DIR)/include_$(TAG).mk
 INCLUDES  += -I./src/includes
+PINLIB_PT  = libptoverride_pt.so
+PINLIB_OMP = libptoverride_omp.so
 
 VPATH     = $(SRC_DIR) $(DOC_DIR)/mkd
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
@@ -19,7 +21,7 @@ MKD_SRC   = $(patsubst $(DOC_DIR)/mkd/%.mkd, $(DOC_DIR)/%.html,$(wildcard $(DOC_
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
-all: perfCtr cpuFeatures  $(TARGET_LIB)
+all: perfCtr cpuFeatures  $(TARGET_LIB)  $(PINLIB_PT)  $(PINLIB_OMP) 
 
 perfCtr: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/PerfCtr/perfCtrMain.c
 	@echo "===>  LINKING  $@"
@@ -42,6 +44,13 @@ doxygen:
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
+$(PINLIB_PT): 
+	@echo "===>  BUILD    $(PINLIB_PT)"
+	$(Q)$(MAKE) -s -C src/PinLib/ $(PINLIB_PT) 
+
+$(PINLIB_OMP): 
+	@echo "===>  BUILD    $(PINLIB_OMP)"
+	$(Q)$(MAKE) -s -C src/PinLib/ $(PINLIB_OMP) 
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
@@ -74,4 +83,6 @@ distclean:
 	@rm -f $(DOC_DIR)/*.html
 	@rm -f $(DOC_DIR)/doxygen.log
 	@rm -f $(TARGET_LIB)
+	@rm -f $(PINLIB_PT)
+	@rm -f $(PINLIB_OMP)
 
