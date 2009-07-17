@@ -21,7 +21,7 @@ MKD_SRC   = $(patsubst $(DOC_DIR)/mkd/%.mkd, $(DOC_DIR)/%.html,$(wildcard $(DOC_
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
-all: perfCtr cpuFeatures  $(TARGET_LIB)  $(PINLIB_PT)  $(PINLIB_OMP) 
+all: perfCtr cpuFeatures cpuTopology  $(TARGET_LIB)  $(PINLIB_PT)  $(PINLIB_OMP) 
 
 perfCtr: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/PerfCtr/perfCtrMain.c
 	@echo "===>  LINKING  $@"
@@ -30,6 +30,10 @@ perfCtr: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/PerfCtr/perfCtrMain.c
 cpuFeatures: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/CpuFeatures/cpuFeaturesMain.c
 	@echo "===>  LINKING  $@"
 	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/CpuFeatures/cpuFeaturesMain.c $(OBJ) $(LIBS)
+
+cpuTopology: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/CpuTopology/cpuTopologyMain.c
+	@echo "===>  LINKING  $@"
+	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/CpuTopology/cpuTopologyMain.c $(OBJ) $(LIBS)
 
 $(TARGET_LIB): $(BUILD_DIR) $(OBJ)
 	@echo "===>  CREATE LIB  $(TARGET_LIB)"

@@ -14,5 +14,11 @@ typedef struct cpu_info {
     uint32_t perf_num_fixed_ctr;
 } CpuInfo;
 
+typedef struct hwThread {
+    int threadId;
+    int coreId;
+    int packageId;
+    int apicId;
+} HWThread;
 
 #endif /*CPUID_TYPES_H*/

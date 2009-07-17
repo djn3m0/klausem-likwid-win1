@@ -59,4 +59,6 @@ extern CpuInfo cpuid_info;
  */
 extern void cpuid_init (void);
 
+extern void cpuid_topology (void);
+
 #endif /*CPUID_H*/
