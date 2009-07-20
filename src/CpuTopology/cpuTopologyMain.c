@@ -10,70 +10,33 @@
 
 
 #define HELP_MSG \
-    printf("\ncpuFeatures --  Version 0.2\n\n"); \
-printf("A tool to print and toggle the feature flag msr on Intel CPUS.\n"); \
-printf("Supported Features: HW_PREFETCHER, CL_PREFETCHER, DCU_PREFETCHER, IP_PREFETCHER.\n\n"); \
+    printf("\ncpuTopology --  Version 0.1\n\n"); \
+printf("A tool to print the thread and cache toppology on Intel CPUS.\n"); \
 printf("Options:\n"); \
 printf("-h\t Help message\n"); \
-printf("-i\t print cpu features\n"); \
-printf("-s <FEATURE>\t set cpu feature \n"); \
-printf("-u <FEATURE>\t unset cpu feature \n"); \
-printf("-t <ID>\t core id\n\n"); \
+printf("-c\t list cache information\n"); \
+printf("-g\t graphical output\n"); \
 exit(0);
 
 int main (int argc, char** argv)
 { 
-    int optInfo = 0;
-    int optSetFeature = 0;
-    int cpuId = 0;
+    int optGraphical = 0;
+    int optCaches = 0;
     int c;
-    CpuFeature feature;
+    int i;
 
-    if (argc ==  1) { HELP_MSG }
-
-    while ((c = getopt (argc, argv, "t:s:u:hi")) != -1)
+    while ((c = getopt (argc, argv, "hcg")) != -1)
     {
         switch (c)
         {
             case 'h':
                 HELP_MSG
                     exit (EXIT_SUCCESS);    
-            case 'u':
-                optSetFeature = 2;
-            case 's':
-                if (!strcmp("HW_PREFETCHER",optarg)) 
-                {
-                    feature = HW_PREFETCHER;
-                }
-                else if (!strcmp("CL_PREFETCHER",optarg)) 
-                {
-                    feature = CL_PREFETCHER;
-                }
-                else if (!strcmp("DCU_PREFETCHER",optarg)) 
-                {
-                    feature = DCU_PREFETCHER;
-                }
-                else if (!strcmp("IP_PREFETCHER",optarg)) 
-                {
-                    feature = IP_PREFETCHER;
-                }
-                else
-                {
-                    fprintf(stderr,"Feature not supported!\n");
-                    exit(EXIT_FAILURE);
-                }
-
-                if (!optSetFeature)
-                {
-                    optSetFeature = 1;
-                }
+            case 'g':
+                optGraphical = 1;
                 break;
-            case 't':
-                cpuId = atoi(optarg);
-
-                break;
-            case 'i':
-                optInfo = 1;
+            case 'c':
+                optCaches = 1;
                 break;
             case '?':
                 if (isprint (optopt))
@@ -95,9 +58,69 @@ int main (int argc, char** argv)
     cpuid_init();
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU clock:\t%llu Hz \n", cpuid_info.clock);
+    printf("CPU clock:\t%llu Hz \n\n", cpuid_info.clock);
 
-    cpuid_topology();
+    cpuid_initTopology();
+    cpuid_initCacheTopology();
+
+    printf("Total hardware threads:\t%u \n", cpuid_topology.numHWThreads);
+    printf("Sockets:\t\t%u \n", cpuid_topology.numSockets);
+    printf("Cores per socket:\t%u \n", cpuid_topology.numCoresPerSocket);
+    printf("Threads per core:\t%u \n", cpuid_topology.numThreadsPerCore);
+
+    printf(HLINE);
+    printf("HWThread\tThread\t\tCore\t\tSocket\n");
+    for (i=0; i< cpuid_topology.numHWThreads; i++)
+    {
+        printf("%d\t\t%d\t\t%d\t\t%d\n",i
+                ,cpuid_topology.threadPool[i].threadId
+                ,cpuid_topology.threadPool[i].coreId
+                ,cpuid_topology.threadPool[i].packageId);
+    }
+    printf(HLINE);
+    for (i=0; i< cpuid_topology.numCacheLevels; i++)
+    {
+        printf("Level:\t %d\n",cpuid_topology.cacheLevels[i].level);
+        if (cpuid_topology.cacheLevels[i].size < 1048576)
+        {
+            printf("Size:\t %d kB\n",cpuid_topology.cacheLevels[i].size/1024);
+        }
+        else 
+        {
+            printf("Size:\t %d MB\n",cpuid_topology.cacheLevels[i].size/1048576);
+        }
+
+        switch (cpuid_topology.cacheLevels[i].type) {
+            case DATACACHE:	
+                printf("Type:\t Data cache\n");
+                break;
+
+            case INSTRUCTIONCACHE:	
+                printf("Type:\t Instruction cache\n");
+                break;
+
+            case UNIFIEDCACHE:	
+                printf("Type:\t Unified cache\n");
+                break;
+        }
+        printf("Associativity:\t %d\n",cpuid_topology.cacheLevels[i].associativity);
+        printf("Number of sets:\t %d\n",cpuid_topology.cacheLevels[i].sets);
+        printf("Cache line size: %d\n",cpuid_topology.cacheLevels[i].lineSize);
+        if(cpuid_topology.cacheLevels[i].inclusive)
+        {
+            printf("Non Inclusive cache\n");
+        }
+        else
+        {
+            printf("Inclusive cache\n");
+        }
+        printf("Shared among %d threads\n",cpuid_topology.cacheLevels[i].threads);
+
+
+        printf(HLINE);
+    }
+
+    printf(HLINE);
 
     return EXIT_SUCCESS;
 }

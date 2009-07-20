@@ -45,6 +45,7 @@
  *
  */
 extern CpuInfo cpuid_info;
+extern CpuTopology cpuid_topology;
 
 /** Init routine to intialize global structure.
  *
@@ -59,6 +60,7 @@ extern CpuInfo cpuid_info;
  */
 extern void cpuid_init (void);
 
-extern void cpuid_topology (void);
+extern void cpuid_initTopology (void);
+extern void cpuid_initCacheTopology (void);
 
 #endif /*CPUID_H*/

@@ -9,6 +9,7 @@
 #include <cpuid_types.h>
 #include <cpuFeatures_types.h>
 #include <perfmon_types.h>
+#include <asciiBoxes_types.h>
 
 
 /* #####   EXPORTED MACROS   ############################################## */

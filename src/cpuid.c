@@ -5,7 +5,6 @@
  *
  *    Description:  Implementation of cpuid module.
  *                  Provides API to extract cpuid info on x86 processors.
- *                  Information is filled 
  *
  *        Version:  1.0
  *        Created:  07/06/2009
@@ -38,6 +37,7 @@
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 CpuInfo cpuid_info;
+CpuTopology cpuid_topology;
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -119,6 +119,85 @@ extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
 
     outField = (inField & bitMask) >> offset;
     return outField;
+}
+
+static uint32_t
+getBitFieldWidth(uint32_t number)
+{
+    uint32_t fieldWidth;
+
+    number--;
+    if (number == 0)
+    {
+        return 0;
+    }
+
+    asm volatile ( "bsr %%eax, %%ecx\n\t"
+            : "=c" (fieldWidth)
+            : "a"(number));
+
+
+    return fieldWidth+1;  /* bsr returns the position, we want the width */
+}
+
+static void
+setupTopologyTree(void)
+{
+    int i;
+    int numSockets=-1;
+    int numCores=-1;
+    int numThreads=-1;
+    TreeNode* currentNode;
+    int** socketLookup;
+    int** coreLookup;
+
+    cpuid_topology.topologyTree = (TreeNode*) malloc(sizeof(TreeNode));
+    cpuid_topology.topologyTree->level = NODE;
+    cpuid_topology.topologyTree->id = 0;
+
+    /* determine number of sockets, cores and threads */
+    for (i=0; i< cpuid_topology.numHWThreads; i++)
+    {
+        numSockets = MAX(numSockets,cpuid_topology.threadPool[i].packageId);
+        numCores = MAX(numCores,cpuid_topology.threadPool[i].coreId);
+        numThreads = MAX(numThreads,cpuid_topology.threadPool[i].threadId);
+    }
+    numSockets++;
+    numCores++;
+    numThreads++;
+
+
+    cpuid_topology.numSockets = numSockets;
+    cpuid_topology.numCoresPerSocket = numCores;
+    cpuid_topology.numThreadsPerCore = numThreads;
+
+    /* setup lookup tables */
+    socketLookup = (int*) malloc(numSockets * sizof(int*));
+    coreLookup = (int*) malloc(numCores * sizof(int*));
+
+    for (i=0; i<numSockets; i++)
+    {
+        socketLookup[i] = (int*) malloc(cpuid_topology.numHWThreads * sizeof(int));
+        INIT_LOOKUP(socketLookup[i]);
+    }
+
+    for (i=0; i<numCores; i++)
+    {
+        coreLookup[i] = (int*) malloc(cpuid_topology.numHWThreads * sizeof(int));
+        INIT_LOOKUP(coreLookup[i]);
+    }
+
+
+
+    cpuid_topology.topologyTree->leafs = (TreeNode*) malloc(numSockets * sizeof(TreeNode));
+
+    for (i=0; i< numSockets ; i++)
+    {
+        currentNode = cpuid_topology.topologyTree->leafs[i];
+        currentNode->leafs = (TreeNode*) malloc(numCores * sizeof(TreeNode));
+        currentNode->numLeafs = numCores;
+        currentNode->level = SOCKET;
+    }
 }
 
 
@@ -216,11 +295,10 @@ cpuid_init (void)
 }
 
 void
-cpuid_topology(void)
+cpuid_initTopology(void)
 {
     uint32_t apicId;
     uint32_t bitField;
-    int numHWThreads = 0;
     int i;
     int level;
     int prevOffset = 0;
@@ -229,15 +307,15 @@ cpuid_topology(void)
     cpu_set_t set;
     HWThread* hwThreadPool;
     int hasBLeaf = 0;
+    int maxNumLogicalProcs;
+    int maxNumLogicalProcsPerCore;
+    int maxNumCores;
 
 
     /* First determine the number of cpus accessible */
     pipe = popen("cat /proc/cpuinfo | grep processor | wc -l", "r");
-    fscanf(pipe, "%d\n", &numHWThreads);
-    hwThreadPool = (HWThread*) malloc(numHWThreads * sizeof(HWThread));
-
-    printf("Number of Hardware Threads: %d \n",numHWThreads);
-
+    fscanf(pipe, "%d\n", &cpuid_topology.numHWThreads);
+    hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
 
     /* check if 0x0B cpuid leaf is supported */
     CPUID(0x0);
@@ -255,7 +333,7 @@ cpuid_topology(void)
 
     if (hasBLeaf)
     {
-        for (i=0; i< numHWThreads; i++)
+        for (i=0; i< cpuid_topology.numHWThreads; i++)
         {
             CPU_ZERO(&set);
             CPU_SET(i,&set);
@@ -311,9 +389,9 @@ cpuid_topology(void)
     }
     else
     {
-        printf("0x0B cpuid leaf not supported. Using legacy mode.\n");
         /* Check if SMT is supported */
         CPUID(0x01);
+#if 0
         if (edx & (1<<28))
         {
             printf("Hyperthreading is supported!.\n");
@@ -322,16 +400,19 @@ cpuid_topology(void)
         {
             printf("Hyperthreading is not supported!.\n");
         }
+#endif
 
         /* Check number of cores per package */
-        printf("Logical Threads in Package: %u \n",extractBitField(ebx,8,16));
+        maxNumLogicalProcs = extractBitField(ebx,8,16);
 
         /* Check number of cores per package */
         level = 0;
         CPUID_TOPO(0x04);
-        printf("Logical Cores in Package: %u \n",extractBitField(eax,6,26)+1);
+        maxNumCores = extractBitField(eax,6,26)+1;
 
-        for (i=0; i< numHWThreads; i++)
+        maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
+
+        for (i=0; i< cpuid_topology.numHWThreads; i++)
         {
             CPU_ZERO(&set);
             CPU_SET(i,&set);
@@ -354,16 +435,94 @@ cpuid_topology(void)
                 }
             }
 
+            CPUID(0x01);
+            hwThreadPool[i].apicId = extractBitField(ebx,8,24);
+
+            /* ThreadId is extracted from th apicId using the bit width
+             * of the number of logical processors
+             * */
+            hwThreadPool[i].threadId = extractBitField(hwThreadPool[i].apicId,
+                    getBitFieldWidth(maxNumLogicalProcsPerCore),0); 
+
+            /* CoreId is extracted from th apicId using the bitWidth 
+             * of the number of logical processors as offset and the
+             * bit width of the number of cores as width
+             * */
+            hwThreadPool[i].coreId = extractBitField(hwThreadPool[i].apicId,
+                    getBitFieldWidth(maxNumCores),
+                    getBitFieldWidth(maxNumLogicalProcsPerCore)); 
+
+            hwThreadPool[i].packageId = extractBitField(hwThreadPool[i].apicId,
+                    8-getBitFieldWidth(maxNumLogicalProcs),
+                    getBitFieldWidth(maxNumLogicalProcs)); 
+        }
+
     }
 
-    printf("HWThread\tThreadID\tCoreID\tPackageID\n");
-    for (i=0; i< numHWThreads; i++)
-    {
-        printf("%d\t\t%d\t\t%d\t\t%d\n",i
-                ,hwThreadPool[i].threadId
-                ,hwThreadPool[i].coreId
-                ,hwThreadPool[i].packageId);
-    }
-    
+    cpuid_topology.threadPool = hwThreadPool;
+    setupTopologyTree();
 }
+
+void 
+cpuid_initCacheTopology()
+{
+    int i;
+    int level=0;
+    int maxNumLevels=0;
+    uint32_t valid=1;
+    CacheLevel* cachePool;
+
+    while (valid)
+    {
+        CPUID_TOPO(0x04);
+        valid = extractBitField(eax,5,0);
+        if (!valid)
+        {
+            break;
+        }
+        level++;
+    }
+
+    maxNumLevels = level;
+    cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
+
+    for (i=0; i < maxNumLevels; i++) 
+    {
+        level = i;
+        CPUID_TOPO(0x04);
+
+        cachePool[i].level = extractBitField(eax,3,5);
+        cachePool[i].type = extractBitField(eax,5,0);
+        cachePool[i].associativity = extractBitField(ebx,8,22)+1;
+        cachePool[i].sets = ecx+1;
+        cachePool[i].lineSize = extractBitField(ebx,12,0)+1;
+        cachePool[i].size = cachePool[i].sets *
+            cachePool[i].associativity *
+            cachePool[i].lineSize;
+        cachePool[i].threads = extractBitField(eax,10,14)+1;
+        cachePool[i].inclusive = edx&0x2;
+    }
+
+    cpuid_topology.numCacheLevels = maxNumLevels;
+    cpuid_topology.cacheLevels = cachePool;
+}
+
+/*
+ * SOCKET 0:
+ *
++-------------------------------+
+|  +---+  +---+   +---+  +---+  |
+|  | 0 |  | 2 |   | 1 |  | 3 |  |   CORES
+|  +---+  +---+   +---+  +---+  |
+|  +---+  +---+   +---+  +---+  |
+|  |32k|  |32k|   |32k|  |32k|  |   L1
+|  +---+  +---+   +---+  +---+  |
+|  +----------+   +----------+  |
+|  |6 MB      |   |6 MB      |  |   L2
+|  +----------+   +----------+  |
++-------------------------------+
+*/
+
+
+
 

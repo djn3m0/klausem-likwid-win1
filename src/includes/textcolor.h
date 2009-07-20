@@ -15,10 +15,10 @@
 #define CYAN		6
 #define	WHITE		7
 
-extern void color_on(int attr, int fg);
-extern void color_reset(void);
+static void color_on(int attr, int fg);
+static void color_reset(void);
 
-void color_on(int attr, int fg)
+static void color_on(int attr, int fg)
 {	
     char command[13];
 
@@ -26,7 +26,7 @@ void color_on(int attr, int fg)
     printf("%s", command);
 }
 
-void color_reset()
+static void color_reset()
 {
     char command[13];
 
