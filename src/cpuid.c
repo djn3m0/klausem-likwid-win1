@@ -33,6 +33,7 @@
 #include <time.h>
 
 #include <cpuid.h>
+#include <tree.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -138,66 +139,6 @@ getBitFieldWidth(uint32_t number)
 
 
     return fieldWidth+1;  /* bsr returns the position, we want the width */
-}
-
-static void
-setupTopologyTree(void)
-{
-    int i;
-    int numSockets=-1;
-    int numCores=-1;
-    int numThreads=-1;
-    TreeNode* currentNode;
-    int** socketLookup;
-    int** coreLookup;
-
-    cpuid_topology.topologyTree = (TreeNode*) malloc(sizeof(TreeNode));
-    cpuid_topology.topologyTree->level = NODE;
-    cpuid_topology.topologyTree->id = 0;
-
-    /* determine number of sockets, cores and threads */
-    for (i=0; i< cpuid_topology.numHWThreads; i++)
-    {
-        numSockets = MAX(numSockets,cpuid_topology.threadPool[i].packageId);
-        numCores = MAX(numCores,cpuid_topology.threadPool[i].coreId);
-        numThreads = MAX(numThreads,cpuid_topology.threadPool[i].threadId);
-    }
-    numSockets++;
-    numCores++;
-    numThreads++;
-
-
-    cpuid_topology.numSockets = numSockets;
-    cpuid_topology.numCoresPerSocket = numCores;
-    cpuid_topology.numThreadsPerCore = numThreads;
-
-    /* setup lookup tables */
-    socketLookup = (int*) malloc(numSockets * sizof(int*));
-    coreLookup = (int*) malloc(numCores * sizof(int*));
-
-    for (i=0; i<numSockets; i++)
-    {
-        socketLookup[i] = (int*) malloc(cpuid_topology.numHWThreads * sizeof(int));
-        INIT_LOOKUP(socketLookup[i]);
-    }
-
-    for (i=0; i<numCores; i++)
-    {
-        coreLookup[i] = (int*) malloc(cpuid_topology.numHWThreads * sizeof(int));
-        INIT_LOOKUP(coreLookup[i]);
-    }
-
-
-
-    cpuid_topology.topologyTree->leafs = (TreeNode*) malloc(numSockets * sizeof(TreeNode));
-
-    for (i=0; i< numSockets ; i++)
-    {
-        currentNode = cpuid_topology.topologyTree->leafs[i];
-        currentNode->leafs = (TreeNode*) malloc(numCores * sizeof(TreeNode));
-        currentNode->numLeafs = numCores;
-        currentNode->level = SOCKET;
-    }
 }
 
 
@@ -310,6 +251,7 @@ cpuid_initTopology(void)
     int maxNumLogicalProcs;
     int maxNumLogicalProcsPerCore;
     int maxNumCores;
+    TreeNode* currentNode;
 
 
     /* First determine the number of cpus accessible */
@@ -330,6 +272,8 @@ cpuid_initTopology(void)
             hasBLeaf = 1;
         }
     }
+
+    tree_init(&cpuid_topology.topologyTree, 0);
 
     if (hasBLeaf)
     {
@@ -411,7 +355,7 @@ cpuid_initTopology(void)
         maxNumCores = extractBitField(eax,6,26)+1;
 
         maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
-
+ 
         for (i=0; i< cpuid_topology.numHWThreads; i++)
         {
             CPU_ZERO(&set);
@@ -456,11 +400,41 @@ cpuid_initTopology(void)
                     8-getBitFieldWidth(maxNumLogicalProcs),
                     getBitFieldWidth(maxNumLogicalProcs)); 
         }
+    }
+
+    for (i=0; i< cpuid_topology.numHWThreads; i++)
+    {
+        /* Add node to Topology tree */
+        printf("GET SOCKET %d\n",hwThreadPool[i].packageId);
+        if (!tree_nodeExists(cpuid_topology.topologyTree, hwThreadPool[i].packageId))
+        {
+            tree_insertNode(cpuid_topology.topologyTree, hwThreadPool[i].packageId);
+        }
+        currentNode = tree_getNode(cpuid_topology.topologyTree, hwThreadPool[i].packageId);
+
+        printf("GET CORE %d\n",hwThreadPool[i].coreId);
+        if (!tree_nodeExists(currentNode, hwThreadPool[i].coreId))
+        {
+            tree_insertNode(currentNode, hwThreadPool[i].coreId);
+        }
+        currentNode = tree_getNode(currentNode, hwThreadPool[i].coreId);
+
+        printf("GET THREAD %d\n",hwThreadPool[i].threadId);
+        if (!tree_nodeExists(currentNode, i))
+        {
+            printf("WARNING: Thread already exists!\n");
+            tree_insertNode(currentNode, i);
+        }
 
     }
 
     cpuid_topology.threadPool = hwThreadPool;
-    setupTopologyTree();
+
+    cpuid_topology.numSockets = tree_countChildren(cpuid_topology.topologyTree);
+    currentNode = tree_getNode(cpuid_topology.topologyTree, 0);
+    cpuid_topology.numCoresPerSocket = tree_countChildren(currentNode);
+    currentNode = tree_getNode(currentNode, 0);
+    cpuid_topology.numThreadsPerCore = tree_countChildren(currentNode);
 }
 
 void 

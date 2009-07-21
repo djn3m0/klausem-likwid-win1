@@ -7,6 +7,8 @@
 
 #include <types.h>
 #include <cpuid.h>
+#include <tree.h>
+#include <asciiBoxes.h>
 
 
 #define HELP_MSG \
@@ -24,6 +26,12 @@ int main (int argc, char** argv)
     int optCaches = 0;
     int c;
     int i;
+    int j;
+    int tmp;
+    TreeNode* socketNode;
+    TreeNode* coreNode;
+    TreeNode* threadNode;
+    BoxContainer* container;
 
     while ((c = getopt (argc, argv, "hcg")) != -1)
     {
@@ -78,6 +86,30 @@ int main (int argc, char** argv)
                 ,cpuid_topology.threadPool[i].packageId);
     }
     printf(HLINE);
+    printf("Thread groups:\n");
+
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+    while (socketNode != NULL)
+    {
+        printf("Socket %d: ( ",socketNode->id);
+        coreNode = tree_getChildNode(socketNode);
+
+        while (coreNode != NULL)
+        {
+            threadNode = tree_getChildNode(coreNode);
+
+            while (threadNode != NULL)
+            {
+                printf("%d ",threadNode->id);
+                threadNode = tree_getNextNode(threadNode);
+            }
+            coreNode = tree_getNextNode(coreNode);
+        }
+        socketNode = tree_getNextNode(socketNode);
+        printf(")\n");
+    }
+    printf(HLINE);
+
     for (i=0; i< cpuid_topology.numCacheLevels; i++)
     {
         printf("Level:\t %d\n",cpuid_topology.cacheLevels[i].level);
@@ -115,12 +147,70 @@ int main (int argc, char** argv)
             printf("Inclusive cache\n");
         }
         printf("Shared among %d threads\n",cpuid_topology.cacheLevels[i].threads);
+        printf("Cache groups:\t");
+        tmp = cpuid_topology.cacheLevels[i].threads;
+        socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+        printf("( ");
+        while (socketNode != NULL)
+        {
+            coreNode = tree_getChildNode(socketNode);
 
+            while (coreNode != NULL)
+            {
+                threadNode = tree_getChildNode(coreNode);
 
+                while (threadNode != NULL)
+                {
+
+                    if (tmp)
+                    {
+                        printf("%d ",threadNode->id);
+                        tmp--;
+                    }
+                    else
+                    {
+                        printf(") ( %d ",threadNode->id);
+                        tmp = cpuid_topology.cacheLevels[i].threads;
+                        tmp--;
+                    }
+
+                    threadNode = tree_getNextNode(threadNode);
+                }
+                coreNode = tree_getNextNode(coreNode);
+            }
+            socketNode = tree_getNextNode(socketNode);
+        }
+        printf(")\n");
+        
         printf(HLINE);
     }
 
     printf(HLINE);
+    printf(HLINE);
+    printf("Graphical:\n");
+    container = asciiBoxes_allocateContainer(1,cpuid_topology.numCoresPerSocket);
+
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+    while (socketNode != NULL)
+    {
+        coreNode = tree_getChildNode(socketNode);
+
+        while (coreNode != NULL)
+        {
+            threadNode = tree_getChildNode(coreNode);
+
+            while (threadNode != NULL)
+            {
+                asciiBoxes_addBox(container, 1, coreNumber,); 
+                threadNode = tree_getNextNode(threadNode);
+            }
+            coreNode = tree_getNextNode(coreNode);
+        }
+        socketNode = tree_getNextNode(socketNode);
+    }
+    printf(HLINE);
+
+
 
     return EXIT_SUCCESS;
 }

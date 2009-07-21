@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include <timer_types.h>
+#include <tree_types.h>
 #include <cpuid_types.h>
 #include <cpuFeatures_types.h>
 #include <perfmon_types.h>

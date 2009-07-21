@@ -9,7 +9,7 @@ typedef struct box {
 typedef struct boxContainer {
     int numLines;
     int numColumns;
-    Box* boxes;
+    Box** boxes;
 } BoxContainer;
 
 #endif /*ASCIIBOXES_TYPES_H*/

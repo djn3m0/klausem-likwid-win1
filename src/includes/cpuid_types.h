@@ -12,13 +12,6 @@ typedef enum nodeLevel {
     CORE,
     THREAD} NodeLevel;
 
-typedef struct treeNode {
-    int numLeafs;
-    int id;
-    NodeLevel level;
-    struct treeNode* leafs;
-} TreeNode;
-
 typedef struct cpu_info {
     uint32_t family;
     uint32_t model;
