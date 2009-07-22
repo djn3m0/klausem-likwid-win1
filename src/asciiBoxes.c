@@ -27,6 +27,7 @@ BoxContainer*
 asciiBoxes_allocateContainer(int numLines, int numColumns)
 {
     int i;
+    int j;
     BoxContainer* container;
 
     container = (BoxContainer*) malloc(sizeof(BoxContainer));
@@ -35,10 +36,20 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
 
     container->boxes = (Box**) malloc(numLines * sizeof(Box*));
 
-    for(i=0; i<numColumns; i++)
+    for(i=0; i<numLines; i++)
     {
         container->boxes[i] = (Box*) malloc(numColumns * sizeof(Box));
     }
+
+    for(i=0; i<numLines; i++)
+    {
+        for(j=0; j<numColumns; j++)
+        {
+            container->boxes[i][j].width = 0;
+            container->boxes[i][j].label = NULL;
+        }
+    }
+
 
     return container;
 }
@@ -46,8 +57,23 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
 void 
 asciiBoxes_addBox(BoxContainer* container, int line, int column, char* label)
 {
+    if( line >= container->numLines)
+    {
+        printf("ERROR: line id %d too large!\n",line);
+        exit(EXIT_FAILURE);
+    }
+    if( column >= container->numColumns)
+    {
+        printf("ERROR: column id %d too large!\n",column);
+        exit(EXIT_FAILURE);
+    }
+
+    if (container->boxes[line][column].label == NULL)
+    {
+        container->boxes[line][column].label = (char*) malloc(strlen(label) * sizeof(char));
+    }
+
     container->boxes[line][column].width = 1;
-    container->boxes[line][column].label = (char*) malloc(strlen(label) * sizeof(char));
     strcpy(container->boxes[line][column].label,label);
 }
 
@@ -55,8 +81,23 @@ asciiBoxes_addBox(BoxContainer* container, int line, int column, char* label)
 void
 asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int endColumn,  char* label)
 {
-    container->boxes[line][startColumn].width = endColumn-startColumn;
-    container->boxes[line][startColumn].label = (char*) malloc(strlen(label) * sizeof(char));
+    if( line >= container->numLines)
+    {
+        printf("ERROR: line id %d too large!\n",line);
+        exit(EXIT_FAILURE);
+    }
+    if( endColumn >= container->numColumns)
+    {
+        printf("ERROR: column id %d too large!\n",endColumn);
+        exit(EXIT_FAILURE);
+    }
+
+    if (container->boxes[line][startColumn].label == NULL)
+    {
+        container->boxes[line][startColumn].label = (char*) malloc(strlen(label) * sizeof(char));
+    }
+
+    container->boxes[line][startColumn].width = (endColumn-startColumn)+1;
     strcpy(container->boxes[line][startColumn].label,label);
 }
 

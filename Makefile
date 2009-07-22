@@ -33,7 +33,7 @@ cpuFeatures: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/CpuFeatures/cpuFeaturesMain.c
 
 cpuTopology: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/CpuTopology/cpuTopologyMain.c
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/CpuTopology/cpuTopologyMain.c $(OBJ) $(LIBS)
+	$(Q)${CC} $(CFLAGS) -std=c99 $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/CpuTopology/cpuTopologyMain.c $(OBJ) $(LIBS)
 
 $(TARGET_LIB): $(BUILD_DIR) $(OBJ)
 	@echo "===>  CREATE LIB  $(TARGET_LIB)"

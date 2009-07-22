@@ -4,6 +4,7 @@
 #include <sched.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <types.h>
 #include <cpuid.h>
@@ -33,9 +34,7 @@ int main (int argc, char** argv)
     TreeNode* coreNode;
     TreeNode* threadNode;
     BoxContainer* container;
-    char* coreLabel;
-    int columnCursor;
-    int lineCursor;
+    char* boxLabel;
 
 
     while ((c = getopt (argc, argv, "hcg")) != -1)
@@ -215,14 +214,24 @@ int main (int argc, char** argv)
         printf(SLINE);
         printf("Graphical:\n");
         printf(SLINE);
-        container = asciiBoxes_allocateContainer(cpuid_topology.numCacheLevels,cpuid_topology.numCoresPerSocket);
+
+        /* Allocate without instruction cache */
+        if ( cpuid_info.family == P6_FAMILY) 
+        {
+            container = asciiBoxes_allocateContainer(cpuid_topology.numCacheLevels,cpuid_topology.numCoresPerSocket);
+        }
+        else
+        {
+            container = asciiBoxes_allocateContainer(cpuid_topology.numCacheLevels+1,cpuid_topology.numCoresPerSocket);
+        }
 
         /* add threads */
-        coreLabel = (char*) malloc(10*sizeof(char));
-        j=0;
+        boxLabel = (char*) malloc(10*sizeof(char));
         socketNode = tree_getChildNode(cpuid_topology.topologyTree);
         while (socketNode != NULL)
         {
+            printf("Socket %d:\n",socketNode->id);
+            j=0;
             coreNode = tree_getChildNode(socketNode);
 
             while (coreNode != NULL)
@@ -234,68 +243,84 @@ int main (int argc, char** argv)
                 {
                     if (tmp > 0)
                     {
-                        sprintf(coreLabel,"%s %d",coreLabel, threadNode->id);
+                        sprintf(boxLabel,"%s %d",boxLabel, threadNode->id);
                     }
                     else
                     {
-                        sprintf(coreLabel,"%d ",threadNode->id);
+                        sprintf(boxLabel,"%d ",threadNode->id);
                     }
                     tmp++;
                     threadNode = tree_getNextNode(threadNode);
                 }
-                asciiBoxes_addBox(container, 0, j,coreLabel); 
+                asciiBoxes_addBox(container, 0, j,boxLabel); 
                 j++;
                 coreNode = tree_getNextNode(coreNode);
             }
+
+            /* add caches */
+            {
+                int columnCursor=0;
+                int lineCursor=1;
+                int sharedCores;
+                int numCores;
+                int numCachesPerLevel;
+                int cacheWidth;
+
+                for (i=0; i< cpuid_topology.numCacheLevels; i++)
+                {
+                    sharedCores = cpuid_topology.cacheLevels[i].threads / cpuid_topology.numThreadsPerCore;
+
+                    if (cpuid_topology.cacheLevels[i].type != INSTRUCTIONCACHE)
+                    {
+                        if (sharedCores > cpuid_topology.numCoresPerSocket)
+                        {
+                            numCachesPerLevel = 1;
+                        }
+                        else
+                        {
+                            numCachesPerLevel = cpuid_topology.numCoresPerSocket/sharedCores;
+                        }
+
+                        columnCursor=0;
+                        for (j=0; j< numCachesPerLevel; j++)
+                        {
+                            if (cpuid_topology.cacheLevels[i].size < 1048576)
+                            {
+                                sprintf(boxLabel,"%dkB",cpuid_topology.cacheLevels[i].size/1024);
+                            }
+                            else 
+                            {
+                                sprintf(boxLabel,"%dMB",cpuid_topology.cacheLevels[i].size/1048576);
+                            }
+
+                            if (sharedCores > 1)
+                            {
+                                if (sharedCores > cpuid_topology.numCoresPerSocket)
+                                {
+                                    cacheWidth = cpuid_topology.numCoresPerSocket-1;
+                                }
+                                else
+                                {
+                                    cacheWidth = sharedCores-1;
+                                }
+                                asciiBoxes_addJoinedBox(container, lineCursor, columnCursor, columnCursor+cacheWidth, boxLabel); 
+                                columnCursor += sharedCores;
+                            }
+                            else 
+                            {
+                                asciiBoxes_addBox(container, lineCursor, columnCursor, boxLabel); 
+                                columnCursor++;
+                            }
+
+                        }
+                        lineCursor++;
+                    }
+                }
+            }
+
+            asciiBoxes_print(container);
             socketNode = tree_getNextNode(socketNode);
         }
-
-        /* add caches */
-        columnCursor=0;
-        lineCursor=1;
-
-        for (i=0; i< cpuid_topology.numCacheLevels; i++)
-        {
-            if (cpuid_topology.cacheLevels[i].type != INSTRUCTIONCACHE)
-            {
-                if (cpuid_topology.cacheLevels[i].threads > cpuid_topology.numHWThreads)
-                {
-                    tmp = cpuid_topology.numHWThreads;
-                }
-                else
-                {
-                    tmp = cpuid_topology.cacheLevels[i].threads;
-                }
-                for (j=0; j< (cpuid_topology.numHWThreads/tmp); j++)
-                {
-                    if (cpuid_topology.cacheLevels[i].size < 1048576)
-                    {
-                        sprintf(coreLabel,"%dkB",cpuid_topology.cacheLevels[i].size/1024);
-                    }
-                    else 
-                    {
-                        sprintf(coreLabel,"%dMB",cpuid_topology.cacheLevels[i].size/1048576);
-                    }
-
-                    if (cpuid_topology.cacheLevels[i].threads > cpuid_topology.numHWThreads)
-                    {
-                        c = cpuid_topology.numHWThreads;
-                    }
-                    else
-                    {
-                        c =cpuid_topology.cacheLevels[i].threads ;
-
-                    }
-                    asciiBoxes_addJoinedBox(container, lineCursor, columnCursor, columnCursor+c, coreLabel); 
-                    columnCursor += cpuid_topology.cacheLevels[i].threads;
-                }
-                lineCursor++;
-            }
-            columnCursor = 0;
-        }
-
-
-        asciiBoxes_print(container);
     }
 
 
