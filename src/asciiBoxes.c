@@ -18,7 +18,7 @@
     printf(#string"\n");            \
     color_reset()
 
-#define BOXWIDTH 4
+#define BOXWIDTH 5
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -33,11 +33,11 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
     container->numLines = numLines;
     container->numColumns = numColumns;
 
-    container->boxes = (box**) malloc(numLines * sizeof(Box*));
+    container->boxes = (Box**) malloc(numLines * sizeof(Box*));
 
     for(i=0; i<numColumns; i++)
     {
-        container->boxes[i] = (box*) malloc(numColumns * sizeof(Box));
+        container->boxes[i] = (Box*) malloc(numColumns * sizeof(Box));
     }
 
     return container;
@@ -46,18 +46,18 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
 void 
 asciiBoxes_addBox(BoxContainer* container, int line, int column, char* label)
 {
-    container->boxes[line][column]->width = 1;
-    container->boxes[line][column]->label = (char*) malloc(strlen(label) * sizeof(char));
-    strcpy(container->boxes[line][column]->label,label);
+    container->boxes[line][column].width = 1;
+    container->boxes[line][column].label = (char*) malloc(strlen(label) * sizeof(char));
+    strcpy(container->boxes[line][column].label,label);
 }
 
 
 void
 asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int endColumn,  char* label)
 {
-    container->boxes[line][column]->width = endColumn-startColumn;
-    container->boxes[line][column]->label = (char*) malloc(strlen(label) * sizeof(char));
-    strcpy(container->boxes[line][column]->label,label);
+    container->boxes[line][startColumn].width = endColumn-startColumn;
+    container->boxes[line][startColumn].label = (char*) malloc(strlen(label) * sizeof(char));
+    strcpy(container->boxes[line][startColumn].label,label);
 }
 
 void
@@ -65,9 +65,11 @@ asciiBoxes_print(BoxContainer* container)
 {
     int i;
     int j;
+    int k;
+    int width;
 
     printf("+");
-    for (i=0; i< (container->numColumns * BOXWIDTH); i++)
+    for (i=0; i< (container->numColumns * (BOXWIDTH+2)+container->numColumns+1); i++)
     {
         printf("-");
     }
@@ -78,25 +80,75 @@ asciiBoxes_print(BoxContainer* container)
         printf("| ");
         for (j=0; j<container->numColumns; j++)
         {
-            printf("+----+ ");
+            printf("+");
+            if(container->boxes[i][j].width == 1)
+            {
+                for (k=0; k<BOXWIDTH; k++)
+                {
+                    printf("-");
+                }
+            }
+            else 
+            {
+                for (k=0; k<(container->boxes[i][j].width * BOXWIDTH+(container->boxes[i][j].width-1)*3); k++)
+                {
+                    printf("-");
+                }
+                j+= container->boxes[i][j].width-1;
+            }
+            printf("+ ");
         }
         printf("|\n");
         printf("| ");
         for (j=0; j<container->numColumns; j++)
         {
-            printf("| %s | ",container->boxes[i][j].label);
+            printf("|");
+            width = (container->boxes[i][j].width * BOXWIDTH+(container->boxes[i][j].width-1)*3-5)/2;
+            for (k=0; k<width; k++)
+            {
+                printf(" ");
+            }
+            printf("%5s",container->boxes[i][j].label);
+            for (k=0; k<width; k++)
+            {
+                printf(" ");
+            }
+            printf("| ");
+
+            if(container->boxes[i][j].width != 1)
+            {
+                j+= container->boxes[i][j].width-1;
+            }
+
         }
         printf("|\n");
         printf("| ");
         for (j=0; j<container->numColumns; j++)
         {
-            printf("+----+ ");
+            printf("+");
+            if(container->boxes[i][j].width == 1)
+            {
+                for (k=0; k<BOXWIDTH; k++)
+                {
+                    printf("-");
+                }
+            }
+            else 
+            {
+                for (k=0; k<(container->boxes[i][j].width * BOXWIDTH+(container->boxes[i][j].width-1)*3); k++)
+                {
+                    printf("-");
+                }
+                j+= container->boxes[i][j].width-1;
+            }
+            printf("+ ");
+
         }
         printf("|\n");
     }
 
     printf("+");
-    for (i=0; i< container->numColumns; i++)
+    for (i=0; i< (container->numColumns * (BOXWIDTH+2)+container->numColumns+1); i++)
     {
         printf("-");
     }

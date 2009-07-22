@@ -405,24 +405,23 @@ cpuid_initTopology(void)
     for (i=0; i< cpuid_topology.numHWThreads; i++)
     {
         /* Add node to Topology tree */
-        printf("GET SOCKET %d\n",hwThreadPool[i].packageId);
         if (!tree_nodeExists(cpuid_topology.topologyTree, hwThreadPool[i].packageId))
         {
             tree_insertNode(cpuid_topology.topologyTree, hwThreadPool[i].packageId);
         }
         currentNode = tree_getNode(cpuid_topology.topologyTree, hwThreadPool[i].packageId);
 
-        printf("GET CORE %d\n",hwThreadPool[i].coreId);
         if (!tree_nodeExists(currentNode, hwThreadPool[i].coreId))
         {
             tree_insertNode(currentNode, hwThreadPool[i].coreId);
         }
         currentNode = tree_getNode(currentNode, hwThreadPool[i].coreId);
 
-        printf("GET THREAD %d\n",hwThreadPool[i].threadId);
         if (!tree_nodeExists(currentNode, i))
         {
+            /*
             printf("WARNING: Thread already exists!\n");
+            */
             tree_insertNode(currentNode, i);
         }
 

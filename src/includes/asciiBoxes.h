@@ -24,7 +24,7 @@
 #include <types.h>
 
 extern BoxContainer* asciiBoxes_allocateContainer(int numLines,int numColumns);
-extern void asciiBoxes_addBox(BoxContainer* container, int line, int column, char* label)
+extern void asciiBoxes_addBox(BoxContainer* container, int line, int column, char* label);
 extern void asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int endColumn, char* label);
 extern void asciiBoxes_print(BoxContainer* container);
 
