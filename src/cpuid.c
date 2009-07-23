@@ -77,27 +77,43 @@ static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
 static char* istanbul_str = "AMD Istanbul processor";
+static char* opteron_dc_e_str = "AMD Opteron Dual Core Rev E 90nm processor";
+static char* opteron_dc_f_str = "AMD Opteron Dual Core Rev F 90nm processor";
+static char* athlon64_str = "AMD Athlon64 X2 (AM2) Rev F 90nm processor";
+static char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
+static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
+static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
+
+
 static int lock = 0;
 static uint32_t eax, ebx, ecx, edx;
+static uint64_t cycle_overhead;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static uint64_t
 get_cpu_speed(void)
 {
+    int i;
     uint64_t tsc1, tsc2;
+    uint64_t result;
     struct timeval tv1;
     struct timeval tv2;
     struct timezone tzp;
     struct timespec delay = { 0, 200000000 };  /* calibration time: 200 ms */
 
-    tsc1 = rdtsc();
-    gettimeofday( &tv1, &tzp);
-    nanosleep( &delay, NULL);
-    tsc2 = rdtsc();
-    gettimeofday( &tv2, &tzp);
+    for (i=0; i< 3; i++)
+    {
+        tsc1 = rdtsc();
+        gettimeofday( &tv1, &tzp);
+        nanosleep( &delay, NULL);
+        tsc2 = rdtsc();
+        gettimeofday( &tv2, &tzp);
 
-    return (tsc2 - tsc1) * 1000000 / 
+        result = MIN(result,(tsc2 - tsc1 - cycle_overhead));
+    }
+
+    return (result) * 1000000 / 
         (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
          ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
 }
@@ -210,15 +226,29 @@ amdGetAssociativity(uint32_t flag)
 void
 cpuid_init (void)
 {
+    uint64_t start,stop;
 
     if (lock) return;
     lock =1;
+
+    start = rdtsc();
+    stop = rdtsc();
+    cycle_overhead = stop-start;
 
     CPUID(0x01);
     cpuid_info.family = ((eax>>8)&0xFU) + ((eax>>20)&0xFFU);
     cpuid_info.model = (((eax>>16)&0xFU)<<4) + ((eax>>4)&0xFU);
     cpuid_info.stepping =  (eax&0xFU);
     cpuid_info.clock =  get_cpu_speed();
+
+#if 0
+    printf ("Family: %u \n",cpuid_info.family);
+    printf ("Model: %u \n",cpuid_info.model);
+#endif
+
+    /*FIXME Add rejection of Netburst CPUs
+     * Netburst is same family than K8
+     */
 
     switch ( cpuid_info.family ) 
     {
@@ -254,7 +284,43 @@ cpuid_init (void)
             }
             break;
 
-        case NETBURST_FAMILY:
+        case K8_FAMILY:
+            switch ( cpuid_info.model ) 
+            {
+                case OPTERON_DC_E:
+                    cpuid_info.name = opteron_dc_e_str;
+                    break;
+
+                case OPTERON_DC_F:
+                    cpuid_info.name = opteron_dc_f_str;
+                    break;
+
+                case ATHLON64_X2:
+
+                case ATHLON64_X2_F:
+                    cpuid_info.name = athlon64_str;
+                    break;
+
+                case ATHLON64_F1:
+
+                case ATHLON64_F2:
+                    cpuid_info.name = athlon64_f_str;
+                    break;
+
+                case ATHLON64_X2_G:
+                    cpuid_info.name = athlon64_X2_g_str;
+                    break;
+
+                case ATHLON64_G1:
+
+                case ATHLON64_G2:
+                    cpuid_info.name = athlon64_g_str;
+                    break;
+
+                default:
+                    break;
+            }
+
             break;
 
         case K10_FAMILY:
@@ -601,7 +667,10 @@ cpuid_initCacheTopology()
             cachePool[0].associativity = extractBitField(ecx,8,16);
             cachePool[0].lineSize = extractBitField(ecx,8,0);
             cachePool[0].size =  extractBitField(ecx,8,24) * 1024;
-     //       cachePool[0].sets = cachePool[0].size/(cachePool[0].associativity * cachePool[0].lineSize);
+            if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
+            {
+                cachePool[0].sets = cachePool[0].size/(cachePool[0].associativity * cachePool[0].lineSize);
+            }
             cachePool[0].threads = 1;
             cachePool[0].inclusive = 1;
 
@@ -611,7 +680,10 @@ cpuid_initCacheTopology()
             cachePool[1].associativity = amdGetAssociativity(extractBitField(ecx,4,12));
             cachePool[1].lineSize = extractBitField(ecx,8,0);
             cachePool[1].size =  extractBitField(ecx,16,16) * 1024;
-      //      cachePool[1].sets = cachePool[1].size/(cachePool[1].associativity * cachePool[1].lineSize);
+            if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
+            {
+                cachePool[1].sets = cachePool[1].size/(cachePool[1].associativity * cachePool[1].lineSize);
+            }
             cachePool[1].threads = 1;
             cachePool[1].inclusive = 1;
 
@@ -620,7 +692,10 @@ cpuid_initCacheTopology()
             cachePool[2].associativity = amdGetAssociativity(extractBitField(edx,4,12));
             cachePool[2].lineSize = extractBitField(edx,8,0);
             cachePool[2].size =  (extractBitField(edx,14,18)+1) * 524288;
-       //     cachePool[2].sets = cachePool[1].size/(cachePool[1].associativity * cachePool[1].lineSize);
+            if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
+            {
+                cachePool[2].sets = cachePool[1].size/(cachePool[1].associativity * cachePool[1].lineSize);
+            }
             cachePool[2].threads = cpuid_topology.numCoresPerSocket;
             cachePool[2].inclusive = 1;
 
