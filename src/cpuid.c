@@ -96,7 +96,7 @@ get_cpu_speed(void)
 {
     int i;
     uint64_t tsc1, tsc2;
-    uint64_t result;
+    uint64_t result = 1000000000ULL;
     struct timeval tv1;
     struct timeval tv2;
     struct timezone tzp;

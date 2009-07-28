@@ -83,6 +83,7 @@ distclean:
 	@rm -rf $(BUILD_DIR)
 	@rm -f perfCtr
 	@rm -f cpuFeatures
+	@rm -f cpuTopology
 	@rm -rf $(DOC_DIR)/doxygen
 	@rm -f $(DOC_DIR)/*.html
 	@rm -f $(DOC_DIR)/doxygen.log
