@@ -403,17 +403,23 @@ cpuid_initTopology(void)
 
                 switch ( level ) {
                     case 0:
-                        bitField = extractBitField(apicId,currOffset-prevOffset,prevOffset);
+                        bitField = extractBitField(apicId,
+                                currOffset-prevOffset,
+                                prevOffset);
                         hwThreadPool[i].threadId = bitField;
                         break;
 
                     case 1:
-                        bitField = extractBitField(apicId,currOffset-prevOffset,prevOffset);
+                        bitField = extractBitField(apicId,
+                                currOffset-prevOffset,
+                                prevOffset);
                         hwThreadPool[i].coreId = bitField;
                         break;
 
                     case 2:
-                        bitField = extractBitField(apicId,32-prevOffset,prevOffset);
+                        bitField = extractBitField(apicId,
+                                32-prevOffset,
+                                prevOffset);
                         hwThreadPool[i].packageId = bitField;
                         break;
 
@@ -446,7 +452,8 @@ cpuid_initTopology(void)
                     {
                         if (errno == EFAULT) 
                         {
-                            fprintf(stderr, "A supplied memory address was invalid\n");
+                            fprintf(stderr, 
+                                    "A supplied memory address was invalid\n");
                             exit(EXIT_FAILURE);
                         }
                         else if (errno == EINVAL) 
@@ -467,18 +474,21 @@ cpuid_initTopology(void)
                     /* ThreadId is extracted from th apicId using the bit width
                      * of the number of logical processors
                      * */
-                    hwThreadPool[i].threadId = extractBitField(hwThreadPool[i].apicId,
+                    hwThreadPool[i].threadId =
+                        extractBitField(hwThreadPool[i].apicId,
                             getBitFieldWidth(maxNumLogicalProcsPerCore),0); 
 
                     /* CoreId is extracted from th apicId using the bitWidth 
                      * of the number of logical processors as offset and the
                      * bit width of the number of cores as width
                      * */
-                    hwThreadPool[i].coreId = extractBitField(hwThreadPool[i].apicId,
+                    hwThreadPool[i].coreId =
+                        extractBitField(hwThreadPool[i].apicId,
                             getBitFieldWidth(maxNumCores),
                             getBitFieldWidth(maxNumLogicalProcsPerCore)); 
 
-                    hwThreadPool[i].packageId = extractBitField(hwThreadPool[i].apicId,
+                    hwThreadPool[i].packageId =
+                        extractBitField(hwThreadPool[i].apicId,
                             8-getBitFieldWidth(maxNumLogicalProcs),
                             getBitFieldWidth(maxNumLogicalProcs)); 
                 }
@@ -507,7 +517,8 @@ cpuid_initTopology(void)
                     {
                         if (errno == EFAULT) 
                         {
-                            fprintf(stderr, "A supplied memory address was invalid\n");
+                            fprintf(stderr, 
+                                    "A supplied memory address was invalid\n");
                             exit(EXIT_FAILURE);
                         }
                         else if (errno == EINVAL) 
@@ -527,8 +538,12 @@ cpuid_initTopology(void)
                     /* AMD only knows cores */
                     hwThreadPool[i].threadId = 0;
 
-                    hwThreadPool[i].coreId = extractBitField(hwThreadPool[i].apicId, width, 0); 
-                    hwThreadPool[i].packageId = extractBitField(hwThreadPool[i].apicId, (8-width), width); 
+                    hwThreadPool[i].coreId =
+                        extractBitField(hwThreadPool[i].apicId,
+                                width, 0); 
+                    hwThreadPool[i].packageId =
+                        extractBitField(hwThreadPool[i].apicId,
+                                (8-width), width); 
                 }
 
                 break;
@@ -538,11 +553,14 @@ cpuid_initTopology(void)
     for (i=0; i< cpuid_topology.numHWThreads; i++)
     {
         /* Add node to Topology tree */
-        if (!tree_nodeExists(cpuid_topology.topologyTree, hwThreadPool[i].packageId))
+        if (!tree_nodeExists(cpuid_topology.topologyTree,
+                    hwThreadPool[i].packageId))
         {
-            tree_insertNode(cpuid_topology.topologyTree, hwThreadPool[i].packageId);
+            tree_insertNode(cpuid_topology.topologyTree,
+                    hwThreadPool[i].packageId);
         }
-        currentNode = tree_getNode(cpuid_topology.topologyTree, hwThreadPool[i].packageId);
+        currentNode = tree_getNode(cpuid_topology.topologyTree,
+                hwThreadPool[i].packageId);
 
         if (!tree_nodeExists(currentNode, hwThreadPool[i].coreId))
         {
