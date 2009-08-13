@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <types.h>
+#include <timer.h>
 #include <cpuid.h>
 #include <perfmon.h>
 
@@ -144,6 +145,7 @@ int main (int argc, char** argv)
         }
     }
 
+    timer_init();
     cpuid_init();
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);

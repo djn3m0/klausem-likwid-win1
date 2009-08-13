@@ -706,7 +706,7 @@ perfmon_startAllCounters(void)
         startCountersThread(i);
     }
 
-    startCycles(&timeData);
+    timer_startCycles(&timeData);
 }
 
 void
@@ -714,13 +714,13 @@ perfmon_stopAllCounters(void)
 {
     int i;
 
-    stopCycles(&timeData);
+    timer_stopCycles(&timeData);
     for (i=0;i<numThreads;i++)
     {
         stopCountersThread(i);
     }
 
-    perfmon_setCycles(timeData.stop-timeData.start-timeData.over);
+    perfmon_setCycles(timer_printCycles(&timeData));
 }
 
 void
@@ -744,7 +744,6 @@ perfmon_init(int numThreads_local, int threads[])
 
     numThreads = numThreads_local;
     threadData = (PerfmonThread*) malloc(numThreads * sizeof(PerfmonThread));
-    initTimer();
 
     switch ( cpuid_info.family ) 
     {

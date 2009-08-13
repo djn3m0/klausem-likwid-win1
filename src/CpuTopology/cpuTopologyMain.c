@@ -7,6 +7,7 @@
 #include <ctype.h>
 
 #include <types.h>
+#include <timer.h>
 #include <cpuid.h>
 #include <tree.h>
 #include <asciiBoxes.h>
@@ -14,7 +15,7 @@
 
 #define HELP_MSG \
     printf("\ncpuTopology --  Version 0.1\n\n"); \
-printf("A tool to print the thread and cache topology on Intel CPUs.\n"); \
+printf("A tool to print the thread and cache topology on x86 CPUs.\n"); \
 printf("Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-c\t list cache information\n"); \
@@ -67,6 +68,7 @@ int main (int argc, char** argv)
         }
     }
 
+    timer_init();
     cpuid_init();
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
@@ -75,6 +77,9 @@ int main (int argc, char** argv)
     cpuid_initTopology();
     cpuid_initCacheTopology();
 
+    /*----------------------------------------------------------------------
+     *  Thread Topology
+     *----------------------------------------------------------------------*/
     printf(SLINE);
     printf("Hardware Thread Topology\n");
     printf(SLINE);
@@ -122,6 +127,9 @@ int main (int argc, char** argv)
     }
     printf(HLINE"\n");
 
+    /*----------------------------------------------------------------------
+     *  Cache Topology
+     *----------------------------------------------------------------------*/
     printf(SLINE);
     printf("Cache Topology\n");
     printf(SLINE);
@@ -133,31 +141,36 @@ int main (int argc, char** argv)
             printf("Level:\t %d\n",cpuid_topology.cacheLevels[i].level);
             if (cpuid_topology.cacheLevels[i].size < 1048576)
             {
-                printf("Size:\t %d kB\n",cpuid_topology.cacheLevels[i].size/1024);
+                printf("Size:\t %d kB\n",
+                        cpuid_topology.cacheLevels[i].size/1024);
             }
             else 
             {
-                printf("Size:\t %d MB\n",cpuid_topology.cacheLevels[i].size/1048576);
+                printf("Size:\t %d MB\n",
+                        cpuid_topology.cacheLevels[i].size/1048576);
             }
 
             if( optCaches)
             {
                 switch (cpuid_topology.cacheLevels[i].type) {
-                    case DATACACHE:	
+                    case DATACACHE:
                         printf("Type:\t Data cache\n");
                         break;
 
-                    case INSTRUCTIONCACHE:	
+                    case INSTRUCTIONCACHE:
                         printf("Type:\t Instruction cache\n");
                         break;
 
-                    case UNIFIEDCACHE:	
+                    case UNIFIEDCACHE:
                         printf("Type:\t Unified cache\n");
                         break;
                 }
-                printf("Associativity:\t %d\n",cpuid_topology.cacheLevels[i].associativity);
-                printf("Number of sets:\t %d\n",cpuid_topology.cacheLevels[i].sets);
-                printf("Cache line size: %d\n",cpuid_topology.cacheLevels[i].lineSize);
+                printf("Associativity:\t %d\n",
+                        cpuid_topology.cacheLevels[i].associativity);
+                printf("Number of sets:\t %d\n",
+                        cpuid_topology.cacheLevels[i].sets);
+                printf("Cache line size: %d\n",
+                        cpuid_topology.cacheLevels[i].lineSize);
                 if(cpuid_topology.cacheLevels[i].inclusive)
                 {
                     printf("Non Inclusive cache\n");
@@ -166,7 +179,8 @@ int main (int argc, char** argv)
                 {
                     printf("Inclusive cache\n");
                 }
-                printf("Shared among %d threads\n",cpuid_topology.cacheLevels[i].threads);
+                printf("Shared among %d threads\n",
+                        cpuid_topology.cacheLevels[i].threads);
             }
             printf("Cache groups:\t");
             tmp = cpuid_topology.cacheLevels[i].threads;
@@ -209,6 +223,9 @@ int main (int argc, char** argv)
 
     printf("\n");
 
+    /*----------------------------------------------------------------------
+     *  Graphical topology
+     *----------------------------------------------------------------------*/
     if(optGraphical)
     {
         printf(SLINE);
@@ -218,11 +235,15 @@ int main (int argc, char** argv)
         /* Allocate without instruction cache */
         if ( cpuid_info.family == P6_FAMILY) 
         {
-            container = asciiBoxes_allocateContainer(cpuid_topology.numCacheLevels,cpuid_topology.numCoresPerSocket);
+            container = asciiBoxes_allocateContainer(
+                    cpuid_topology.numCacheLevels,
+                    cpuid_topology.numCoresPerSocket);
         }
         else
         {
-            container = asciiBoxes_allocateContainer(cpuid_topology.numCacheLevels+1,cpuid_topology.numCoresPerSocket);
+            container = asciiBoxes_allocateContainer(
+                    cpuid_topology.numCacheLevels+1,
+                    cpuid_topology.numCoresPerSocket);
         }
 
         /* add threads */
@@ -268,7 +289,8 @@ int main (int argc, char** argv)
 
                 for (i=0; i< cpuid_topology.numCacheLevels; i++)
                 {
-                    sharedCores = cpuid_topology.cacheLevels[i].threads / cpuid_topology.numThreadsPerCore;
+                    sharedCores = cpuid_topology.cacheLevels[i].threads /
+                        cpuid_topology.numThreadsPerCore;
 
                     if (cpuid_topology.cacheLevels[i].type != INSTRUCTIONCACHE)
                     {
@@ -278,7 +300,8 @@ int main (int argc, char** argv)
                         }
                         else
                         {
-                            numCachesPerLevel = cpuid_topology.numCoresPerSocket/sharedCores;
+                            numCachesPerLevel =
+                                cpuid_topology.numCoresPerSocket/sharedCores;
                         }
 
                         columnCursor=0;
@@ -286,11 +309,13 @@ int main (int argc, char** argv)
                         {
                             if (cpuid_topology.cacheLevels[i].size < 1048576)
                             {
-                                sprintf(boxLabel,"%dkB",cpuid_topology.cacheLevels[i].size/1024);
+                                sprintf(boxLabel,"%dkB",
+                                        cpuid_topology.cacheLevels[i].size/1024);
                             }
                             else 
                             {
-                                sprintf(boxLabel,"%dMB",cpuid_topology.cacheLevels[i].size/1048576);
+                                sprintf(boxLabel,"%dMB",
+                                        cpuid_topology.cacheLevels[i].size/1048576);
                             }
 
                             if (sharedCores > 1)
@@ -303,12 +328,23 @@ int main (int argc, char** argv)
                                 {
                                     cacheWidth = sharedCores-1;
                                 }
-                                asciiBoxes_addJoinedBox(container, lineCursor, columnCursor, columnCursor+cacheWidth, boxLabel); 
+                                asciiBoxes_addJoinedBox(
+                                        container,
+                                        lineCursor,
+                                        columnCursor,
+                                        columnCursor+cacheWidth,
+                                        boxLabel); 
+
                                 columnCursor += sharedCores;
                             }
                             else 
                             {
-                                asciiBoxes_addBox(container, lineCursor, columnCursor, boxLabel); 
+                                asciiBoxes_addBox(
+                                        container,
+                                        lineCursor,
+                                        columnCursor,
+                                        boxLabel); 
+
                                 columnCursor++;
                             }
 
@@ -322,8 +358,6 @@ int main (int argc, char** argv)
             socketNode = tree_getNextNode(socketNode);
         }
     }
-
-
 
     return EXIT_SUCCESS;
 }

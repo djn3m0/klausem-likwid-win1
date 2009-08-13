@@ -20,7 +20,6 @@
 
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
-
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,6 +31,7 @@
 #include <sched.h>
 #include <time.h>
 
+#include <timer.h>
 #include <cpuid.h>
 #include <tree.h>
 
@@ -87,36 +87,8 @@ static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 
 static int lock = 0;
 static uint32_t eax, ebx, ecx, edx;
-static uint64_t cycle_overhead;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
-static uint64_t
-get_cpu_speed(void)
-{
-    int i;
-    uint64_t tsc1, tsc2;
-    uint64_t result = 1000000000ULL;
-    struct timeval tv1;
-    struct timeval tv2;
-    struct timezone tzp;
-    struct timespec delay = { 0, 200000000 };  /* calibration time: 200 ms */
-
-    for (i=0; i< 3; i++)
-    {
-        tsc1 = rdtsc();
-        gettimeofday( &tv1, &tzp);
-        nanosleep( &delay, NULL);
-        tsc2 = rdtsc();
-        gettimeofday( &tv2, &tzp);
-
-        result = MIN(result,(tsc2 - tsc1 - cycle_overhead));
-    }
-
-    return (result) * 1000000 / 
-        (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
-         ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
-}
 
 static uint32_t 
 extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
@@ -164,55 +136,55 @@ amdGetAssociativity(uint32_t flag)
 
     switch ( flag ) 
     {
-        case 0x0:	
+        case 0x0:
             asso = 0;
             break;
 
-        case 0x1:	
+        case 0x1:
             asso = 1;
             break;
 
-        case 0x2:	
+        case 0x2:
             asso = 2;
             break;
 
-        case 0x4:	
+        case 0x4:
             asso = 4;
             break;
 
-        case 0x6:	
+        case 0x6:
             asso = 8;
             break;
 
-        case 0x8:	
+        case 0x8:
             asso = 16;
             break;
 
-        case 0xA:	
+        case 0xA:
             asso = 32;
             break;
 
-        case 0xB:	
+        case 0xB:
             asso = 48;
             break;
 
-        case 0xC:	
+        case 0xC:
             asso = 64;
             break;
 
-        case 0xD:	
+        case 0xD:
             asso = 96;
             break;
 
-        case 0xE:	
+        case 0xE:
             asso = 128;
             break;
 
-        case 0xF:	
+        case 0xF:
             asso = 0;
             break;
 
-        default:	
+        default:
             break;
     }
     return asso;
@@ -226,25 +198,14 @@ amdGetAssociativity(uint32_t flag)
 void
 cpuid_init (void)
 {
-    uint64_t start,stop;
-
     if (lock) return;
     lock =1;
-
-    start = rdtsc();
-    stop = rdtsc();
-    cycle_overhead = stop-start;
 
     CPUID(0x01);
     cpuid_info.family = ((eax>>8)&0xFU) + ((eax>>20)&0xFFU);
     cpuid_info.model = (((eax>>16)&0xFU)<<4) + ((eax>>4)&0xFU);
     cpuid_info.stepping =  (eax&0xFU);
-    cpuid_info.clock =  get_cpu_speed();
-
-#if 0
-    printf ("Family: %u \n",cpuid_info.family);
-    printf ("Model: %u \n",cpuid_info.model);
-#endif
+    cpuid_info.clock =  timer_getCpuClock();
 
     /*FIXME Add rejection of Netburst CPUs
      * Netburst is same family than K8
@@ -441,17 +402,17 @@ cpuid_initTopology(void)
                 currOffset = eax&0xFU;
 
                 switch ( level ) {
-                    case 0:	
+                    case 0:
                         bitField = extractBitField(apicId,currOffset-prevOffset,prevOffset);
                         hwThreadPool[i].threadId = bitField;
                         break;
 
-                    case 1:	
+                    case 1:
                         bitField = extractBitField(apicId,currOffset-prevOffset,prevOffset);
                         hwThreadPool[i].coreId = bitField;
                         break;
 
-                    case 2:	
+                    case 2:
                         bitField = extractBitField(apicId,32-prevOffset,prevOffset);
                         hwThreadPool[i].packageId = bitField;
                         break;
@@ -649,6 +610,17 @@ cpuid_initCacheTopology()
                     cachePool[i].associativity *
                     cachePool[i].lineSize;
                 cachePool[i].threads = extractBitField(eax,10,14)+1;
+
+ /* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes 
+  * too large in here. Ask Intel what is wrong here!
+  * Limit threads per Socket than to the maximum possible value.*/
+                if(cachePool[i].threads > 
+                        (cpuid_topology.numCoresPerSocket*
+                         cpuid_topology.numThreadsPerCore))
+                {
+                    cachePool[i].threads = cpuid_topology.numCoresPerSocket*
+                         cpuid_topology.numThreadsPerCore;
+                }
                 cachePool[i].inclusive = edx&0x2;
             }
 
@@ -669,7 +641,8 @@ cpuid_initCacheTopology()
             cachePool[0].size =  extractBitField(ecx,8,24) * 1024;
             if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
             {
-                cachePool[0].sets = cachePool[0].size/(cachePool[0].associativity * cachePool[0].lineSize);
+                cachePool[0].sets = cachePool[0].size/
+                    (cachePool[0].associativity * cachePool[0].lineSize);
             }
             cachePool[0].threads = 1;
             cachePool[0].inclusive = 1;
@@ -677,24 +650,28 @@ cpuid_initCacheTopology()
             CPUID(0x80000006);
             cachePool[1].level = 2;
             cachePool[1].type = UNIFIEDCACHE;
-            cachePool[1].associativity = amdGetAssociativity(extractBitField(ecx,4,12));
+            cachePool[1].associativity = 
+                amdGetAssociativity(extractBitField(ecx,4,12));
             cachePool[1].lineSize = extractBitField(ecx,8,0);
             cachePool[1].size =  extractBitField(ecx,16,16) * 1024;
             if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
             {
-                cachePool[1].sets = cachePool[1].size/(cachePool[1].associativity * cachePool[1].lineSize);
+                cachePool[1].sets = cachePool[1].size/
+                    (cachePool[1].associativity * cachePool[1].lineSize);
             }
             cachePool[1].threads = 1;
             cachePool[1].inclusive = 1;
 
             cachePool[2].level = 3;
             cachePool[2].type = UNIFIEDCACHE;
-            cachePool[2].associativity = amdGetAssociativity(extractBitField(edx,4,12));
+            cachePool[2].associativity =
+                amdGetAssociativity(extractBitField(edx,4,12));
             cachePool[2].lineSize = extractBitField(edx,8,0);
             cachePool[2].size =  (extractBitField(edx,14,18)+1) * 524288;
             if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
             {
-                cachePool[2].sets = cachePool[1].size/(cachePool[1].associativity * cachePool[1].lineSize);
+                cachePool[2].sets = cachePool[1].size/
+                    (cachePool[1].associativity * cachePool[1].lineSize);
             }
             cachePool[2].threads = cpuid_topology.numCoresPerSocket;
             cachePool[2].inclusive = 1;

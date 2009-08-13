@@ -1,91 +1,113 @@
+/**
+ *       @file  timer.h
+ *      @brief  Measure runtime with getTimeOfday and rdtsc.
+ *
+ * A C module to measure runtime. There are two methods: with gettimeofday for
+ * longer time periods (over 0.5 sec) and with rdtsc (read time stamp counter)
+ * for shorter periods. There is a variation for measurements with rdtsc
+ * of 100 cycles in the worst case. Therefore sensible measurements should be 
+ * over 1000 cycles.
+ *
+ *     @author  Jan Treibig (jt), jan.treibig@gmail.com
+ *
+ *   @internal
+ *     Created  07/30/2009
+ *    Revision  ---
+ *    Compiler  gcc
+ *     Company  RRZE Erlangen
+ *   Copyright  Copyright (c) 2009, Jan Treibig
+ *
+ * This source code is released for free distribution under the terms of the
+ * GNU General Public License as published by the Free Software Foundation.
+ * ============================================================================
+ */
 #ifndef TIMER_H
 #define TIMER_H
 
 #include <sys/time.h>
-#include <types.h>
+#include <timer_types.h>
 
-typedef struct time {
-    struct timeval before;
-    struct timeval after;
-} TimerData;
+#define RDTSC2(cpu_c) \
+asm volatile( "rdtsc\n\t"           \
+"movl %%eax, %0\n\t"  \
+"movl %%edx, %1\n\t"  \
+: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
+: : "%eax", "%edx")
 
-typedef struct cycles {
-    uint64_t start;
-    uint64_t stop;
-    uint64_t over;
-} CyclesData;
+#define RDTSC(cpu_c) \
+asm volatile("xor %%eax,%%eax\n\t"           \
+"cpuid\n\t"           \
+"rdtsc\n\t"           \
+"movl %%eax, %0\n\t"  \
+"movl %%edx, %1\n\t"  \
+: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
+: : "%eax","%ebx","%ecx","%edx")
 
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  initTimer
- *  Description:  Initializes cycles for cpuid and cpuclock
- * =====================================================================================
+
+
+/**
+ * @brief  Initialize timer module
+ *
+ * Determines processor clock and cycles for cpuid.
  */
-extern void initTimer(void );
+extern void timer_init(void );
 
-
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  startTimer
- *  Description:  Store timestamp in TimerData->before with gettimeofday()
- * =====================================================================================
+/**
+ * @brief  Start timer measurement with getTimeofDay
+ * @param  time  Reference to struct holding the timestamps
  */
-extern void starttimer(TimerData* );
+extern void timer_start(TimerData* time);
 
-
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  stopTimer
- *  Description:  Store timestamp in TimerData->after with gettimeofday()
- * =====================================================================================
+/**
+ * @brief  Stop timer measurement with getTimeofDay
+ * @param  time Reference to struct holding the timestamps
  */
-extern void stoptimer(TimerData* );
+extern void timer_stop(TimerData* time);
 
-
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  printTimer
- *  Description:  Return time duration between TimerData->after - TimerData->before .
- * =====================================================================================
+/**
+ * @brief  Get timer measurement with getTimeofDay
+ * @param  time Reference to struct holding the timestamps
+ * @return Time duration between start and stop in seconds
  */
-extern float printtimer(TimerData* );
+extern float timer_print(TimerData* timer);
 
-
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  readCycles
- *  Description:  Gets cycle counter with rdtsc instruction.
- *                Serialized with cpuid.
- *                Defined in tsc-asm.pas .
- *                Overhead must be determined by user.
- * =====================================================================================
+/**
+ * @brief  Start cycles measurement with rdtsc
+ * @param cycles Reference to struct holding the timestamps 
  */
-extern void readCycles(uint64_t* );
+extern void timer_startCycles(CyclesData* cycles);
 
-
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  cyclesForCpuId
- *  Description:  Returns cycles for cpuid.
- *                Defined in tsc-asm.pas.
- * =====================================================================================
+/**
+ * @brief  Stop cycles measurement with rdtsc
+ * @param cycles Reference to struct holding the timestamps 
  */
-extern int cyclesForCpuId(void);
+extern void timer_stopCycles(CyclesData* cycles);
 
 
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  cpuClockFrequency
- *  Description:  Determines cpu clock frequency from /proc filesystem
- * =====================================================================================
+/**
+ * @brief  Get time of cycles measurement
+ * @param cycles Reference to struct holding the timestamps 
+ * @return Timer duration between start and stop in seconds
  */
-extern float cpuClockFrequency(void);
+extern float timer_printCyclesTime(CyclesData* cycles);
 
-void startCycles(CyclesData* time);
-float stopCycles(CyclesData* time);
+/**
+ * @brief  Get cycles of cycles measurement
+ * @param cycles Reference to struct holding the timestamps 
+ * @return cycles between start and stop
+ */
+extern uint64_t timer_printCycles(CyclesData* cycles);
 
-/* defined in timer.c */
-extern int baseCycles;
-extern float cpuclock;
+/**
+ * @brief  Get Clock rate of cpu in Hertz 
+ * @return clock rate of cpu
+ */
+extern uint64_t timer_getCpuClock(void);
+
+/**
+ * @brief  Get cycles for cpuid
+ * @return cycles for cpuid
+ */
+extern uint64_t timer_getCpuidCycles(void);
 
 #endif /* TIMER_H */

@@ -1,105 +1,194 @@
+/*
+ * ===========================================================================
+ *
+ *       Filename:  timer.c
+ *
+ *    Description:  Implementation of timer module
+ *
+ *        Version:  1.0
+ *        Created:  07/30/2009
+ *       Revision:  none
+ *
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  none
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ * ===========================================================================
+ */
+
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
+#include <types.h>
 #include <timer.h>
 
-int baseCycles=0;
-float cpuclock=0.0F;
-static uint64_t cycle_overhead;
 
-inline uint64_t rdtsc(void)
-{
-   unsigned int tsc_low, tsc_high;
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-   asm( "rdtsc\n\t"
-	"movl %%eax, %0\n\t"
-	"movl %%edx, %1\n\t"
-        : "=r" (tsc_low), "=r" (tsc_high)
-        :
-        : "%eax", "%edx");      
+static uint64_t cpuClock = 0;
+static uint64_t cyclesForCpuid = 0;
 
-   return (uint64_t)tsc_high << 32 | (uint64_t)tsc_low;
-}
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-
-void initTimer(void )
-{
-    uint64_t start,stop;
-#if 0
-    baseCycles = cyclesForCpuId();
-    cpuclock = cpuClockFrequency();
-#endif
-
-    start = rdtsc();
-    stop = rdtsc();
-    cycle_overhead = stop-start;
-}
-
-void startCycles(CyclesData* time) 
-{
-    time->start = rdtsc();
-}
-
-float stopCycles(CyclesData* time) 
-{
-    time->stop = rdtsc();
-    time->over = cycle_overhead;
-    return (float)(time->stop-time->start-cycle_overhead)/(float)cpuclock;
-}
-
-void starttimer(TimerData* time)
+static uint64_t
+getCpuSpeed(void)
 {
     int i;
-    i = gettimeofday(&(time->before),NULL);
+    TscCounter start;
+    TscCounter stop;
+    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
+    struct timeval tv1;
+    struct timeval tv2;
+    struct timezone tzp;
+    struct timespec delay = { 0, 800000000 }; /* calibration time: 400 ms */
 
-#ifdef DEBUG
-    printf("Seconds: %ld \t uSeconds: %ld \n", before.tv_sec, before.tv_usec);
-#endif
+    for (i=0; i< 2; i++)
+    {
+        RDTSC(start);
+        gettimeofday( &tv1, &tzp);
+        nanosleep( &delay, NULL);
+        RDTSC(stop);
+        gettimeofday( &tv2, &tzp);
+
+        result = MIN(result,(stop.int64 - start.int64 - cyclesForCpuid));
+    }
+
+    return (result) * 1000000 / 
+        (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
+         ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
 }
 
-void stoptimer(TimerData* time)
+
+static uint64_t
+getCpuidCycles(void)
 {
     int i;
-    i = gettimeofday(&(time->after),NULL);
+    TscCounter start;
+    TscCounter stop;
+    uint64_t result = 1000000000ULL;
+
+    for (i=0; i< 5; i++)
+    {
+        RDTSC(start);
+        RDTSC(stop);
+
+        result = MIN(result,(stop.int64 - start.int64));
+    }
+
+    return result;
+}
+
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+void
+timer_init(void )
+{
+    getCpuidCycles();
+    getCpuSpeed();
+
+    cyclesForCpuid = getCpuidCycles();
+    cpuClock = getCpuSpeed();
+}
+
+void
+timer_startCycles(CyclesData* time) 
+{
+    TscCounter start;
+    TscCounter stop;
+    getCpuidCycles();
+
+    RDTSC(start);
+    RDTSC(stop);
+
+    time->base = cyclesForCpuid + (stop.int64 - start.int64 - cyclesForCpuid);
+    RDTSC(time->start);
+}
+
+void
+timer_stopCycles(CyclesData* time) 
+{
+    RDTSC(time->stop);
+}
+
+void
+timer_start(TimerData* time)
+{
+    gettimeofday(&(time->before),NULL);
 
 #ifdef DEBUG
-    printf("Seconds: %ld \t uSeconds: %ld \n", after.tv_sec, after.tv_usec);
+    printf("Timer Start - Seconds: %ld \t uSeconds: %ld \n",
+            before.tv_sec, before.tv_usec);
 #endif
 }
 
-float printtimer(TimerData* time_data)
+void
+timer_stop(TimerData* time)
+{
+    gettimeofday(&(time->after),NULL);
+
+#ifdef DEBUG
+    printf("Timer Start - Seconds: %ld \t uSeconds: %ld \n",
+            after.tv_sec, after.tv_usec);
+#endif
+}
+
+float
+timer_print(TimerData* time)
 {
     long int sec;
-    float time;
+    float timeDuration;
 
-    sec = time_data->after.tv_sec - time_data->before.tv_sec;
+    sec = time->after.tv_sec - time->before.tv_sec;
 
-    time = (((sec*1000000)+time_data->after.tv_usec)-time_data->before.tv_usec) * 0.001F;
+    timeDuration = (((sec*1000000)+time->after.tv_usec)- time->before.tv_usec);
 
 #ifdef VERBOSE
     printf("*******************************************\n");
-    printf("TIME [ms]\t:\t %f \n", time );
+    printf("TIME [ms]\t:\t %f \n", timeDuration );
     printf("*******************************************\n\n");
 #endif
 
-    return time;
+    return (timeDuration * 0.000001F);
 }
 
-
-float cpuClockFrequency()
+uint64_t
+timer_printCycles(CyclesData* time)
 {
-    static float frequency = -1.;
-    int ret;
+    return (time->stop.int64 - time->start.int64 - time->base);
+}
 
-    if (frequency < 0) {
-	FILE *output = popen("grep 'cpu MHz' /proc/cpuinfo | awk -F : '{print $2}'", "r");
-	frequency = 0.0;
-	ret = fscanf(output, "%f\n", &frequency);
-	pclose(output);
-	/* convert to Hz */
-	frequency *= 1000000;
-    }
-    return frequency;
+float
+timer_printCyclesTime(CyclesData* time)
+{
+    uint64_t cycles;
+    float timeDuration;
+
+    cycles = (time->stop.int64 - time->start.int64 - time->base);
+    timeDuration   =  (float) cycles / (float) cpuClock;
+
+#ifdef VERBOSE
+    printf("*******************************************\n");
+    printf("TIME [ms]\t:\t %f \n", timeDuration );
+    printf("*******************************************\n\n");
+#endif
+
+    return timeDuration;
+}
+
+uint64_t
+timer_getCpuClock(void)
+{
+    return cpuClock;
+}
+
+uint64_t
+timer_getCpuidCycles(void)
+{
+    return cyclesForCpuid;
 }
 
 
