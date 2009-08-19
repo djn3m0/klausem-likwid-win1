@@ -13,8 +13,6 @@
  *     Company  RRZE Erlangen
  *   Copyright  Copyright (c) 2009, Jan Treibig
  *
- * This source code is released for free distribution under the terms of the
- * GNU General Public License as published by the Free Software Foundation.
  * ============================================================================
  */
 #ifndef TIMER_TYPES_H

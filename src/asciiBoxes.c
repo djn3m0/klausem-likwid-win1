@@ -1,3 +1,22 @@
+/*
+ * ===========================================================================
+ *
+ *       Filename:  asciiBoxes.c
+ *
+ *    Description:  Module implementing output of nested ascii art boxes
+ *
+ *        Version:  1.0
+ *        Created:  08/13/2009
+ *       Revision:  none
+ *
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  none
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ * ===========================================================================
+ */
+
 
 
 /* #####   HEADER FILE INCLUDES   ######################################### */

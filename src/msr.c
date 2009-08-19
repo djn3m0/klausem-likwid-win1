@@ -16,6 +16,7 @@
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
  *        Project:  none
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
  *
  * ===========================================================================
  */

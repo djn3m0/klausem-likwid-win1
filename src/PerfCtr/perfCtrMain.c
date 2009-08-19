@@ -1,3 +1,24 @@
+/*
+ * ===========================================================================
+ *
+ *       Filename:  perfCtrMain.c
+ *
+ *    Description:  An application to read out performance counter registers
+ *                  on Intel Core, Nehalem and AMD K10 processors.
+ *
+ *        Version:  1.0
+ *        Created:  08/13/2009
+ *       Revision:  none
+ *
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  HpcUtil
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ * ===========================================================================
+ */
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

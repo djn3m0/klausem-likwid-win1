@@ -14,7 +14,7 @@
 #endif
 
 #define str(x) #x
-#define MAX_CORES 24
+#define MAX_CORES 32
 
 extern int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize, const cpu_set_t *cpuset);
 
@@ -39,7 +39,7 @@ pthread_create(pthread_t* thread,
     int ret;
     static int reallpthrindex = 0;
     static int npinned = 0;
-    static int pin_ids[MAX_CORES] = {0,0,0,0,0,0,0,0};
+    static int pin_ids[MAX_CORES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 
 #ifdef COLOR

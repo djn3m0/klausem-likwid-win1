@@ -1,3 +1,23 @@
+/*
+ * ===========================================================================
+ *
+ *       Filename:  tree.c
+ *
+ *    Description:  Module implementing a tree data structure
+ *
+ *        Version:  1.0
+ *        Created:  08/13/2009
+ *       Revision:  none
+ *
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  none
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ * ===========================================================================
+ */
+
+
 #include <stdlib.h>
 #include <stdio.h>
 
