@@ -4,9 +4,7 @@ TAG = GCC
 TARGET_LIB = libhpcUtil.a
 BUILD_DIR  = ./$(TAG)
 SRC_DIR    = ./src
-DOC_DIR    = ./doc
 MAKE_DIR   = ./
-MKD        = $(PERL) ext/perl/mkd2html.pl
 Q         ?= @
 
 #DO NOT EDIT BELOW
@@ -17,7 +15,6 @@ PINLIB_OMP = libptoverride_omp.so
 
 VPATH     = $(SRC_DIR) $(DOC_DIR)/mkd
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
-MKD_SRC   = $(patsubst $(DOC_DIR)/mkd/%.mkd, $(DOC_DIR)/%.html,$(wildcard $(DOC_DIR)/mkd/*.mkd))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
@@ -39,12 +36,6 @@ $(TARGET_LIB): $(BUILD_DIR) $(OBJ)
 	@echo "===>  CREATE LIB  $(TARGET_LIB)"
 	$(Q)${AR} -cq $(TARGET_LIB) $(filter-out $(BUILD_DIR)/main.o,$(OBJ))
 
-doc: doxygen $(MKD_SRC)
-
-doxygen:
-	@echo "===>  BUILD DOXYGEN"
-	$(Q)$(DOXYGEN) $(DOC_DIR)/Doxyfile
-
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
@@ -62,11 +53,6 @@ $(BUILD_DIR)/%.o:  %.c
 	$(Q)$(CC) -c  $(CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
-$(DOC_DIR)/%.html:  %.mkd
-	@echo "===>  BUILD DOC  $@"
-	$(Q)$(MKD)  $<  $@ test
-
-
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
@@ -83,9 +69,6 @@ distclean: clean
 	@rm -f perfCtr
 	@rm -f cpuFeatures
 	@rm -f cpuTopology
-	@rm -rf $(DOC_DIR)/doxygen
-	@rm -f $(DOC_DIR)/*.html
-	@rm -f $(DOC_DIR)/doxygen.log
 	@rm -f $(TARGET_LIB)
 	@rm -f $(PINLIB_PT)
 	@rm -f $(PINLIB_OMP)
