@@ -227,7 +227,12 @@ int main (int argc, char** argv)
     {
         perfmon_startAllCounters();
     }
-    system(cmd_str);
+    if (system(cmd_str) == EOF)
+    {
+        fprintf(stderr, "Failed to execute %s!\n", cmd_str);
+        exit(EXIT_FAILURE);
+    }
+    
     perfmon_stopAllCounters();
     if (optUseMarker)
     {

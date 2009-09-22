@@ -78,9 +78,8 @@ clean:
 	@echo "===>  CLEAN"
 	@rm -rf $(BUILD_DIR)
 
-distclean:
+distclean: clean
 	@echo "===>  DIST CLEAN"
-	@rm -rf $(BUILD_DIR)
 	@rm -f perfCtr
 	@rm -f cpuFeatures
 	@rm -f cpuTopology

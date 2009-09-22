@@ -167,15 +167,21 @@ void perfmon_print_results_nehalem(PerfmonThread *thread, PerfmonGroup group_set
 
     switch ( group_set ) {
         case STD:
-            printf ("[%d] Double Precision MFlops/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]*2)+thread->pc[0])/time);
-            printf ("[%d] Scalar MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0])/time);
-            printf ("[%d] Packed MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1]*2)/time);
+            printf ("[%d] Double Precision MFlops/s: %f \n",
+                    cpu_id,1.0E-06*(float)((thread->pc[1]*2)+thread->pc[0])/time);
+            printf ("[%d] Scalar MFlops/s: %f \n",
+                    cpu_id,1.0E-06*(float)(thread->pc[0])/time);
+            printf ("[%d] Packed MFlops/s: %f \n",
+                    cpu_id,1.0E-06*(float)(thread->pc[1]*2)/time);
             break;
 
         case FLOPS_SP:
-            printf ("[%d] Single Precision MFlops/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]*4)+thread->pc[0])/time);
-            printf ("[%d] Scalar MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0])/time);
-            printf ("[%d] Packed MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1]*4)/time);
+            printf ("[%d] Single Precision MFlops/s: %f \n",
+                    cpu_id,1.0E-06*(float)((thread->pc[1]*4)+thread->pc[0])/time);
+            printf ("[%d] Scalar MFlops/s: %f \n",
+                    cpu_id,1.0E-06*(float)(thread->pc[0])/time);
+            printf ("[%d] Packed MFlops/s: %f \n",
+                    cpu_id,1.0E-06*(float)(thread->pc[1]*4)/time);
             break;
 
         case L1:

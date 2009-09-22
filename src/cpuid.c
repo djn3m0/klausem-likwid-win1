@@ -347,7 +347,11 @@ cpuid_initTopology(void)
 
     /* First determine the number of cpus accessible */
     pipe = popen("cat /proc/cpuinfo | grep processor | wc -l", "r");
-    fscanf(pipe, "%d\n", &cpuid_topology.numHWThreads);
+    if (fscanf(pipe, "%d\n", &cpuid_topology.numHWThreads) != 1)
+    {
+        fprintf(stderr, "Failed to fscanf cpuinfo!\n");
+        exit(EXIT_FAILURE);
+    }
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
 
     /* check if 0x0B cpuid leaf is supported */

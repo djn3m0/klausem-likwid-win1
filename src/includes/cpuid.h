@@ -41,7 +41,6 @@
 #define ISTANBUL  0x08U
 
 /* AMD K8 */
-
 #define OPTERON_DC_E  0x21
 #define OPTERON_DC_F  0x41
 #define ATHLON64_X2   0x43

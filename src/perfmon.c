@@ -663,7 +663,12 @@ perfmon_getCycles(void)
         exit (EXIT_FAILURE);
     }
 
-    fscanf(file,"%llu",&summary.cycles);
+    if (fscanf(file,"%llu",&summary.cycles) != 1)
+    {
+        fprintf(stderr, "Failed to fscanf cycles file!\n");
+        exit(EXIT_FAILURE);
+    }
+
     fclose(file);
     remove("/tmp/perfmon_cycles.txt");
 }

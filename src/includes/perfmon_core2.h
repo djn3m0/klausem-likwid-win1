@@ -99,11 +99,13 @@ void perfmon_print_results_core2(PerfmonThread *thread, PerfmonGroup group_set, 
     switch ( group_set ) 
     {
         case STD:
-            printf ("[%d] MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*2+thread->pc[1])/time);
+            printf ("[%d] MFlops/s: %f \n",
+                    cpu_id,1.0E-06*(float)(thread->pc[0]*2+thread->pc[1])/time);
             break;
 
         case FLOPS_SP:
-            printf ("[%d] MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*4+thread->pc[1])/time);
+            printf ("[%d] MFlops/s: %f \n",
+                    cpu_id,1.0E-06*(float)(thread->pc[0]*4+thread->pc[1])/time);
             break;
 
         case L1:
