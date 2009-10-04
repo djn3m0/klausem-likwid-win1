@@ -28,7 +28,8 @@
 #include <types.h>
 
 /* Intel P6 */
-#define PENTIUM_M 0x0DU
+#define PENTIUM_M_BANIAS 0x09U
+#define PENTIUM_M_DOTHAN 0x0DU
 #define CORE_DUO  0x0EU
 #define CORE2_65  0x0FU
 #define CORE2_45  0x17U

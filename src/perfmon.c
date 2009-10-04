@@ -214,7 +214,10 @@ setupGroupThread(int thread_id, PerfmonGroup group)
 
             switch ( cpuid_info.model ) 
             {
-                case PENTIUM_M:
+                case PENTIUM_M_BANIAS:
+                    break;
+
+                case PENTIUM_M_DOTHAN:
                     break;
 
                 case CORE_DUO:
@@ -306,7 +309,10 @@ startCountersThread(int thread_id)
 
             switch ( cpuid_info.model ) 
             {
-                case PENTIUM_M:
+                case PENTIUM_M_BANIAS:
+                    break;
+
+                case PENTIUM_M_DOTHAN:
                     break;
 
                 case CORE_DUO:
@@ -503,7 +509,10 @@ perfmon_printResults()
 
                 switch ( cpuid_info.model ) 
                 {
-                    case PENTIUM_M:
+                    case PENTIUM_M_BANIAS:
+                        break;
+
+                    case PENTIUM_M_DOTHAN:
                         break;
 
                     case CORE_DUO:
@@ -587,7 +596,10 @@ perfmon_printResults()
 
                 switch ( cpuid_info.model ) 
                 {
-                    case PENTIUM_M:
+                    case PENTIUM_M_BANIAS:
+                        break;
+
+                    case PENTIUM_M_DOTHAN:
                         break;
 
                     case CORE_DUO:
@@ -756,7 +768,7 @@ perfmon_init(int numThreads_local, int threads[])
 
             switch ( cpuid_info.model ) 
             {
-                case PENTIUM_M:
+                case PENTIUM_M_BANIAS:
                     fprintf(stderr, "Unsupported Processor!\n");
                     exit(EXIT_FAILURE);
                     break;
