@@ -417,6 +417,7 @@ stopCountersThread(int thread_id)
             }
 
             threadData[thread_id].cycles = msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+            threadData[thread_id].instructionsRetired = msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
 
             flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
             printf ("Status: 0x%llX \n",flags);
@@ -471,6 +472,7 @@ perfmon_printResults()
     {
         summary.counters[i].label = (char*) malloc(500*sizeof(char));
         summary.pc[i] = 0;
+        summary.instructionsRetired = 0;
         summary.counters[i].init = FALSE;
     }
     summary.cpu_id = 100;
@@ -480,9 +482,13 @@ perfmon_printResults()
     {
 
         printf(HLINE);
+        printf ("[%d] Instruction retired any: %llu \n",
+                threadData[thread_id].cpu_id,
+                threadData[thread_id].instructionsRetired);
         printf ("[%d] Cycles unhalted core: %llu \n",
                 threadData[thread_id].cpu_id,
                 threadData[thread_id].cycles);
+        summary.instructionsRetired += threadData[thread_id].instructionsRetired;
 
         for (i=0;i<NUM_PMC;i++) 
         {
@@ -506,6 +512,7 @@ perfmon_printResults()
         switch ( cpuid_info.family ) 
         {
             case P6_FAMILY:
+
 
                 switch ( cpuid_info.model ) 
                 {
@@ -574,6 +581,7 @@ perfmon_printResults()
         printf("==== SUMMARY RESULTS ====\n");
         printf(HLINE);
         printf ("[%d] RDTSC Cycles: %llu \n",summary.cpu_id,summary.cycles);
+        printf ("[%d] Instructions retired any: %llu \n",summary.cpu_id,summary.instructionsRetired);
         for (i=0;i<NUM_PMC;i++) 
         {
             if (threadData[0].counters[i].init == TRUE) 
