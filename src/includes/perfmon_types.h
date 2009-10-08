@@ -30,7 +30,9 @@ typedef enum perfmon_group {
     DATA,
     BRANCH,
     CPI,
-    TLB} PerfmonGroup;
+    TLB,
+    CLUSTER,
+    CLUSTER_FLOPS} PerfmonGroup;
 
 typedef struct perfmon_event {
     uint32_t event_id;
@@ -52,6 +54,7 @@ typedef struct perfmon_counter {
 typedef struct perfmon_thread {
     int cpu_id;
     uint64_t cycles;
+    uint64_t instructionsRetired;
     PerfmonCounter counters[NUM_PMC];
     uint64_t pc[NUM_PMC];
 } PerfmonThread;

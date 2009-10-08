@@ -112,6 +112,14 @@ int main (int argc, char** argv)
                 {
                     group = CPI;
                 }
+                else if (!strcmp("CLUSTER",optarg)) 
+                {
+                    group = CLUSTER;
+                }
+                else if (!strcmp("CLUSTER_FLOPS",optarg)) 
+                {
+                    group = CLUSTER_FLOPS;
+                }
                 else
                 {
                     customEvent = (char*) malloc((strlen(optarg)+10)*sizeof(char));
