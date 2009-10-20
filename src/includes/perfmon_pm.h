@@ -6,7 +6,7 @@
 
 
 void 
-perfmon_init_core2(PerfmonThread *thread)
+perfmon_init_pm(PerfmonThread *thread)
 {
     uint64_t flags = 0x0ULL;
     int cpu_id = thread->cpu_id;
@@ -38,14 +38,14 @@ perfmon_init_core2(PerfmonThread *thread)
 }
 
 void
-perfmon_printGroups_core2 (void)
+perfmon_printGroups_pm (void)
 {
 
 
 }
 
 PerfmonGroup
-perfmon_getGroupId_core2 (char* groupStr)
+perfmon_getGroupId_pm (char* groupStr)
 {
 	PerfmonGroup group;
 
@@ -96,7 +96,7 @@ perfmon_getGroupId_core2 (char* groupStr)
 
 
 
-void perfmon_setup_group_core2(int thread_id, PerfmonGroup group)
+void perfmon_setup_group_pm(int thread_id, PerfmonGroup group)
 {
 
     switch ( group ) 
@@ -155,7 +155,7 @@ void perfmon_setup_group_core2(int thread_id, PerfmonGroup group)
 
 }
 
-void perfmon_print_results_core2(PerfmonThread *thread, PerfmonGroup group_set, float time)
+void perfmon_print_results_pm(PerfmonThread *thread, PerfmonGroup group_set, float time)
 {
     int cpu_id = thread->cpu_id;
 

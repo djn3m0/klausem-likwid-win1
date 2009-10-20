@@ -20,6 +20,10 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
 all: perfCtr cpuFeatures cpuTopology  $(TARGET_LIB)  $(PINLIB_PT)  $(PINLIB_OMP) 
 
+tags:
+	@echo "===>  GENERATE  TAGS"
+	$(Q)ctags -R
+
 perfCtr: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/PerfCtr/perfCtrMain.c
 	@echo "===>  LINKING  $@"
 	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/PerfCtr/perfCtrMain.c $(OBJ) $(LIBS)

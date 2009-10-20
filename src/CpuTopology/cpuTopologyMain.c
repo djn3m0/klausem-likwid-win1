@@ -105,7 +105,6 @@ int main (int argc, char** argv)
     printf("Hardware Thread Topology\n");
     printf(SLINE);
 
-    printf("Total hardware threads:\t%u \n", cpuid_topology.numHWThreads);
     printf("Sockets:\t\t%u \n", cpuid_topology.numSockets);
     printf("Cores per socket:\t%u \n", cpuid_topology.numCoresPerSocket);
     printf("Threads per core:\t%u \n", cpuid_topology.numThreadsPerCore);

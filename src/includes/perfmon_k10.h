@@ -34,6 +34,63 @@ void perfmon_init_k10(PerfmonThread *thread)
 
 }
 
+void
+perfmon_printGroups_k10 (void)
+{
+
+
+}
+
+PerfmonGroup
+perfmon_getGroupId_k10 (char* groupStr)
+{
+	PerfmonGroup group;
+
+	if (!strcmp("FLOPS_DP",groupStr)) 
+	{
+		group = STD;
+	}
+	else if (!strcmp("FLOPS_SP",groupStr)) 
+	{
+		group = FLOPS_SP;
+	}
+	else if (!strcmp("L1",groupStr)) 
+	{
+		group = L1;
+	}
+	else if (!strcmp("L2",groupStr)) 
+	{
+		group = L2;
+	}
+	else if (!strcmp("MEM",groupStr)) 
+	{
+		group = MEM;
+	}
+	else if (!strcmp("DATA",groupStr)) 
+	{
+		group = DATA;
+	}
+	else if (!strcmp("BRANCH",groupStr)) 
+	{
+		group = BRANCH;
+	}
+	else if (!strcmp("TLB",groupStr)) 
+	{
+		group = TLB;
+	}
+	else if (!strcmp("CPI",groupStr)) 
+	{
+		group = CPI;
+	}
+	else
+	{
+		return NOGROUP;
+	}
+
+	return group;
+}
+
+
 
 
 void perfmon_setup_group_k10(int thread_id,PerfmonGroup group)
