@@ -41,6 +41,10 @@ CpuInfo cpuid_info;
 CpuTopology cpuid_topology;
 
 
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
+static int largest_function;
+
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 /* this was taken from the linux kernel */
@@ -189,6 +193,11 @@ cpuid_init (void)
     if (lock) return;
     lock =1;
 
+    eax = 0x00;
+    CPUID;
+
+    printf("Largest supported basic function 0x%X \n",eax);
+
     eax = 0x01;
     CPUID;
     cpuid_info.family = ((eax>>8)&0xFU) + ((eax>>20)&0xFFU);
@@ -316,7 +325,8 @@ cpuid_init (void)
     if (ecx & (1<<19)) strcat(cpuid_info.features, "SSE4.1 ");
     if (ecx & (1<<20)) strcat(cpuid_info.features, "SSE4.2 ");
 
-    if( cpuid_info.family == P6_FAMILY) 
+    cpuid_info.perf_version   =  0;
+    if( cpuid_info.family == P6_FAMILY && 0x0A <= largest_function) 
     {
         eax = 0x0A;
         CPUID;
@@ -348,7 +358,7 @@ cpuid_initTopology(void)
 
 
     /* First determine the number of cpus accessible */
-    pipe = popen("cat /proc/cpuinfo | grep processor | wc -l", "r");
+    pipe = popen("cat /proc/cpuinfo | grep ^processor | wc -l", "r");
     if (fscanf(pipe, "%d\n", &cpuid_topology.numHWThreads) != 1)
     {
         fprintf(stderr, "Failed to fscanf cpuinfo!\n");

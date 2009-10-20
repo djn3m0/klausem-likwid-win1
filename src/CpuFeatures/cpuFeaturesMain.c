@@ -125,6 +125,16 @@ int main (int argc, char** argv)
 
     timer_init();
     cpuid_init();
+
+	cpuFeatures_init(cpuId);
+
+    if (cpuFeatureFlags.speedstep)
+    {
+        fprintf (stderr, "Speedstep is enabled!\nThis produces inaccurate timing measurements.\n");
+        fprintf (stderr, "For reliable clock measurements disable speedstep.\n");
+    }
+
+
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
     printf("CPU clock:\t%llu Hz \n", cpuid_info.clock);

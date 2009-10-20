@@ -100,6 +100,73 @@ void perfmon_init_nehalem(PerfmonThread *thread)
     msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
 }
 
+void
+perfmon_printGroups_nehalem (void)
+{
+
+
+}
+
+PerfmonGroup
+perfmon_getGroupId_nehalem (char* groupStr)
+{
+	PerfmonGroup group;
+
+	if (!strcmp("FLOPS_DP",groupStr)) 
+	{
+		group = STD;
+	}
+	else if (!strcmp("FLOPS_SP",groupStr)) 
+	{
+		group = FLOPS_SP;
+	}
+	else if (!strcmp("L1",groupStr)) 
+	{
+		group = L1;
+	}
+	else if (!strcmp("L2",groupStr)) 
+	{
+		group = L2;
+	}
+	else if (!strcmp("MEM",groupStr)) 
+	{
+		group = MEM;
+	}
+	else if (!strcmp("DATA",groupStr)) 
+	{
+		group = DATA;
+	}
+	else if (!strcmp("BRANCH",groupStr)) 
+	{
+		group = BRANCH;
+	}
+	else if (!strcmp("TLB",groupStr)) 
+	{
+		group = TLB;
+	}
+	else if (!strcmp("CPI",groupStr)) 
+	{
+		group = CPI;
+	}
+	else if (!strcmp("CLUSTER",groupStr)) 
+	{
+		group = CLUSTER;
+	}
+	else if (!strcmp("CLUSTER_FLOPS",groupStr)) 
+	{
+		group = CLUSTER_FLOPS;
+	}
+	else
+	{
+		return NOGROUP;
+	}
+
+	return group;
+}
+
+
+
+
 void perfmon_setup_group_nehalem(int thread_id,PerfmonGroup group)
 {
 
