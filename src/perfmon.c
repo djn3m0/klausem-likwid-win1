@@ -30,9 +30,11 @@
 #include <cpuid.h>
 #include <perfmon.h>
 #include <registers.h>
+#include <perfmon_pm_events.h>
 #include <perfmon_core2_events.h>
 #include <perfmon_nehalem_events.h>
 #include <perfmon_k10_events.h>
+#include <perfmon_pm.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
 #include <perfmon_k10.h>
@@ -42,7 +44,7 @@
 
 int num_arch_events;
 int perfmon_verbose=0;
-
+void (*perfmon_printAvailableGroups) (void);
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -53,6 +55,8 @@ static PerfmonThread* threadData;
 static CyclesData timeData;
 static int numThreads;
 
+static PerfmonGroup (*getGroupIdFuncPtr) (char*);
+static void (*setupGroupThreadFuncPtr) (int thread_id, PerfmonGroup group);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -202,73 +206,6 @@ setupCounterThread(int thread_id,
     return TRUE;
 }
 
-
-static void
-setupGroupThread(int thread_id, PerfmonGroup group)
-{
-    groupSet = group;
-
-    switch ( cpuid_info.family ) 
-    {
-        case P6_FAMILY:
-
-            switch ( cpuid_info.model ) 
-            {
-                case PENTIUM_M:
-                    break;
-
-                case CORE_DUO:
-                    break;
-
-                case XEON_MP:
-
-                case CORE2_65:
-
-                case CORE2_45:
-
-                    perfmon_setup_group_core2(thread_id,groupSet);
-                    break;
-
-                case NEHALEM:
-
-                    perfmon_setup_group_nehalem(thread_id,groupSet);
-                    break;
-
-                default:
-                    fprintf(stderr, "Unsupported Processor!\n");
-                    exit(EXIT_FAILURE);
-                    break;
-            }
-            break;
-
-        case NETBURST_FAMILY:
-            break;
-
-        case K10_FAMILY:
-            switch ( cpuid_info.model ) 
-            {
-                case BARCELONA:
-
-                case SHANGHAI:
-
-                case ISTANBUL:
-                    perfmon_setup_group_k10(thread_id,groupSet);
-                    break;
-
-                default:
-                    fprintf(stderr, "Unsupported Processor!\n");
-                    exit(EXIT_FAILURE);
-                    break;
-            }
-
-        default:
-            fprintf(stderr, "Unsupported Processor!\n");
-            exit(EXIT_FAILURE);
-            break;
-    }
-}
-
-
 static void
 startCountersThread(int thread_id)
 {
@@ -280,36 +217,61 @@ startCountersThread(int thread_id)
     {
         case P6_FAMILY:
 
-            msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-            msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
-            msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
+            switch ( cpuid_info.model ) 
+            {
+                case PENTIUM_M_BANIAS:
 
-            /* Enable fixed counters */
-            flags  = 0x300000000ULL;
-            uflags = 0x1000000FFULL;
+                case PENTIUM_M_DOTHAN:
 
-            for (i=0;i<NUM_PMC;i++) {
-                if (threadData[thread_id].counters[i].init == TRUE) {
-                    msr_write(cpu_id, threadData[thread_id].counters[i].counter_reg , 0x0ULL);
-                    if (i < PMCU0) {
-                        flags |= (1<<i);  /* enable counter */
-                    } else {
-                        uflags |= (1<<(i-PMCU0));  /* enable uncore counter */
+                    break;
+
+                case XEON_MP:
+
+                case CORE2_65:
+
+                case CORE2_45:
+
+                case NEHALEM:
+
+                    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+                    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
+                    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
+
+                    /* Enable fixed counters */
+                    flags  = 0x300000000ULL;
+                    uflags = 0x1000000FFULL;
+
+                    for (i=0;i<NUM_PMC;i++) {
+                        if (threadData[thread_id].counters[i].init == TRUE) {
+                            msr_write(cpu_id, threadData[thread_id].counters[i].counter_reg , 0x0ULL);
+                            if (i < PMCU0) {
+                                flags |= (1<<i);  /* enable counter */
+                            } else {
+                                uflags |= (1<<(i-PMCU0));  /* enable uncore counter */
+                            }
+                        }
                     }
-                }
+
+                    break;
+
+                default:
+                    fprintf(stderr, "Unsupported Processor!\n");
+                    exit(EXIT_FAILURE);
+                    break;
             }
+            break;
 
             if (perfmon_verbose)
             {
                 printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL,flags);
             }
 
+
             switch ( cpuid_info.model ) 
             {
-                case PENTIUM_M:
-                    break;
+                case PENTIUM_M_BANIAS:
 
-                case CORE_DUO:
+                case PENTIUM_M_DOTHAN:
                     break;
 
                 case XEON_MP:
@@ -342,6 +304,8 @@ startCountersThread(int thread_id)
             break;
 
         case NETBURST_FAMILY:
+            fprintf(stderr, "Unsupported Processor!\n");
+            exit(EXIT_FAILURE);
             break;
 
         case K10_FAMILY:
@@ -503,7 +467,10 @@ perfmon_printResults()
 
                 switch ( cpuid_info.model ) 
                 {
-                    case PENTIUM_M:
+                    case PENTIUM_M_BANIAS:
+                        break;
+
+                    case PENTIUM_M_DOTHAN:
                         break;
 
                     case CORE_DUO:
@@ -587,7 +554,10 @@ perfmon_printResults()
 
                 switch ( cpuid_info.model ) 
                 {
-                    case PENTIUM_M:
+                    case PENTIUM_M_BANIAS:
+                        break;
+
+                    case PENTIUM_M_DOTHAN:
                         break;
 
                     case CORE_DUO:
@@ -673,15 +643,25 @@ perfmon_getCycles(void)
     remove("/tmp/perfmon_cycles.txt");
 }
 
-void
-perfmon_setupGroup(PerfmonGroup group)
+int
+perfmon_setupGroup(char* groupString)
 {
     int i;
+	PerfmonGroup group;
+
+	group = getGroupIdFuncPtr(groupString);
+
+	if (group == NOGROUP)
+	{
+		return 0;
+	}
 
     for (i=0;i<numThreads;i++)
     {
-        setupGroupThread(i,group);
+        setupGroupThreadFuncPtr(i,group);
     }
+
+	return 1;
 }
 
 int
@@ -756,9 +736,15 @@ perfmon_init(int numThreads_local, int threads[])
 
             switch ( cpuid_info.model ) 
             {
-                case PENTIUM_M:
-                    fprintf(stderr, "Unsupported Processor!\n");
-                    exit(EXIT_FAILURE);
+                case PENTIUM_M_BANIAS:
+
+                case PENTIUM_M_DOTHAN:
+
+                    eventHash = pm_arch_events;
+                    num_arch_events = NUM_ARCH_EVENTS_PM;
+					getGroupIdFuncPtr = perfmon_getGroupId_pm;
+					setupGroupThreadFuncPtr = perfmon_setup_group_pm;
+					perfmon_printAvailableGroups = perfmon_printGroups_pm;
                     break;
 
                 case CORE_DUO:
@@ -774,12 +760,18 @@ perfmon_init(int numThreads_local, int threads[])
 
                     eventHash = core2_arch_events;
                     num_arch_events = NUM_ARCH_EVENTS_CORE2;
+					getGroupIdFuncPtr = perfmon_getGroupId_core2;
+					setupGroupThreadFuncPtr = perfmon_setup_group_core2;
+					perfmon_printAvailableGroups = perfmon_printGroups_core2;
                     break;
 
                 case NEHALEM:
 
                     eventHash = nehalem_arch_events;
                     num_arch_events = NUM_ARCH_EVENTS_NEHALEM;
+					getGroupIdFuncPtr = perfmon_getGroupId_nehalem;
+					setupGroupThreadFuncPtr = perfmon_setup_group_nehalem;
+					perfmon_printAvailableGroups = perfmon_printGroups_nehalem;
                     break;
 
                 default:
@@ -804,6 +796,9 @@ perfmon_init(int numThreads_local, int threads[])
                 case ISTANBUL:
                     eventHash = k10_arch_events;
                     num_arch_events = NUM_ARCH_EVENTS_K10;
+					getGroupIdFuncPtr = perfmon_getGroupId_k10;
+					setupGroupThreadFuncPtr = perfmon_setup_group_k10;
+					perfmon_printAvailableGroups = perfmon_printGroups_k10;
                     break;
 
                 default:
@@ -826,6 +821,4 @@ perfmon_init(int numThreads_local, int threads[])
         initThread(i,threads[i]);
     }
 }
-
-
 

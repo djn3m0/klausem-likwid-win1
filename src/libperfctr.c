@@ -48,7 +48,10 @@ perfmon_markerStartCounters(int cpu_id)
 
             switch ( cpuid_info.model ) 
             {
-                case PENTIUM_M:
+                case PENTIUM_M_BANIAS:
+                    break;
+
+                case PENTIUM_M_DOTHAN:
                     break;
 
                 case CORE_DUO:

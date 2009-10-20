@@ -29,21 +29,22 @@
 #include <types.h>
 #include <timer.h>
 #include <cpuid.h>
+#include <cpuFeatures.h>
 #include <perfmon.h>
 
 #define MAX_NUM_THREADS 100
 
 #define HELP_MSG \
-    printf("perfCtr --  Version 0.4\n"); \
+printf("perfCtr --  Version 0.4\n"); \
 printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t verbose output\n"); \
 printf("-i\t print cpu info\n"); \
 printf("-m\t use markers inside code \n"); \
-printf("-g\t performance group [STD FLOPS_SP L1 L2 L3 MEM DATA BRANCH TLB CPI] or event tag\n"); \
-printf("-t\t comma separated core ids to measure\n\n"); \
-exit(0);
+printf("-g\t performance group  or event tag\n"); \
+printf("-a\t list available performance groups\n"); \
+printf("-t\t comma separated core ids to measure\n\n")
 
 int main (int argc, char** argv)
 { 
@@ -61,57 +62,17 @@ int main (int argc, char** argv)
     int num_threads=0;
     int threads[MAX_NUM_THREADS];
 
-    if (argc ==  1) { HELP_MSG }
+    if (argc ==  1) { HELP_MSG; }
 
-    while ((c = getopt (argc, argv, "t:g:u:p:hmvi")) != -1)
+    while ((c = getopt (argc, argv, "t:g:u:p:hmvai")) != -1)
     {
         switch (c)
         {
             case 'h':
-                HELP_MSG
-                    exit (EXIT_SUCCESS);    
+                HELP_MSG;
+                exit (EXIT_SUCCESS);    
             case 'g':
-                if (!strcmp("STD",optarg)) 
-                {
-                    group = STD;
-                }
-                else if (!strcmp("FLOPS_SP",optarg)) 
-                {
-                    group = FLOPS_SP;
-                }
-                else if (!strcmp("L1",optarg)) 
-                {
-                    group = L1;
-                }
-                else if (!strcmp("L2",optarg)) 
-                {
-                    group = L2;
-                }
-                else if (!strcmp("L3",optarg)) 
-                {
-                    group = L3;
-                }
-                else if (!strcmp("MEM",optarg)) 
-                {
-                    group = MEM;
-                }
-                else if (!strcmp("DATA",optarg)) 
-                {
-                    group = DATA;
-                }
-                else if (!strcmp("BRANCH",optarg)) 
-                {
-                    group = BRANCH;
-                }
-                else if (!strcmp("TLB",optarg)) 
-                {
-                    group = TLB;
-                }
-                else if (!strcmp("CPI",optarg)) 
-                {
-                    group = CPI;
-                }
-                else
+                if (!perfmon_setupGroup(optarg)) 
                 {
                     customEvent = (char*) malloc((strlen(optarg)+10)*sizeof(char));
                     strcpy(customEvent,optarg);
@@ -142,6 +103,10 @@ int main (int argc, char** argv)
             case 'v':
                 perfmon_verbose = 1;
                 break;
+            case 'a':
+				perfmon_printAvailableGroups();
+                exit (EXIT_SUCCESS);    
+                break;
             case 'm':
                 optUseMarker = 1;
                 break;
@@ -162,12 +127,20 @@ int main (int argc, char** argv)
                 }
                 return EXIT_FAILURE;
             default:
-                HELP_MSG
+                HELP_MSG;
         }
     }
 
     timer_init();
     cpuid_init();
+	cpuFeatures_init(0);
+
+    if (cpuFeatureFlags.speedstep)
+    {
+        fprintf (stderr, "Speedstep is enabled!\nThis produces inaccurate timing measurements.\n");
+        fprintf (stderr, "For reliable clock measurements disable speedstep.\n");
+    }
+
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
     printf("CPU clock:\t%llu Hz \n", cpuid_info.clock);
@@ -178,7 +151,7 @@ int main (int argc, char** argv)
         printf("CPU stepping:\t%u \n", cpuid_info.stepping);
         printf("CPU features:\t%s \n", cpuid_info.features);
 
-        if( cpuid_info.family == P6_FAMILY) 
+        if( cpuid_info.family == P6_FAMILY && cpuid_info.perf_version) 
         {
             printf(HLINE);
             printf("PERFMON version:\t%u \n",cpuid_info.perf_version);
@@ -207,11 +180,7 @@ int main (int argc, char** argv)
 
     perfmon_init(num_threads, threads);
 
-    if (group != NOGROUP) 
-    {
-        perfmon_setupGroup(group);
-    }
-    else 
+    if (group == NOGROUP) 
     {
         if (optUncoreEvent) 
         {

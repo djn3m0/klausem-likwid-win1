@@ -30,6 +30,9 @@ typedef enum perfmon_group {
     DATA,
     BRANCH,
     CPI,
+    FRONTEND,
+	CLUSTER,
+	CLUSTER_FLOPS,
     TLB} PerfmonGroup;
 
 typedef struct perfmon_event {

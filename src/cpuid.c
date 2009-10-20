@@ -41,34 +41,26 @@ CpuInfo cpuid_info;
 CpuTopology cpuid_topology;
 
 
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
+static int largest_function;
+
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define CPUID(arg)                              \
-    asm volatile ("movl $" #arg ", %%eax\n\t"       \
-        "cpuid\n\t"                             \
-        "movl %%eax, %0\n\t"                    \
-        "movl %%ebx, %1\n\t"                    \
-        "movl %%ecx, %2\n\t"                    \
-        "movl %%edx, %3\n\t"                    \
-        : "=r" (eax), "=r" (ebx), "=r" (ecx), "=r" (edx) \
-        :                                                \
-        : "%eax","%ebx","%ecx","%edx")
-
-#define CPUID_TOPO(argA)                              \
-        asm volatile ("movl $" #argA ", %%eax\n\t"                  \
-            "cpuid\n\t"                             \
-            "movl %%eax, %0\n\t"                   \
-            "movl %%ebx, %1\n\t"                    \
-            "movl %%ecx, %2\n\t"                   \
-            "movl %%edx, %3\n\t"                  \
-            : "=r" (eax), "=r" (ebx), "=c" (ecx), "=r" (edx) \
-            : "c" (level)                                        \
-            : "%eax","%ebx","%edx")
+/* this was taken from the linux kernel */
+#define CPUID                              \
+    asm volatile ("cpuid"                             \
+        : "=a" (eax),     \
+          "=b" (ebx),     \
+          "=c" (ecx),     \
+          "=d" (edx)      \
+        : "0" (eax), "2" (ecx))
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static char* pentium_m_str = "Intel Pentium M processor";
+static char* pentium_m_b_str = "Intel Pentium M Banias processor";
+static char* pentium_m_d_str = "Intel Pentium M Dothan processor";
 static char* core_duo_str = "Intel Core Duo processor";
 static char* core_2a_str = "Intel Core 2 65nm processor";
 static char* core_2b_str = "Intel Core 2 45nm processor";
@@ -201,7 +193,13 @@ cpuid_init (void)
     if (lock) return;
     lock =1;
 
-    CPUID(0x01);
+    eax = 0x00;
+    CPUID;
+
+    printf("Largest supported basic function 0x%X \n",eax);
+
+    eax = 0x01;
+    CPUID;
     cpuid_info.family = ((eax>>8)&0xFU) + ((eax>>20)&0xFFU);
     cpuid_info.model = (((eax>>16)&0xFU)<<4) + ((eax>>4)&0xFU);
     cpuid_info.stepping =  (eax&0xFU);
@@ -216,8 +214,12 @@ cpuid_init (void)
         case P6_FAMILY:
             switch ( cpuid_info.model ) 
             {
-                case PENTIUM_M:
-                    cpuid_info.name = pentium_m_str;
+                case PENTIUM_M_BANIAS:
+                    cpuid_info.name = pentium_m_b_str;
+                    break;
+
+                case PENTIUM_M_DOTHAN:
+                    cpuid_info.name = pentium_m_d_str;
                     break;
 
                 case CORE_DUO:
@@ -241,6 +243,8 @@ cpuid_init (void)
                     break;
 
                 default:
+                    fprintf(stderr, "Processor is not supported\n");
+                    exit(EXIT_FAILURE);
                     break;
             }
             break;
@@ -279,6 +283,8 @@ cpuid_init (void)
                     break;
 
                 default:
+                    fprintf(stderr, "Processor is not supported\n");
+                    exit(EXIT_FAILURE);
                     break;
             }
 
@@ -300,11 +306,15 @@ cpuid_init (void)
                     break;
 
                 default:
+                    fprintf(stderr, "Processor is not supported\n");
+                    exit(EXIT_FAILURE);
                     break;
             }
             break;
 
         default:
+			fprintf(stderr, "Processor is not supported\n");
+			exit(EXIT_FAILURE);
             break;
     }
 
@@ -315,9 +325,11 @@ cpuid_init (void)
     if (ecx & (1<<19)) strcat(cpuid_info.features, "SSE4.1 ");
     if (ecx & (1<<20)) strcat(cpuid_info.features, "SSE4.2 ");
 
-    if( cpuid_info.family == P6_FAMILY) 
+    cpuid_info.perf_version   =  0;
+    if( cpuid_info.family == P6_FAMILY && 0x0A <= largest_function) 
     {
-        CPUID(0x0A);
+        eax = 0x0A;
+        CPUID;
         cpuid_info.perf_version   =  (eax&0xFFU);
         cpuid_info.perf_num_ctr   =   ((eax>>8)&0xFFU);
         cpuid_info.perf_width_ctr =  ((eax>>16)&0xFFU);
@@ -346,21 +358,30 @@ cpuid_initTopology(void)
 
 
     /* First determine the number of cpus accessible */
-    pipe = popen("cat /proc/cpuinfo | grep processor | wc -l", "r");
+    pipe = popen("cat /proc/cpuinfo | grep ^processor | wc -l", "r");
     if (fscanf(pipe, "%d\n", &cpuid_topology.numHWThreads) != 1)
     {
         fprintf(stderr, "Failed to fscanf cpuinfo!\n");
         exit(EXIT_FAILURE);
     }
+
+    if (cpuid_topology.numHWThreads == 1)
+    {
+        fprintf(stderr, "Single Core processor, exiting!\n");
+        exit(EXIT_FAILURE);
+    }
+
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
 
     /* check if 0x0B cpuid leaf is supported */
-    CPUID(0x0);
+    eax = 0x0;
+    CPUID;
 
     if (eax >= 0x0B)
     {
-        level = 0;
-        CPUID_TOPO(0x0B);
+        eax = 0x0B;
+        ecx = 0;
+        CPUID;
 
         if (ebx) 
         {
@@ -395,14 +416,17 @@ cpuid_initTopology(void)
                 }
             }
 
-            level = 0;
-            CPUID_TOPO(0x0B);
+            eax = 0x0B;
+            ecx = 0;
+            CPUID;
             apicId = edx;
             hwThreadPool[i].apicId = apicId;
 
             for (level=0; level < 3; level++)
             {
-                CPUID_TOPO(0x0B);
+                eax = 0x0B;
+                ecx = level;
+                CPUID;
                 currOffset = eax&0xFU;
 
                 switch ( level ) {
@@ -437,13 +461,15 @@ cpuid_initTopology(void)
         switch ( cpuid_info.family ) 
         {
             case P6_FAMILY:
-                CPUID(0x01);
+                eax = 0x01;
+                CPUID;
                 /* Check number of cores per package */
                 maxNumLogicalProcs = extractBitField(ebx,8,16);
 
                 /* Check number of cores per package */
-                level = 0;
-                CPUID_TOPO(0x04);
+                eax = 0x04;
+                ecx = 0;
+                CPUID;
                 maxNumCores = extractBitField(eax,6,26)+1;
 
                 maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
@@ -472,7 +498,8 @@ cpuid_initTopology(void)
                         }
                     }
 
-                    CPUID(0x01);
+                    eax = 0x01;
+                    CPUID;
                     hwThreadPool[i].apicId = extractBitField(ebx,8,24);
 
                     /* ThreadId is extracted from th apicId using the bit width
@@ -499,7 +526,8 @@ cpuid_initTopology(void)
                 break;
 
             case K10_FAMILY:
-                CPUID(0x80000008);
+                eax = 0x80000008;
+                CPUID;
 
                 width =  extractBitField(ecx,4,12);
 
@@ -508,7 +536,8 @@ cpuid_initTopology(void)
                     width =  extractBitField(ecx,8,0)+1;
                 }
 
-                CPUID(0x01);
+                eax = 0x01;
+                CPUID;
                 maxNumLogicalProcs =  extractBitField(ebx,8,16);
                 maxNumCores = extractBitField(ecx,8,0)+1;
 
@@ -537,7 +566,8 @@ cpuid_initTopology(void)
                         }
                     }
 
-                    CPUID(0x01);
+                    eax = 0x01;
+                    CPUID;
                     hwThreadPool[i].apicId = extractBitField(ebx,8,24);
                     /* AMD only knows cores */
                     hwThreadPool[i].threadId = 0;
@@ -606,7 +636,9 @@ cpuid_initCacheTopology()
 
             while (valid)
             {
-                CPUID_TOPO(0x04);
+                eax = 0x04;
+                ecx = level;
+                CPUID;
                 valid = extractBitField(eax,5,0);
                 if (!valid)
                 {
@@ -620,8 +652,9 @@ cpuid_initCacheTopology()
 
             for (i=0; i < maxNumLevels; i++) 
             {
-                level = i;
-                CPUID_TOPO(0x04);
+                eax = 0x04;
+                ecx = i;
+                CPUID;
 
                 cachePool[i].level = extractBitField(eax,3,5);
                 cachePool[i].type = extractBitField(eax,5,0);
@@ -655,7 +688,8 @@ cpuid_initCacheTopology()
             maxNumLevels = 3;
             cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
 
-            CPUID(0x80000005);
+            eax = 0x80000005;
+            CPUID;
             cachePool[0].level = 1;
             cachePool[0].type = DATACACHE;
             cachePool[0].associativity = extractBitField(ecx,8,16);
@@ -669,7 +703,8 @@ cpuid_initCacheTopology()
             cachePool[0].threads = 1;
             cachePool[0].inclusive = 1;
 
-            CPUID(0x80000006);
+            eax = 0x80000006;
+            CPUID;
             cachePool[1].level = 2;
             cachePool[1].type = UNIFIEDCACHE;
             cachePool[1].associativity = 

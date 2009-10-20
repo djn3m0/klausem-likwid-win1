@@ -34,6 +34,8 @@
 #include <cpuFeatures.h>
 
 
+CpuFeatureFlags cpuFeatureFlags;
+
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define MSR_IA32_MISC_ENABLE      0x1A0
@@ -43,8 +45,35 @@
     printf(#string"\n");            \
     color_reset()
 
+#define TEST_FLAG(feature,flag)  \
+    if (flags & (1ULL<<(flag)))   \
+    {                    \
+		cpuFeatureFlags.feature = 1; \
+    }                    \
+    else                \
+    {                \
+		cpuFeatureFlags.feature = 0; \
+    }
+
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+void
+cpuFeatures_init(int cpu)
+{
+    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
+
+	TEST_FLAG(fastStrings,1);
+	TEST_FLAG(thermalControl,3);
+	TEST_FLAG(perfMonitoring,7);
+	TEST_FLAG(hardwarePrefetcher,9);
+	TEST_FLAG(pebs,12);
+	TEST_FLAG(speedstep,16);
+	TEST_FLAG(clPrefetcher,19);
+	TEST_FLAG(dcuPrefetcher,37);
+	TEST_FLAG(dynamicAcceleration,38);
+	TEST_FLAG(ipPrefetcher,39);
+}
 
 void
 cpuFeatures_print(int cpu)

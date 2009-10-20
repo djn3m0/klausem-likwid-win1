@@ -27,6 +27,16 @@
 
 #include <types.h>
 
+extern CpuFeatureFlags cpuFeatureFlags;
+
+/**  Initialize cpuFeatureFlags struct
+ *
+ * Init the cpuFeatureFlags struct
+ * \param[in] cpu  The cpu id in the Os context
+ */
+extern void cpuFeatures_print(int cpu);
+
+
 /**  Prints the feature flags
  *
  * Print feature flags of cpu with id cpu.
