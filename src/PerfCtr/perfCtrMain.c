@@ -18,7 +18,6 @@
  * ===========================================================================
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,14 +48,15 @@ printf("-t\t comma separated core ids to measure\n\n")
 int main (int argc, char** argv)
 { 
     int optInfo = 0;
+    int optPrintGroups = 0;
     int optThreaded = 0;
     int optUncoreEvent = 0;
     int optUseMarker = 0;
     int cpu_id = 0;
     int c;
     char * cmd_str;
-    char * customEvent;
-    PerfmonGroup group= STD;
+    char * eventString = NULL;
+    PerfmonGroup group= FLOPS_DP;
     char *token, *saveptr, *str;
     char *delimiter = ",";
     int num_threads=0;
@@ -72,12 +72,8 @@ int main (int argc, char** argv)
                 HELP_MSG;
                 exit (EXIT_SUCCESS);    
             case 'g':
-                if (!perfmon_setupGroup(optarg)) 
-                {
-                    customEvent = (char*) malloc((strlen(optarg)+10)*sizeof(char));
-                    strcpy(customEvent,optarg);
-                    group = NOGROUP;
-                }
+                eventString = (char*) malloc((strlen(optarg)+10)*sizeof(char));
+                strcpy(eventString,optarg);
                 break;
             case 't':
                 optThreaded = 1;
@@ -96,16 +92,17 @@ int main (int argc, char** argv)
 
                 break;
             case 'u':
+#if 0
                 optUncoreEvent = 1;
                 customEvent = optarg;
                 group = NOGROUP;
+#endif
                 break;
             case 'v':
                 perfmon_verbose = 1;
                 break;
             case 'a':
-				perfmon_printAvailableGroups();
-                exit (EXIT_SUCCESS);    
+                optPrintGroups = 1;
                 break;
             case 'm':
                 optUseMarker = 1;
@@ -144,6 +141,7 @@ int main (int argc, char** argv)
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
     printf("CPU clock:\t%llu Hz \n", cpuid_info.clock);
+
     if (perfmon_verbose) 
     {
         printf("CPU family:\t%u \n",cpuid_info.family);
@@ -164,33 +162,64 @@ int main (int argc, char** argv)
 
     if (optInfo)
     {
-        return EXIT_SUCCESS;
+        exit (EXIT_SUCCESS);
+    }
+
+    perfmon_init(num_threads, threads);
+
+    if (optPrintGroups)
+    {
+        perfmon_printAvailableGroups();
+        exit (EXIT_SUCCESS);    
     }
 
     if (optind == argc) 
     {
-        printf("WARNING: You have to specify a program to measure as argument!\n");
-        return EXIT_SUCCESS;
+        printf("NOTICE: You have to specify a program to measure as argument!\n");
+        exit (EXIT_SUCCESS);
     }
+
+    if (eventString == NULL)
+    {
+        eventString = "FLOPS_DP";
+    }
+
+    if (perfmon_setupGroup(eventString)) 
+    {
+        printf("Measuring Performance group: %s\n", eventString);
+    }
+    else
+    {
+        group = NOGROUP;
+    }
+
 
     cmd_str = (char*) malloc((strlen(argv[optind])+200)*sizeof(char));
     sprintf(cmd_str,"%s",argv[optind]);
 
     if (perfmon_verbose) printf("Executing: %s \n",cmd_str);
 
-    perfmon_init(num_threads, threads);
 
     if (group == NOGROUP) 
     {
         if (optUncoreEvent) 
         {
-            perfmon_setupCounter(PMCU0,customEvent);
+            perfmon_setupCounter(PMCU0,eventString);
         }
         else 
         {
-            perfmon_setupCounter(PMC0,customEvent);
+            if (perfmon_setupCounter(PMC0,eventString))
+            {
+                printf("Measuring Performance event: %s\n", eventString);
+            }
+            else
+            {
+                printf("ERROR: Performance event %s not supported!\n", eventString);
+                exit (EXIT_FAILURE);
+            }
         }
     }
+    printf(HLINE);
 
     if (!optUseMarker)
     {

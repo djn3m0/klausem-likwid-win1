@@ -38,28 +38,31 @@ perfmon_init_core2(PerfmonThread *thread)
 }
 
 void
-perfmon_printGroups_core2 (void)
+perfmon_printGroups_core2(void)
 {
-
-
+    printf("Performance Groups: Core 2\n\n");
+    printf("FLOPS_DP: Double Precision MFlops/s\n");
+    printf("FLOPS_SP: Single Precision MFlops/s\n");
+    printf("L2: L2 cache bandwidth in MBytes/s\n");
+    printf("MEM: Main memory bandwidth in MBytes/s\n");
+    printf("DATA: Load to store ratio\n");
+    printf("BRANCH: Branch prediction miss rate\n");
+    printf("TLB: Translation lookaside buffer miss rate\n");
+    printf("CPI: cycles per instruction\n\n");
 }
 
 PerfmonGroup
-perfmon_getGroupId_core2 (char* groupStr)
+perfmon_getGroupId_core2(char* groupStr)
 {
 	PerfmonGroup group;
 
 	if (!strcmp("FLOPS_DP",groupStr)) 
 	{
-		group = STD;
+		group = FLOPS_DP;
 	}
 	else if (!strcmp("FLOPS_SP",groupStr)) 
 	{
 		group = FLOPS_SP;
-	}
-	else if (!strcmp("L1",groupStr)) 
-	{
-		group = L1;
 	}
 	else if (!strcmp("L2",groupStr)) 
 	{
@@ -93,15 +96,80 @@ perfmon_getGroupId_core2 (char* groupStr)
 	return group;
 }
 
+void
+perfmon_startCountersThread_core2(int thread_id)
+{
+    int i;
+    uint64_t flags, uflags;
+    int cpu_id = threadData[thread_id].cpu_id;
+
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
+
+    /* Enable fixed counters */
+    flags  = 0x300000000ULL;
+
+    for (i=0;i<NUM_PMC;i++) {
+        if (threadData[thread_id].counters[i].init == TRUE) {
+            msr_write(cpu_id, threadData[thread_id].counters[i].counter_reg , 0x0ULL);
+            flags |= (1<<i);  /* enable counter */
+        }
+    }
+
+    if (perfmon_verbose)
+    {
+        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL,flags);
+    }
+
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
+    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000003ULL);
+}
+
+void 
+perfmon_stopCountersThread_core2(int thread_id)
+{
+    uint64_t flags;
+    uint64_t uncore_cycles;
+    int i;
+    int cpu_id = threadData[thread_id].cpu_id;
+
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    if (cpuid_info.model == NEHALEM)
+    {
+        msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
+    }
+
+    for (i=0;i<NUM_PMC;i++) 
+    {
+        if (threadData[thread_id].counters[i].init == TRUE) 
+        {
+            threadData[thread_id].pc[i] = msr_read(cpu_id, threadData[thread_id].counters[i].counter_reg);
+        }
+    }
+
+    threadData[thread_id].cycles = msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+    threadData[thread_id].instructionsRetired = msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
+
+    flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
+    printf ("Status: 0x%llX \n",flags);
+    if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
+    {
+        printf ("Overflow occured \n");
+    }
+
+}
 
 
 
-void perfmon_setup_group_core2(int thread_id, PerfmonGroup group)
+
+void
+perfmon_setupGroupThread_core2(int thread_id, PerfmonGroup group)
 {
 
     switch ( group ) 
     {
-        case STD:
+        case FLOPS_DP:
             setupCounterThread(thread_id, PMC0, "SIMD_COMP_INST_RETIRED_PACKED_DOUBLE");
             setupCounterThread(thread_id, PMC1, "SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE");
             break;
@@ -109,11 +177,6 @@ void perfmon_setup_group_core2(int thread_id, PerfmonGroup group)
         case FLOPS_SP:
             setupCounterThread(thread_id, PMC0, "SIMD_COMP_INST_RETIRED_PACKED_SINGLE");
             setupCounterThread(thread_id, PMC1, "SIMD_COMP_INST_RETIRED_SCALAR_SINGLE");
-            break;
-
-        case L1:
-            setupCounterThread(thread_id, PMC0, "SIMD_COMP_INST_RETIRED_PACKED_SINGLE");
-            setupCounterThread(thread_id, PMC1, "SIMD_INST_RETIRED_PACKED_SINGLE");
             break;
 
         case L2:
@@ -150,29 +213,36 @@ void perfmon_setup_group_core2(int thread_id, PerfmonGroup group)
             break;
 
         default:
+            printf ("WARNING: Unknown Performance group %d \n",group);
             break;
     }
 
 }
 
-void perfmon_print_results_core2(PerfmonThread *thread, PerfmonGroup group_set, float time)
+void
+perfmon_printResults_core2(PerfmonThread *thread, PerfmonGroup group, float time)
 {
     int cpu_id = thread->cpu_id;
 
-    switch ( group_set ) 
+    if (thread->instructionsRetired < 1.0E-06)
     {
-        case STD:
-            printf ("[%d] MFlops/s: %f \n",
+        printf ("[%d] Cycles per uop/s: %f \n",cpu_id,0.0);
+    }
+    else
+    {
+        printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->instructionsRetired);
+    }
+
+    switch ( group ) 
+    {
+        case FLOPS_DP:
+            printf ("[%d] Double Precision MFlops/s: %f \n",
                     cpu_id,1.0E-06*(float)(thread->pc[0]*2+thread->pc[1])/time);
             break;
 
         case FLOPS_SP:
-            printf ("[%d] MFlops/s: %f \n",
+            printf ("[%d] Single Precision MFlops/s: %f \n",
                     cpu_id,1.0E-06*(float)(thread->pc[0]*4+thread->pc[1])/time);
-            break;
-
-        case L1:
-            printf ("[%d] Guess: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]-thread->pc[0])*16)/time);
             break;
 
         case L2:
@@ -202,6 +272,7 @@ void perfmon_print_results_core2(PerfmonThread *thread, PerfmonGroup group_set, 
             break;
 
         default:
+            printf ("WARNING: Unknown Performance group %d \n",group);
             break;
     }
 
