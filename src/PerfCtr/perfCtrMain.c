@@ -6,14 +6,26 @@
  *    Description:  An application to read out performance counter registers
  *                  on Intel Core, Nehalem and AMD K10 processors.
  *
- *        Version:  1.0
+ *        Version:  0.1
  *        Created:  08/13/2009
- *       Revision:  none
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
  *        Project:  HpcUtil
  *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * ===========================================================================
  */
@@ -34,7 +46,7 @@
 #define MAX_NUM_THREADS 100
 
 #define HELP_MSG \
-printf("perfCtr --  Version 0.4\n"); \
+printf("perfCtr --  Version 0.1\n"); \
 printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
@@ -45,6 +57,8 @@ printf("-g\t performance group  or event tag\n"); \
 printf("-a\t list available performance groups\n"); \
 printf("-t\t comma separated core ids to measure\n\n")
 
+/* the next two functions were copied and adopted from 
+ * the taskset application in linux-util package */
 static const char *nexttoken(const char *str,  int sep)
 {
 	if (str)
