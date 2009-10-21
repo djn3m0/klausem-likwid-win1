@@ -45,11 +45,76 @@ printf("-g\t performance group  or event tag\n"); \
 printf("-a\t list available performance groups\n"); \
 printf("-t\t comma separated core ids to measure\n\n")
 
+static const char *nexttoken(const char *str,  int sep)
+{
+	if (str)
+    {
+		str = strchr(str, sep);
+    }
+
+	if (str)
+    {
+		str++;
+    }
+
+	return str;
+}
+
+static int cstr_to_cpuset(int* threads,  const char* str)
+{
+    int numThreads=0;
+	const char *p, *q;
+	q = str;
+
+	while (p = q, q = nexttoken(q, ','), p) 
+    {
+		unsigned int rangeBegin;
+		unsigned int rangeEnd;
+		const char *c1, *c2;
+
+		if (sscanf(p, "%u", &rangeBegin) < 1)
+        {
+			return 0;
+        }
+
+		rangeEnd = rangeBegin;
+
+		c1 = nexttoken(p, '-');
+		c2 = nexttoken(p, ',');
+
+		if (c1 != NULL && (c2 == NULL || c1 < c2)) 
+        {
+			if (sscanf(c1, "%u", &rangeEnd) < 1)
+            {
+				return 0;
+            }
+            else if(rangeEnd > 1000)
+            {
+                return 0;
+            }
+
+		}
+
+		if (!(rangeBegin <= rangeEnd))
+        {
+			return 0;
+        }
+
+		while (rangeBegin <= rangeEnd) {
+            numThreads++;
+            threads[numThreads-1] = rangeBegin;
+            rangeBegin++;
+		}
+	}
+
+    return numThreads;
+
+}
+
 int main (int argc, char** argv)
 { 
     int optInfo = 0;
     int optPrintGroups = 0;
-    int optThreaded = 0;
     int optUncoreEvent = 0;
     int optUseMarker = 0;
     int cpu_id = 0;
@@ -57,10 +122,10 @@ int main (int argc, char** argv)
     char * cmd_str;
     char * eventString = NULL;
     PerfmonGroup group= FLOPS_DP;
-    char *token, *saveptr, *str;
-    char *delimiter = ",";
     int num_threads=0;
+    /* It should be checked for size to prevent buffer overflow on threads */
     int threads[MAX_NUM_THREADS];
+    int i,j;
 
     if (argc ==  1) { HELP_MSG; }
 
@@ -76,18 +141,12 @@ int main (int argc, char** argv)
                 strcpy(eventString,optarg);
                 break;
             case 't':
-                optThreaded = 1;
-                str = optarg;
-                token = str;
-                while (token)
+                num_threads = cstr_to_cpuset(threads, optarg);
+
+                if(!num_threads)
                 {
-                    token = strtok_r(str,delimiter,&saveptr);
-                    str = NULL;
-                    if (token) 
-                    {
-                        num_threads++;
-                        threads[num_threads-1] = atoi(token);
-                    }
+                    fprintf (stderr, "ERROR: Failed to parse cpu list.\n");
+                    exit(EXIT_FAILURE);
                 }
 
                 break;
@@ -125,6 +184,18 @@ int main (int argc, char** argv)
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
+        }
+    }
+
+    for (i = 0; i< num_threads;i++)
+    {
+        for (j = 0; j< num_threads;j++)
+        {
+            if(i != j && threads[i] == threads[j])
+            {
+                fprintf (stderr, "ERROR: Cpu list is not unique.\n");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 

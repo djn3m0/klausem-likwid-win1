@@ -103,8 +103,17 @@ void perfmon_init_nehalem(PerfmonThread *thread)
 void
 perfmon_printGroups_nehalem (void)
 {
-
-
+    printf("Performance Groups: Nehalem\n\n");
+    printf("FLOPS_DP: Double Precision MFlops/s\n");
+    printf("FLOPS_SP: Single Precision MFlops/s\n");
+    printf("L2: L2 cache bandwidth in MBytes/s\n");
+    printf("MEM: Main memory bandwidth in MBytes/s\n");
+    printf("DATA: Load to store ratio\n");
+    printf("BRANCH: Branch prediction miss rate\n");
+    printf("TLB: Translation lookaside buffer miss rate\n");
+    printf("CPI: cycles per instruction\n");
+    printf("CLUSTER: Cluster monitoring \n");
+    printf("CLUSTER_FLOPS: Cluster monitoring flops \n\n");
 }
 
 void
@@ -158,10 +167,6 @@ perfmon_getGroupId_nehalem (char* groupStr)
 	else if (!strcmp("FLOPS_SP",groupStr)) 
 	{
 		group = FLOPS_SP;
-	}
-	else if (!strcmp("L1",groupStr)) 
-	{
-		group = L1;
 	}
 	else if (!strcmp("L2",groupStr)) 
 	{
@@ -224,9 +229,6 @@ void perfmon_setupGroupThread_nehalem(int thread_id,PerfmonGroup group)
             setupCounterThread(thread_id, PMC3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
             break;
 
-        case L1:
-            break;
-
         case L2:
             setupCounterThread(thread_id, PMC0, "L1D_REPL");
             setupCounterThread(thread_id, PMC1, "L1D_M_EVICT");
@@ -284,7 +286,7 @@ void perfmon_setupGroupThread_nehalem(int thread_id,PerfmonGroup group)
 }
 
 
-void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group_set, float time)
+void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, float time)
 {
     int cpu_id = thread->cpu_id;
 
@@ -297,40 +299,84 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group_set,
         printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->instructionsRetired);
     }
 
-    switch ( group_set ) {
+    switch ( group) {
         case FLOPS_DP:
-            printf ("[%d] Double Precision MFlops/s (DP assumed): %f \n",
-                    cpu_id,1.0E-06*(float)((thread->pc[0]*2)+thread->pc[1])/time);
-            printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
-            printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]))/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] Double Precision MFlops/s (DP assumed): %f \n",
+                        cpu_id,0.0);
+                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0);
+                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] Double Precision MFlops/s (DP assumed): %f \n",
+                        cpu_id,1.0E-06*(float)((thread->pc[0]*2)+thread->pc[1])/time);
+                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
+                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]))/time);
+            }
             break;
 
         case FLOPS_SP:
-            printf ("[%d] Single Precision MFlops/s (SP assumed): %f \n",
-                    cpu_id,1.0E-06*(float)((thread->pc[0]*4)+thread->pc[1])/time);
-            printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
-            printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]))/time);
-            break;
-
-        case L1:
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] Single Precision MFlops/s (SP assumed): %f \n",
+                        cpu_id,0.0);
+                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0);
+                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] Single Precision MFlops/s (SP assumed): %f \n",
+                        cpu_id,1.0E-06*(float)((thread->pc[0]*4)+thread->pc[1])/time);
+                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
+                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]))/time);
+            }
             break;
 
         case L2:
-            printf ("[%d] L2 Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
-            printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0])*64)/time);
-            printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1])*64)/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] L2 Bandwidth MBytes/s: %f \n",cpu_id,0.0);
+                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",0.0);
+                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",0.0);
+            }
+            else
+            {
+                printf ("[%d] L2 Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
+                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0])*64)/time);
+                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1])*64)/time);
+            }
             break;
 
         case L3:
-            printf ("[%d] L3 Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
-            printf ("[%d] L3 Load Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0])*64)/time);
-            printf ("[%d] L3 Evict Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1])*64)/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] L3 Bandwidth MBytes/s: %f \n",cpu_id,0.0);
+                printf ("[%d] L3 Load Bandwidth MBytes/s: %f \n",0.0);
+                printf ("[%d] L3 Evict Bandwidth MBytes/s: %f \n",0.0);
+            }
+            else
+            {
+                printf ("[%d] L3 Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
+                printf ("[%d] L3 Load Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0])*64)/time);
+                printf ("[%d] L3 Evict Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1])*64)/time);
+            }
             break;
 
         case MEM:
-            printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
-            printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0])*64)/time);
-            printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1])*64)/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,0.0);
+                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,0.0);
+                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
+                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0])*64)/time);
+                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1])*64)/time);
+            }
             break;
 
         case DATA:
@@ -377,6 +423,7 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group_set,
             break;
 
         default:
+            printf ("WARNING: Unknown Performance group %d \n",group);
             break;
     }
 

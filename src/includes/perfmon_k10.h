@@ -54,10 +54,6 @@ perfmon_getGroupId_k10 (char* groupStr)
 	{
 		group = FLOPS_SP;
 	}
-	else if (!strcmp("L1",groupStr)) 
-	{
-		group = L1;
-	}
 	else if (!strcmp("L2",groupStr)) 
 	{
 		group = L2;

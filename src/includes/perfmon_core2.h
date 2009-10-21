@@ -236,23 +236,55 @@ perfmon_printResults_core2(PerfmonThread *thread, PerfmonGroup group, float time
     switch ( group ) 
     {
         case FLOPS_DP:
-            printf ("[%d] Double Precision MFlops/s: %f \n",
-                    cpu_id,1.0E-06*(float)(thread->pc[0]*2+thread->pc[1])/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] Double Precision MFlops/s: %f \n",
+                        cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] Double Precision MFlops/s: %f \n",
+                        cpu_id,1.0E-06*(float)(thread->pc[0]*2+thread->pc[1])/time);
+            }
             break;
 
         case FLOPS_SP:
-            printf ("[%d] Single Precision MFlops/s: %f \n",
-                    cpu_id,1.0E-06*(float)(thread->pc[0]*4+thread->pc[1])/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] Single Precision MFlops/s: %f \n",
+                        cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] Single Precision MFlops/s: %f \n",
+                        cpu_id,1.0E-06*(float)(thread->pc[0]*4+thread->pc[1])/time);
+            }
             break;
 
         case L2:
-            printf ("[%d] L2 Load MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*64)/time);
-            printf ("[%d] L2 Evict MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1]*64)/time);
-            printf ("[%d] L2 bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] L2 Load MBytes/s: %f \n",cpu_id,0.0);
+                printf ("[%d] L2 Evict MBytes/s: %f \n",cpu_id,0.0);
+                printf ("[%d] L2 bandwidth MBytes/s: %f \n",cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] L2 Load MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*64)/time);
+                printf ("[%d] L2 Evict MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1]*64)/time);
+                printf ("[%d] L2 bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
+            }
             break;
 
         case MEM:
-            printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*64)/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*64)/time);
+            }
             break;
 
         case DATA:
