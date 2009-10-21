@@ -107,6 +107,45 @@ perfmon_printGroups_nehalem (void)
 
 }
 
+void
+perfmon_startCountersThread_nehalem(int thread_id)
+{
+    int i;
+    uint64_t flags, uflags;
+    int cpu_id = threadData[thread_id].cpu_id;
+
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
+
+    /* Enable fixed counters */
+    flags  = 0x300000000ULL;
+    uflags = 0x1000000FFULL;
+
+    for (i=0;i<NUM_PMC;i++) {
+        if (threadData[thread_id].counters[i].init == TRUE) {
+            msr_write(cpu_id, threadData[thread_id].counters[i].counter_reg , 0x0ULL);
+            if (i < PMCU0) {
+                flags |= (1<<i);  /* enable counter */
+            } else {
+                uflags |= (1<<(i-PMCU0));  /* enable uncore counter */
+            }
+        }
+    }
+
+    if (perfmon_verbose)
+    {
+        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL,flags);
+        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_UNCORE_PERF_GLOBAL_CTRL,uflags);
+    }
+
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
+    msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, uflags);
+    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
+
+}
+
+
 PerfmonGroup
 perfmon_getGroupId_nehalem (char* groupStr)
 {
@@ -114,7 +153,7 @@ perfmon_getGroupId_nehalem (char* groupStr)
 
 	if (!strcmp("FLOPS_DP",groupStr)) 
 	{
-		group = STD;
+		group = FLOPS_DP;
 	}
 	else if (!strcmp("FLOPS_SP",groupStr)) 
 	{
@@ -167,11 +206,11 @@ perfmon_getGroupId_nehalem (char* groupStr)
 
 
 
-void perfmon_setup_group_nehalem(int thread_id,PerfmonGroup group)
+void perfmon_setupGroupThread_nehalem(int thread_id,PerfmonGroup group)
 {
 
     switch ( group ) {
-        case STD:
+        case FLOPS_DP:
             setupCounterThread(thread_id, PMC0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
             setupCounterThread(thread_id, PMC1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
             setupCounterThread(thread_id, PMC2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
@@ -245,12 +284,21 @@ void perfmon_setup_group_nehalem(int thread_id,PerfmonGroup group)
 }
 
 
-void perfmon_print_results_nehalem(PerfmonThread *thread, PerfmonGroup group_set, float time)
+void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group_set, float time)
 {
     int cpu_id = thread->cpu_id;
 
+    if (thread->instructionsRetired < 1.0E-06)
+    {
+        printf ("[%d] Cycles per uop/s: %f \n",cpu_id,0.0);
+    }
+    else
+    {
+        printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->instructionsRetired);
+    }
+
     switch ( group_set ) {
-        case STD:
+        case FLOPS_DP:
             printf ("[%d] Double Precision MFlops/s (DP assumed): %f \n",
                     cpu_id,1.0E-06*(float)((thread->pc[0]*2)+thread->pc[1])/time);
             printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
@@ -298,17 +346,34 @@ void perfmon_print_results_nehalem(PerfmonThread *thread, PerfmonGroup group_set
             break;
 
         case CLUSTER:
-            printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->instructionsRetired);
-            printf ("[%d] X87 Mops/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
-            printf ("[%d] SSE Mops/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]))/time);
-            printf ("[%d] L2 MMiss/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[2]))/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] X87 Mops/s: %f \n",cpu_id,0.0);
+                printf ("[%d] SSE Mops/s: %f \n",cpu_id,0.0);
+                printf ("[%d] L2 MMiss/s: %f \n",cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] X87 Mops/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
+                printf ("[%d] SSE Mops/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]))/time);
+                printf ("[%d] L2 MMiss/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[2]))/time);
+            }
             break;
 
         case CLUSTER_FLOPS:
-            printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
-            printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]))/time);
-            printf ("[%d] SP MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[2]))/time);
-            printf ("[%d] DP MUOPS/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[3]))/time);
+            if (time < 1.0E-12)
+            {
+                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0);
+                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0);
+                printf ("[%d] SP MUOPS/s: %f \n",cpu_id,0.0);
+                printf ("[%d] DP MUOPS/s: %f \n",cpu_id,0.0);
+            }
+            else
+            {
+                printf ("[%d] X87 Mops/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]))/time);
+                printf ("[%d] SSE Mops/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1]))/time);
+                printf ("[%d] L2 MMiss/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[2]))/time);
+            }
             break;
 
         default:

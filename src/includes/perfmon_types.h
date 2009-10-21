@@ -21,7 +21,7 @@ typedef enum perfmon_index {
 
 typedef enum perfmon_group {
     NOGROUP = 0,
-    STD,
+    FLOPS_DP,
     FLOPS_SP,
     L1,
     L2,

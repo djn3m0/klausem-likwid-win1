@@ -44,6 +44,30 @@ perfmon_printGroups_pm (void)
 
 }
 
+
+void
+perfmon_startCountersThread_pm(int thread_id)
+{
+    int i;
+    uint64_t flags, uflags;
+    int cpu_id = threadData[thread_id].cpu_id;
+
+}
+
+void 
+perfmon_stopCountersThread_pm(int thread_id)
+{
+    uint64_t flags;
+    uint64_t uncore_cycles;
+    int i;
+    int cpu_id = threadData[thread_id].cpu_id;
+
+
+}
+
+
+
+
 PerfmonGroup
 perfmon_getGroupId_pm (char* groupStr)
 {
@@ -51,7 +75,7 @@ perfmon_getGroupId_pm (char* groupStr)
 
 	if (!strcmp("FLOPS_DP",groupStr)) 
 	{
-		group = STD;
+		group = FLOPS_DP;
 	}
 	else if (!strcmp("FLOPS_SP",groupStr)) 
 	{
@@ -96,12 +120,12 @@ perfmon_getGroupId_pm (char* groupStr)
 
 
 
-void perfmon_setup_group_pm(int thread_id, PerfmonGroup group)
+void perfmon_setupGroupThread_pm(int thread_id, PerfmonGroup group)
 {
 
     switch ( group ) 
     {
-        case STD:
+        case FLOPS_DP:
             setupCounterThread(thread_id, PMC0, "SIMD_COMP_INST_RETIRED_PACKED_DOUBLE");
             setupCounterThread(thread_id, PMC1, "SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE");
             break;
@@ -161,7 +185,7 @@ void perfmon_print_results_pm(PerfmonThread *thread, PerfmonGroup group_set, flo
 
     switch ( group_set ) 
     {
-        case STD:
+        case FLOPS_DP:
             printf ("[%d] MFlops/s: %f \n",
                     cpu_id,1.0E-06*(float)(thread->pc[0]*2+thread->pc[1])/time);
             break;

@@ -48,7 +48,7 @@ perfmon_getGroupId_k10 (char* groupStr)
 
 	if (!strcmp("FLOPS_DP",groupStr)) 
 	{
-		group = STD;
+		group = FLOPS_DP;
 	}
 	else if (!strcmp("FLOPS_SP",groupStr)) 
 	{
@@ -90,14 +90,62 @@ perfmon_getGroupId_k10 (char* groupStr)
 	return group;
 }
 
+void
+perfmon_startCountersThread_k10(int thread_id)
+{
+    int i;
+    uint64_t flags, uflags;
+    int cpu_id = threadData[thread_id].cpu_id;
+
+    for (i=0;i<NUM_PMC;i++) 
+    {
+        if (threadData[thread_id].counters[i].init == TRUE) 
+        {
+            msr_write(cpu_id, threadData[thread_id].counters[i].counter_reg , 0x0ULL);
+            flags = msr_read(cpu_id,threadData[thread_id].counters[i].config_reg);
+            flags |= (1<<22);  /* enable flag */
+            if (perfmon_verbose) 
+            {
+                printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",threadData[thread_id].counters[i].config_reg,flags);
+            }
+
+            msr_write(cpu_id, threadData[thread_id].counters[i].config_reg , flags);
+        }
+    }
+}
+
+void 
+perfmon_stopCountersThread_k10(int thread_id)
+{
+    uint64_t flags;
+    uint64_t uncore_cycles;
+    int i;
+    int cpu_id = threadData[thread_id].cpu_id;
+
+    for (i=0;i<NUM_PMC;i++) 
+    {
+        if (threadData[thread_id].counters[i].init == TRUE) 
+        {
+            flags = msr_read(cpu_id,threadData[thread_id].counters[i].config_reg);
+            flags &= ~(1<<22);  /* clear enable flag */
+            msr_write(cpu_id, threadData[thread_id].counters[i].config_reg , flags);
+            if (perfmon_verbose)
+            {
+                printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",threadData[thread_id].counters[i].config_reg,flags);
+            }
+            threadData[thread_id].pc[i] = msr_read(cpu_id, threadData[thread_id].counters[i].counter_reg);
+        }
+    }
+    threadData[thread_id].cycles = threadData[thread_id].pc[2];
+}
 
 
-
-void perfmon_setup_group_k10(int thread_id,PerfmonGroup group)
+void
+perfmon_setupGroupThread_k10(int thread_id,PerfmonGroup group)
 {
 
     switch ( group ) {
-        case STD:
+        case FLOPS_DP:
             setupCounterThread(thread_id, PMC0, "SSE_RETIRED_ADD_DOUBLE_FLOPS");
             setupCounterThread(thread_id, PMC1, "SSE_RETIRED_MULT_DOUBLE_FLOPS");
             setupCounterThread(thread_id, PMC2, "CPU_CLOCKS_UNHALTED");
@@ -160,12 +208,12 @@ void perfmon_setup_group_k10(int thread_id,PerfmonGroup group)
 }
 
 
-void perfmon_print_results_k10(PerfmonThread *thread, PerfmonGroup group_set, float time)
+void perfmon_printResults_k10(PerfmonThread *thread, PerfmonGroup group_set, float time)
 {
     int cpu_id = thread->cpu_id;
 
     switch ( group_set ) {
-        case STD:
+        case FLOPS_DP:
             printf ("[%d] Double MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]+thread->pc[1])/time);
             printf ("[%d] Double Add MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0])/time);
             printf ("[%d] Double Mult MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1])/time);

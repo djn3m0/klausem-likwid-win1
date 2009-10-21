@@ -196,7 +196,8 @@ cpuid_init (void)
     eax = 0x00;
     CPUID;
 
-    printf("Largest supported basic function 0x%X \n",eax);
+    printf("CPUID Largest supported basic function 0x%X \n",eax);
+    largest_function = eax;
 
     eax = 0x01;
     CPUID;
