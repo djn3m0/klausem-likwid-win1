@@ -61,65 +61,64 @@ printf("-t\t comma separated core ids to measure\n\n")
  * the taskset application in linux-util package */
 static const char *nexttoken(const char *str,  int sep)
 {
-	if (str)
+    if (str)
     {
-		str = strchr(str, sep);
+        str = strchr(str, sep);
     }
 
-	if (str)
+    if (str)
     {
-		str++;
+        str++;
     }
 
-	return str;
+    return str;
 }
 
 static int cstr_to_cpuset(int* threads,  const char* str)
 {
     int numThreads=0;
-	const char *p, *q;
-	q = str;
+    const char *p, *q;
+    q = str;
 
-	while (p = q, q = nexttoken(q, ','), p) 
+    while (p = q, q = nexttoken(q, ','), p) 
     {
-		unsigned int rangeBegin;
-		unsigned int rangeEnd;
-		const char *c1, *c2;
+        unsigned int rangeBegin;
+        unsigned int rangeEnd;
+        const char *c1, *c2;
 
-		if (sscanf(p, "%u", &rangeBegin) < 1)
+        if (sscanf(p, "%u", &rangeBegin) < 1)
         {
-			return 0;
+            return 0;
         }
 
-		rangeEnd = rangeBegin;
+        rangeEnd = rangeBegin;
 
-		c1 = nexttoken(p, '-');
-		c2 = nexttoken(p, ',');
+        c1 = nexttoken(p, '-');
+        c2 = nexttoken(p, ',');
 
-		if (c1 != NULL && (c2 == NULL || c1 < c2)) 
+        if (c1 != NULL && (c2 == NULL || c1 < c2)) 
         {
-			if (sscanf(c1, "%u", &rangeEnd) < 1)
+            if (sscanf(c1, "%u", &rangeEnd) < 1)
             {
-				return 0;
+                return 0;
             }
             else if(rangeEnd > 1000)
             {
                 return 0;
             }
-
-		}
-
-		if (!(rangeBegin <= rangeEnd))
-        {
-			return 0;
         }
 
-		while (rangeBegin <= rangeEnd) {
+        if (!(rangeBegin <= rangeEnd))
+        {
+            return 0;
+        }
+
+        while (rangeBegin <= rangeEnd) {
             numThreads++;
             threads[numThreads-1] = rangeBegin;
             rangeBegin++;
-		}
-	}
+        }
+    }
 
     return numThreads;
 
@@ -215,7 +214,7 @@ int main (int argc, char** argv)
 
     timer_init();
     cpuid_init();
-	cpuFeatures_init(0);
+    cpuFeatures_init(0);
 
     if (cpuFeatureFlags.speedstep)
     {
@@ -315,7 +314,7 @@ int main (int argc, char** argv)
         fprintf(stderr, "Failed to execute %s!\n", cmd_str);
         exit(EXIT_FAILURE);
     }
-    
+
     perfmon_stopAllCounters();
     if (optUseMarker)
     {
