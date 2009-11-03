@@ -17,27 +17,27 @@ OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
-all: perfCtr cpuFeatures cpuTopology pinApplication  $(TARGET_LIB)  $(PINLIB) 
+all: likwid-perfCtr likwid-features likwid-topology likwid-pin  $(TARGET_LIB)  $(PINLIB) 
 
 tags:
 	@echo "===>  GENERATE  TAGS"
 	$(Q)ctags -R
 
-perfCtr: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/PerfCtr/perfCtrMain.c
+likwid-perfCtr: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/perfCtr/perfCtrMain.c
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/PerfCtr/perfCtrMain.c $(OBJ) $(LIBS)
+	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/perfCtr/perfCtrMain.c $(OBJ) $(LIBS)
 
-cpuFeatures: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/CpuFeatures/cpuFeaturesMain.c
+likwid-features: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/features/cpuFeaturesMain.c
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/CpuFeatures/cpuFeaturesMain.c $(OBJ) $(LIBS)
+	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/features/cpuFeaturesMain.c $(OBJ) $(LIBS)
 
-cpuTopology: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/CpuTopology/cpuTopologyMain.c
+likwid-topology: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/topology/cpuTopologyMain.c
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(CFLAGS) -std=c99 $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/CpuTopology/cpuTopologyMain.c $(OBJ) $(LIBS)
+	$(Q)${CC} $(CFLAGS) -std=c99 $(CPPFLAGS) ${LFLAGS} -o $@ $(SRC_DIR)/topology/cpuTopologyMain.c $(OBJ) $(LIBS)
 
-pinApplication: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/ApplicationPin/applicationPinMain.c
+likwid-pin: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/pin/applicationPinMain.c
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(CFLAGS) -std=c99 $(CPPFLAGS) -DCOLOR ${LFLAGS} -o $@ $(SRC_DIR)/ApplicationPin/applicationPinMain.c $(OBJ) $(LIBS)
+	$(Q)${CC} $(CFLAGS) -std=c99 $(CPPFLAGS) -DCOLOR ${LFLAGS} -o $@ $(SRC_DIR)/pin/applicationPinMain.c $(OBJ) $(LIBS)
 
 $(TARGET_LIB): $(BUILD_DIR) $(OBJ)
 	@echo "===>  CREATE LIB  $(TARGET_LIB)"
@@ -48,7 +48,7 @@ $(BUILD_DIR):
 
 $(PINLIB): 
 	@echo "===>  BUILD    $(PINLIB)"
-	$(Q)$(MAKE) -s -C src/PinLib/ $(PINLIB) 
+	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB) 
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
@@ -69,9 +69,7 @@ clean:
 
 distclean: clean
 	@echo "===>  DIST CLEAN"
-	@rm -f perfCtr
-	@rm -f cpuFeatures
-	@rm -f cpuTopology
+	@rm -f likwid-*
 	@rm -f $(TARGET_LIB)
 	@rm -f $(PINLIB)
 
