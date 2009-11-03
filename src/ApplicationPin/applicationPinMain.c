@@ -33,10 +33,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <sched.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <types.h>
+
+#ifdef COLOR
+#include <textcolor.h>
+#endif
 
 #define MAX_NUM_THREADS 100
 
@@ -46,7 +52,8 @@ printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t verbose output\n"); \
-printf("-c\t comma separated core ids to measure\n\n")
+printf("-c\t comma separated core ids to measure\n\n"); \
+printf("-s\t bitmask with threads to skip\n\n")
 
 /* the next two functions were inspired and adopted from 
  * the taskset application in linux-util package */
@@ -120,9 +127,12 @@ pinPid(int cpuid)
 {
 	cpu_set_t cpuset;
 
+#ifdef COLOR
+    color_on(BRIGHT, CYAN);
+#endif
 	CPU_ZERO(&cpuset);
 	CPU_SET(cpuid, &cpuset);
-	printf("[likwid-pin  0] Main PID -> core %d - ",  cpuid);
+	printf("[likwid-pin] Main PID -> core %d - ",  cpuid);
 	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpuset) == -1) 
 	{
 		printf("sched_setaffinity failed : %s \n",strerror(errno));
@@ -131,6 +141,9 @@ pinPid(int cpuid)
 	{
 		printf("OK\n");
 	}
+#ifdef COLOR
+    color_reset();
+#endif
 }
 
 int main (int argc, char** argv)
@@ -140,6 +153,8 @@ int main (int argc, char** argv)
 	int skipMask = 0;
     char * typeString = NULL;
     char * pinString = NULL;
+    char * skipString = NULL;
+    int verbose = 0;
     int numThreads=0;
     /* It should be checked for size to prevent buffer overflow on threads */
     int threads[MAX_NUM_THREADS];
@@ -147,7 +162,10 @@ int main (int argc, char** argv)
 
     if (argc ==  1) { HELP_MSG; }
 
-    while ((c = getopt (argc, argv, "c:t:hv")) != -1)
+    skipString = (char*) malloc(10*sizeof(char));
+    pinString = (char*) malloc(100*sizeof(char));
+
+    while ((c = getopt (argc, argv, "+c:s:t:hv")) != -1)
     {
         switch (c)
         {
@@ -167,58 +185,37 @@ int main (int argc, char** argv)
                 typeString = (char*) malloc((strlen(optarg)+10)*sizeof(char));
                 strcpy(typeString,optarg);
                 break;
-            case 'v':
-                perfmon_verbose = 1;
+            case 's':
+                skipMask = strtoul(optarg,NULL,16);
                 break;
-            case '?':
-                if (isprint (optopt))
-                {
-                    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-                }
-                else
-                {
-                    fprintf (stderr,
-                            "Unknown option character `\\x%x'.\n",
-                            optopt);
-                }
-                return EXIT_FAILURE;
+            case 'v':
+                verbose = 1;
+                break;
             default:
                 HELP_MSG;
         }
     }
 
-    for (i = 0; i< numThreads;i++)
+    if (typeString == NULL)
     {
-        for (j = 0; j< numThreads;j++)
-        {
-            if(i != j && threads[i] == threads[j])
-            {
-                fprintf (stderr, "ERROR: Cpu list is not unique.\n");
-                exit(EXIT_FAILURE);
-            }
-        }
+        typeString = (char*) malloc(30*sizeof(char));
+        strcpy(typeString,"NoType");
     }
 
+
+
+
 	/* CPU List:
-	 * pthread 0: pin main pid + all thread tids
-	 * pthread 1: pin only all thread tids
+	 * pthread (default): pin main pid + all thread tids
 	 *
 	 * OpenMP: Pin OMP_NUM_THREADS
 	 * intel openmp: pin main pid + all thread tids (skip thread 1)
 	 * gcc openmp: pin main pid + all thread tids (one less)
 	 */
 
-    if (!strcmp("pthread",typeString)) 
-    {
-		skipMask = 0x0;
-    }
-    else if (!strcmp("omp_intel",typeString)) 
+    if (!strcmp("omp_intel",typeString)) 
     {
 		skipMask = 0x2;
-    }
-    else if (!strcmp("omp_gcc",typeString)) 
-    {
-		skipMask = 0x0;
     }
 
 	if (numThreads > 1)
@@ -229,14 +226,24 @@ int main (int argc, char** argv)
 		{
 			sprintf(pinString,"%s,%d",pinString,threads[i]);
 		}
+
+        sprintf(skipString,"%d",skipMask);
+        setenv("LIKWID_PIN",pinString , 1);
+        setenv("LIKWID_SKIP",skipString , 1);
+        setenv("LD_PRELOAD","./libptoverride.so", 1);
+
+        if (verbose)
+        {
+            printf("Threads: %d \n",numThreads);
+            printf("Pin list: %s\n",pinString);
+            printf("Skip mask: %s\n",skipString);
+        }
 	}
 
-	sprintf(skipString,"%d",skipMask);
 	pinPid(threads[0]);
-	setenv("PIN_CPUS",pinString , 1);
-	setenv("SKIP_MASK",skipString , 1);
+    fflush(stdout);
 
-	argv += optind + 1;
+	argv +=  optind;
 	execvp(argv[0], argv);
 	perror("execvp");
 	fprintf(stderr,"failed to execute %s\n", argv[0]);

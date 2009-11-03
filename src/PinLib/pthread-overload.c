@@ -39,16 +39,18 @@ pthread_create(pthread_t* thread,
     int ret;
     static int reallpthrindex = 0;
     static int npinned = 0;
+    static int ncalled = 0;
     static int pin_ids[MAX_CORES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    static int skipMask = 0;
 
 
 #ifdef COLOR
     color_on(BRIGHT, COLOR);
 #endif
     /* On first entry: Get Evironment Variable and initialize pin_ids */
-    if (npinned == 0) 
+    if (ncalled == 0) 
     {
-        char *str = getenv("PINOMP_CPUS");
+        char *str = getenv("LIKWID_PIN");
         char *token, *saveptr;
         char *delimiter = ",";
         int i = 0;
@@ -71,34 +73,27 @@ pthread_create(pthread_t* thread,
         }
         else 
         {
-            printf("[pthread wrapper 0] ERROR: Environment Variabel PINOMP_CPUS not set!\n");
+            printf("[pthread wrapper] ERROR: Environment Variabel LIKWID_PIN not set!\n");
         }
 
-        printf("[pthread wrapper 0] PIN_MASK: ");
+        printf("[pthread wrapper] PIN_MASK: ");
         for (int i=0;i<ncpus;i++) 
         {
             printf("%d->%d  ",i,pin_ids[i]); 
         }
         printf("\n");
 
-#ifdef INTEL_OMP
-        /* Intel OpenMP uses the main thread as working thread */
-        cpu_set_t cpuset;
-        pid_t mainpid;
-        mainpid = getpid();
-        CPU_ZERO(&cpuset);
-        CPU_SET(pin_ids[0], &cpuset);
-        printf("[pthread wrapper 0] Main PID: %d -> core %d - ", mainpid, pin_ids[0]);
-        if (sched_setaffinity(mainpid, sizeof(cpu_set_t), &cpuset) == -1) 
+        str = getenv("LIKWID_SKIP");
+        if (str != NULL) 
         {
-            printf("sched_setaffinity failed : %s \n",strerror(errno));
+            skipMask = strtoul(str, &str, 10);
         }
         else 
         {
-            printf("OK\n");
+            printf("[pthread wrapper] ERROR: Environment Variabel LIKWID_SKIP not set!\n");
         }
-#endif /* INTEL_OMP */
-    }
+        printf("[pthread wrapper] SKIP MASK: 0x%X\n",skipMask);
+    } 
 
     /* Handle dll related stuff */
     do 
@@ -107,7 +102,7 @@ pthread_create(pthread_t* thread,
         if (handle) 
         {
             printf("[pthread wrapper %d] Notice: Using %s \n ",
-                    npinned, sosearchpaths[reallpthrindex]);
+                    ncalled, sosearchpaths[reallpthrindex]);
             break;
         }
         if (sosearchpaths[reallpthrindex] != NULL) 
@@ -115,6 +110,7 @@ pthread_create(pthread_t* thread,
             reallpthrindex++;
         }
     }
+
     while (sosearchpaths[reallpthrindex] != NULL);
 
     if (!handle) 
@@ -131,43 +127,41 @@ pthread_create(pthread_t* thread,
         printf("%s\n", error);
         return -2;
     }
+
     ret = (*rptc)(thread, attr, start_routine, arg);
 
     /* After thread creation pin the thread */
     if (ret == 0) 
     {
         cpu_set_t cpuset;
-#ifdef INTEL_OMP
-        if (npinned == 1) 
+
+        if (skipMask&(1<<(ncalled))) 
         {
-            printf("\tthreadid %lu -> SKIP ", *thread);
+            printf("\tthreadid %lu -> SKIP \n", *thread);
         }
         else 
         {
             CPU_ZERO(&cpuset);
-            CPU_SET(pin_ids[npinned-1], &cpuset);
-            printf("\tthreadid %lu -> core %d - ", *thread, pin_ids[npinned-1]);
-        }
-#else
-        CPU_ZERO(&cpuset);
-        CPU_SET(pin_ids[npinned], &cpuset);
-        printf("\tthreadid %lu -> core %d - ", *thread, pin_ids[npinned]);
-#endif /* INTEL_OMP */
+            CPU_SET(pin_ids[npinned], &cpuset);
+            printf("\tthreadid %lu -> core %d - ", *thread, pin_ids[npinned]);
 
-        if (pthread_setaffinity_np(*thread, sizeof(cpu_set_t), &cpuset)) 
-        {
-            perror("pthread_setaffinity_np failed");
-        }
-        else 
-        {
-            printf("OK\n");
+            if (pthread_setaffinity_np(*thread, sizeof(cpu_set_t), &cpuset)) 
+            {
+                perror("pthread_setaffinity_np failed");
+            }
+            else 
+            {
+                printf("OK\n");
+            }
+            npinned++;
         }
     }
 #ifdef COLOR
     color_reset();
 #endif
 
-    npinned++;
+    fflush(stdout);
+    ncalled++;
     dlclose(handle);
 
     return ret;
