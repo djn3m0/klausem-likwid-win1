@@ -5,7 +5,7 @@
 #include <registers.h>
 
 
-void 
+    void 
 perfmon_init_core2(PerfmonThread *thread)
 {
     uint64_t flags = 0x0ULL;
@@ -37,7 +37,7 @@ perfmon_init_core2(PerfmonThread *thread)
     msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
 }
 
-void
+    void
 perfmon_printGroups_core2(void)
 {
     printf("Performance Groups: Core 2\n\n");
@@ -51,52 +51,52 @@ perfmon_printGroups_core2(void)
     printf("CPI: cycles per instruction\n\n");
 }
 
-PerfmonGroup
+    PerfmonGroup
 perfmon_getGroupId_core2(char* groupStr)
 {
-	PerfmonGroup group;
+    PerfmonGroup group;
 
-	if (!strcmp("FLOPS_DP",groupStr)) 
-	{
-		group = FLOPS_DP;
-	}
-	else if (!strcmp("FLOPS_SP",groupStr)) 
-	{
-		group = FLOPS_SP;
-	}
-	else if (!strcmp("L2",groupStr)) 
-	{
-		group = L2;
-	}
-	else if (!strcmp("MEM",groupStr)) 
-	{
-		group = MEM;
-	}
-	else if (!strcmp("DATA",groupStr)) 
-	{
-		group = DATA;
-	}
-	else if (!strcmp("BRANCH",groupStr)) 
-	{
-		group = BRANCH;
-	}
-	else if (!strcmp("TLB",groupStr)) 
-	{
-		group = TLB;
-	}
-	else if (!strcmp("CPI",groupStr)) 
-	{
-		group = CPI;
-	}
-	else
-	{
-		return NOGROUP;
-	}
+    if (!strcmp("FLOPS_DP",groupStr)) 
+    {
+        group = FLOPS_DP;
+    }
+    else if (!strcmp("FLOPS_SP",groupStr)) 
+    {
+        group = FLOPS_SP;
+    }
+    else if (!strcmp("L2",groupStr)) 
+    {
+        group = L2;
+    }
+    else if (!strcmp("MEM",groupStr)) 
+    {
+        group = MEM;
+    }
+    else if (!strcmp("DATA",groupStr)) 
+    {
+        group = DATA;
+    }
+    else if (!strcmp("BRANCH",groupStr)) 
+    {
+        group = BRANCH;
+    }
+    else if (!strcmp("TLB",groupStr)) 
+    {
+        group = TLB;
+    }
+    else if (!strcmp("CPI",groupStr)) 
+    {
+        group = CPI;
+    }
+    else
+    {
+        return NOGROUP;
+    }
 
-	return group;
+    return group;
 }
 
-void
+    void
 perfmon_startCountersThread_core2(int thread_id)
 {
     int i;
@@ -126,7 +126,7 @@ perfmon_startCountersThread_core2(int thread_id)
     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000003ULL);
 }
 
-void 
+    void 
 perfmon_stopCountersThread_core2(int thread_id)
 {
     uint64_t flags;
@@ -163,7 +163,7 @@ perfmon_stopCountersThread_core2(int thread_id)
 
 
 
-void
+    void
 perfmon_setupGroupThread_core2(int thread_id, PerfmonGroup group)
 {
 
@@ -219,7 +219,7 @@ perfmon_setupGroupThread_core2(int thread_id, PerfmonGroup group)
 
 }
 
-void
+    void
 perfmon_printResults_core2(PerfmonThread *thread, PerfmonGroup group, float time)
 {
     int cpu_id = thread->cpu_id;
