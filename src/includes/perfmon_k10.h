@@ -90,7 +90,7 @@ void
 perfmon_startCountersThread_k10(int thread_id)
 {
     int i;
-    uint64_t flags, uflags;
+    uint64_t flags;
     int cpu_id = threadData[thread_id].cpu_id;
 
     for (i=0;i<NUM_PMC;i++) 
@@ -102,7 +102,9 @@ perfmon_startCountersThread_k10(int thread_id)
             flags |= (1<<22);  /* enable flag */
             if (perfmon_verbose) 
             {
-                printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",threadData[thread_id].counters[i].config_reg,flags);
+                printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",
+                        LLU_CAST threadData[thread_id].counters[i].config_reg,
+                        LLU_CAST flags);
             }
 
             msr_write(cpu_id, threadData[thread_id].counters[i].config_reg , flags);
@@ -114,7 +116,6 @@ void
 perfmon_stopCountersThread_k10(int thread_id)
 {
     uint64_t flags;
-    uint64_t uncore_cycles;
     int i;
     int cpu_id = threadData[thread_id].cpu_id;
 
@@ -127,7 +128,9 @@ perfmon_stopCountersThread_k10(int thread_id)
             msr_write(cpu_id, threadData[thread_id].counters[i].config_reg , flags);
             if (perfmon_verbose)
             {
-                printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",threadData[thread_id].counters[i].config_reg,flags);
+                printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",
+                        LLU_CAST threadData[thread_id].counters[i].config_reg,
+                        LLU_CAST flags);
             }
             threadData[thread_id].pc[i] = msr_read(cpu_id, threadData[thread_id].counters[i].counter_reg);
         }

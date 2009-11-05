@@ -106,7 +106,7 @@ int main (int argc, char** argv)
     cpuid_init();
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU clock:\t%llu Hz \n\n", cpuid_info.clock);
+    printf("CPU clock:\t%llu Hz \n\n", LLU_CAST cpuid_info.clock);
 
     cpuid_initTopology();
     cpuid_initCacheTopology();
@@ -316,7 +316,6 @@ int main (int argc, char** argv)
                 int columnCursor=0;
                 int lineCursor=1;
                 int sharedCores;
-                int numCores;
                 int numCachesPerLevel;
                 int cacheWidth;
 

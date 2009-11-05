@@ -39,14 +39,14 @@
 #include <timer_types.h>
 
 #define RDTSC2(cpu_c) \
-asm volatile( "rdtsc\n\t"           \
+__asm__ volatile( "rdtsc\n\t"           \
 "movl %%eax, %0\n\t"  \
 "movl %%edx, %1\n\t"  \
 : "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
 : : "%eax", "%edx")
 
 #define RDTSC(cpu_c) \
-asm volatile("xor %%eax,%%eax\n\t"           \
+__asm__ volatile("xor %%eax,%%eax\n\t"           \
 "cpuid\n\t"           \
 "rdtsc\n\t"           \
 "movl %%eax, %0\n\t"  \

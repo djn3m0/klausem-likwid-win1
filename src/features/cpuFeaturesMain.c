@@ -38,6 +38,7 @@
 #include <sched.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <types.h>
 #include <timer.h>
@@ -63,7 +64,7 @@ int main (int argc, char** argv)
     int optSetFeature = 0;
     int cpuId = 0;
     int c;
-    CpuFeature feature;
+    CpuFeature feature = HW_PREFETCHER ;
 
     if (argc ==  1) { HELP_MSG }
 
@@ -139,18 +140,9 @@ int main (int argc, char** argv)
     timer_init();
     cpuid_init();
 
-	cpuFeatures_init(cpuId);
-
-    if (cpuFeatureFlags.speedstep)
-    {
-        fprintf (stderr, "Speedstep is enabled!\nThis produces inaccurate timing measurements.\n");
-        fprintf (stderr, "For reliable clock measurements disable speedstep.\n");
-    }
-
-
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU clock:\t%llu Hz \n", cpuid_info.clock);
+    printf("CPU clock:\t%llu Hz \n", LLU_CAST cpuid_info.clock);
     printf("CPU core id:\t%d \n", cpuId);
 
     if (cpuid_info.family != P6_FAMILY)

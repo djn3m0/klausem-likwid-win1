@@ -143,7 +143,7 @@ setupCounterThread(int thread_id,
         char* event_str)
 {
     uint64_t flags;
-    uint32_t umask, event;
+    uint32_t umask = 0, event = 0;
     uint64_t reg = threadData[thread_id].counters[index].config_reg;
     int cpu_id = threadData[thread_id].cpu_id;
 
@@ -177,7 +177,10 @@ setupCounterThread(int thread_id,
 
     if (perfmon_verbose)
     {
-        printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",cpu_id,reg,flags);
+        printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
+               cpu_id,
+               LLU_CAST reg,
+               LLU_CAST flags);
     }
     msr_write(cpu_id, reg , flags);
 
@@ -211,10 +214,10 @@ perfmon_printResults()
         printf(HLINE);
         printf ("[%d] Instruction retired any: %llu \n",
                 threadData[thread_id].cpu_id,
-                threadData[thread_id].instructionsRetired);
+                LLU_CAST threadData[thread_id].instructionsRetired);
         printf ("[%d] Cycles unhalted core: %llu \n",
                 threadData[thread_id].cpu_id,
-                threadData[thread_id].cycles);
+                LLU_CAST threadData[thread_id].cycles);
         summary.instructionsRetired += threadData[thread_id].instructionsRetired;
 
         for (i=0;i<NUM_PMC;i++) 
@@ -225,7 +228,7 @@ perfmon_printResults()
                 printf ("[%d] %s: %llu \n",
                         threadData[thread_id].cpu_id,
                         threadData[thread_id].counters[i].label,
-                        threadData[thread_id].pc[i]);
+                        LLU_CAST threadData[thread_id].pc[i]);
             }
         }
         printf(HLINE);
@@ -246,8 +249,8 @@ perfmon_printResults()
         printf(HLINE);
         printf("==== SUMMARY RESULTS ====\n");
         printf(HLINE);
-        printf ("[%d] RDTSC Cycles: %llu \n",summary.cpu_id,summary.cycles);
-        printf ("[%d] Instructions retired any: %llu \n",summary.cpu_id,summary.instructionsRetired);
+        printf ("[%d] RDTSC Cycles: %llu \n",summary.cpu_id, LLU_CAST summary.cycles);
+        printf ("[%d] Instructions retired any: %llu \n",summary.cpu_id, LLU_CAST summary.instructionsRetired);
         for (i=0;i<NUM_PMC;i++) 
         {
             if (threadData[0].counters[i].init == TRUE) 
@@ -255,7 +258,7 @@ perfmon_printResults()
                 printf ("[%d] %s: %llu \n",
                         summary.cpu_id,
                         threadData[0].counters[i].label,
-                        summary.pc[i]);
+                         LLU_CAST summary.pc[i]);
             }
         }
 
@@ -290,7 +293,7 @@ perfmon_getCycles(void)
         exit (EXIT_FAILURE);
     }
 
-    if (fscanf(file,"%llu",&summary.cycles) != 1)
+    if (fscanf(file,"%llu", &summary.cycles) != 1)
     {
         fprintf(stderr, "Failed to fscanf cycles file!\n");
         exit(EXIT_FAILURE);

@@ -146,7 +146,6 @@ void
 perfmon_markerStopCounters(int cpu_id)
 {
     uint64_t flags;
-    int i;
 
     switch ( cpuid_info.family ) 
     {
@@ -187,7 +186,7 @@ void perfmon_markerSetCycles(uint64_t cycles)
     FILE *file;
 
     file = fopen("/tmp/perfmon_cycles.txt","w");
-    fprintf(file,"%llu",cycles);
+    fprintf(file,"%llu", LLU_CAST cycles);
     fclose(file);
 }
 

@@ -36,8 +36,10 @@
 #include <sched.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <types.h>
+#include <msr.h>
 #include <timer.h>
 #include <cpuid.h>
 #include <cpuFeatures.h>
@@ -130,7 +132,6 @@ int main (int argc, char** argv)
     int optPrintGroups = 0;
     int optUncoreEvent = 0;
     int optUseMarker = 0;
-    int cpu_id = 0;
     int c;
     char * cmd_str;
     char * eventString = NULL;
@@ -212,9 +213,9 @@ int main (int argc, char** argv)
         }
     }
 
+    msr_check();
     timer_init();
     cpuid_init();
-
 
     if( cpuid_info.family == P6_FAMILY ) 
         cpuFeatures_init(0);
@@ -229,7 +230,7 @@ int main (int argc, char** argv)
 
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU clock:\t%llu Hz \n", cpuid_info.clock);
+    printf("CPU clock:\t%llu Hz \n", LLU_CAST cpuid_info.clock);
 
     if (perfmon_verbose) 
     {
