@@ -148,7 +148,6 @@ pinPid(int cpuid)
 
 int main (int argc, char** argv)
 { 
-    int cpu_id = 0;
     int c;
 	int skipMask = 0;
     char * typeString = NULL;
@@ -158,7 +157,7 @@ int main (int argc, char** argv)
     int numThreads=0;
     /* It should be checked for size to prevent buffer overflow on threads */
     int threads[MAX_NUM_THREADS];
-    int i,j;
+    int i;
 
     if (argc ==  1) { HELP_MSG; }
 

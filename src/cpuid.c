@@ -62,7 +62,7 @@ static int largest_function;
 
 /* this was taken from the linux kernel */
 #define CPUID                              \
-    asm volatile ("cpuid"                             \
+    __asm__ volatile ("cpuid"                             \
         : "=a" (eax),     \
           "=b" (ebx),     \
           "=c" (ecx),     \
@@ -129,7 +129,7 @@ getBitFieldWidth(uint32_t number)
         return 0;
     }
 
-    asm volatile ( "bsr %%eax, %%ecx\n\t"
+    __asm__ volatile ( "bsr %%eax, %%ecx\n\t"
             : "=c" (fieldWidth)
             : "a"(number));
 
@@ -140,7 +140,7 @@ getBitFieldWidth(uint32_t number)
 static uint32_t
 amdGetAssociativity(uint32_t flag)
 {
-    uint32_t asso;
+    uint32_t asso= 0;
 
     switch ( flag ) 
     {
@@ -392,7 +392,7 @@ cpuid_initTopology(void)
 
     /* First determine the number of cpus accessible */
     pipe = popen("cat /proc/cpuinfo | grep ^processor | wc -l", "r");
-    if (fscanf(pipe, "%d\n", &cpuid_topology.numHWThreads) != 1)
+    if (fscanf(pipe, "%u\n", &cpuid_topology.numHWThreads) != 1)
     {
         fprintf(stderr, "Failed to fscanf cpuinfo!\n");
         exit(EXIT_FAILURE);
@@ -426,7 +426,7 @@ cpuid_initTopology(void)
 
     if (hasBLeaf)
     {
-        for (i=0; i< cpuid_topology.numHWThreads; i++)
+        for (i=0; i < (int) cpuid_topology.numHWThreads; i++)
         {
             CPU_ZERO(&set);
             CPU_SET(i,&set);
@@ -507,7 +507,7 @@ cpuid_initTopology(void)
 
                 maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
 
-                for (i=0; i< cpuid_topology.numHWThreads; i++)
+                for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
                     CPU_ZERO(&set);
                     CPU_SET(i,&set);
@@ -571,7 +571,7 @@ cpuid_initTopology(void)
 
                 maxNumCores =  extractBitField(ecx,8,0)+1;
 
-                for (i=0; i< cpuid_topology.numHWThreads; i++)
+                for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
                     CPU_ZERO(&set);
                     CPU_SET(i,&set);
@@ -641,7 +641,7 @@ cpuid_initTopology(void)
                 maxNumCores = extractBitField(ecx,8,0)+1;
 
 
-                for (i=0; i< cpuid_topology.numHWThreads; i++)
+                for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
                     CPU_ZERO(&set);
                     CPU_SET(i,&set);
@@ -683,7 +683,7 @@ cpuid_initTopology(void)
         }
     }
 
-    for (i=0; i< cpuid_topology.numHWThreads; i++)
+    for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
     {
         /* Add node to Topology tree */
         if (!tree_nodeExists(cpuid_topology.topologyTree,
@@ -727,7 +727,7 @@ cpuid_initCacheTopology()
     int level=0;
     int maxNumLevels=0;
     uint32_t valid=1;
-    CacheLevel* cachePool;
+    CacheLevel* cachePool = NULL;
 
     switch ( cpuid_info.family ) 
     {
@@ -768,7 +768,7 @@ cpuid_initCacheTopology()
  /* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes 
   * too large in here. Ask Intel what is wrong here!
   * Limit threads per Socket than to the maximum possible value.*/
-                if(cachePool[i].threads > 
+                if(cachePool[i].threads > (int)
                         (cpuid_topology.numCoresPerSocket*
                          cpuid_topology.numThreadsPerCore))
                 {
@@ -871,6 +871,10 @@ cpuid_initCacheTopology()
 
             break;
 
+        default:
+			fprintf(stderr, "Processor is not supported\n");
+			exit(EXIT_FAILURE);
+            break;
     }
 
     cpuid_topology.numCacheLevels = maxNumLevels;

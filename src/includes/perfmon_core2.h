@@ -100,7 +100,7 @@ perfmon_getGroupId_core2(char* groupStr)
 perfmon_startCountersThread_core2(int thread_id)
 {
     int i;
-    uint64_t flags, uflags;
+    uint64_t flags;
     int cpu_id = threadData[thread_id].cpu_id;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
@@ -119,7 +119,7 @@ perfmon_startCountersThread_core2(int thread_id)
 
     if (perfmon_verbose)
     {
-        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL,flags);
+        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
     }
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
@@ -130,7 +130,6 @@ perfmon_startCountersThread_core2(int thread_id)
 perfmon_stopCountersThread_core2(int thread_id)
 {
     uint64_t flags;
-    uint64_t uncore_cycles;
     int i;
     int cpu_id = threadData[thread_id].cpu_id;
 
@@ -152,7 +151,7 @@ perfmon_stopCountersThread_core2(int thread_id)
     threadData[thread_id].instructionsRetired = msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
 
     flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
-    printf ("Status: 0x%llX \n",flags);
+    printf ("Status: 0x%llX \n", LLU_CAST flags);
     if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
     {
         printf ("Overflow occured \n");
@@ -292,7 +291,7 @@ perfmon_printResults_core2(PerfmonThread *thread, PerfmonGroup group, float time
             break;
 
         case BRANCH:
-            printf ("[%d] Mispredicted Branches: %f % \n",cpu_id,(float) (thread->pc[1]/(float)thread->pc[0]) * 100);
+            printf ("[%d] Mispredicted Branches: %f \n",cpu_id,(float) (thread->pc[1]/(float)thread->pc[0]) * 100);
             break;
 
         case CPI:

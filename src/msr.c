@@ -42,10 +42,30 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <string.h>                                                                                                   
+#include <unistd.h> 
 
 #include <msr.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+void
+msr_check()
+{
+    int  fd;
+    char* msr_file_name = "/dev/cpu/0/msr";
+
+    fd = open(msr_file_name, O_RDWR);
+
+    if (fd < 0)
+    {
+        fprintf(stderr, "rdmsr: failed to open '%s': %s\n",msr_file_name , strerror(errno));                      
+        fprintf(stderr, "       check if the msr module is loaded and the file has correct permissions.\n");  
+        exit(127);
+    }
+}
+
+
+
 
 uint64_t 
 msr_read(const int cpu, uint32_t reg)
@@ -125,7 +145,7 @@ msr_write(const int cpu, uint32_t reg, uint64_t data)
         if (errno == EIO) 
         {
             fprintf(stderr, "wrmsr: CPU %d cannot set MSR %X to %llX\n",
-                    cpu, reg, data);
+                    cpu, reg, LLU_CAST data);
             exit(4);
         }
         else

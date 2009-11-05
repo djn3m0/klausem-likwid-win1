@@ -43,7 +43,6 @@ perfmon_printGroups_pm (void)
     void
 perfmon_startCountersThread_pm(int thread_id)
 {
-    int i;
     uint64_t flags;
     int cpu_id = threadData[thread_id].cpu_id;
 
@@ -59,7 +58,7 @@ perfmon_startCountersThread_pm(int thread_id)
 
     if (perfmon_verbose)
     {
-        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERFEVTSEL0,flags);
+        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERFEVTSEL0, LLU_CAST flags);
     }
 
     msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
@@ -198,7 +197,7 @@ void perfmon_print_results_pm(PerfmonThread *thread, PerfmonGroup group_set, flo
             break;
 
         case BRANCH:
-            printf ("[%d] Mispredicted Branches: %f % \n",cpu_id,(float) (thread->pc[1]/(float)thread->pc[0]) * 100);
+            printf ("[%d] Mispredicted Branches: %f  \n",cpu_id,(float) (thread->pc[1]/(float)thread->pc[0]) * 100);
             break;
 
         case CPI:

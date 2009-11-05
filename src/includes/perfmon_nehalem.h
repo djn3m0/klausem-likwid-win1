@@ -144,8 +144,8 @@ perfmon_startCountersThread_nehalem(int thread_id)
 
     if (perfmon_verbose)
     {
-        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL,flags);
-        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_UNCORE_PERF_GLOBAL_CTRL,uflags);
+        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
+        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST uflags);
     }
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
@@ -305,8 +305,8 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
             {
                 printf ("[%d] Double Precision MFlops/s (DP assumed): %f \n",
                         cpu_id,0.0);
-                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0);
-                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0);
+                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0F);
             }
             else
             {
@@ -320,10 +320,9 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
         case FLOPS_SP:
             if (time < 1.0E-12)
             {
-                printf ("[%d] Single Precision MFlops/s (SP assumed): %f \n",
-                        cpu_id,0.0);
-                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0);
-                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0);
+                printf ("[%d] Single Precision MFlops/s (SP assumed): %f \n", cpu_id,0.0F);
+                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0F);
             }
             else
             {
@@ -337,9 +336,9 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
         case L2:
             if (time < 1.0E-12)
             {
-                printf ("[%d] L2 Bandwidth MBytes/s: %f \n",cpu_id,0.0);
-                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",0.0);
-                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",0.0);
+                printf ("[%d] L2 Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
             }
             else
             {
@@ -352,9 +351,9 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
         case L3:
             if (time < 1.0E-12)
             {
-                printf ("[%d] L3 Bandwidth MBytes/s: %f \n",cpu_id,0.0);
-                printf ("[%d] L3 Load Bandwidth MBytes/s: %f \n",0.0);
-                printf ("[%d] L3 Evict Bandwidth MBytes/s: %f \n",0.0);
+                printf ("[%d] L3 Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] L3 Load Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] L3 Evict Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
             }
             else
             {
@@ -367,9 +366,9 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
         case MEM:
             if (time < 1.0E-12)
             {
-                printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,0.0);
-                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,0.0);
-                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,0.0);
+                printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
             }
             else
             {
@@ -394,9 +393,9 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
         case CLUSTER:
             if (time < 1.0E-12)
             {
-                printf ("[%d] X87 Mops/s: %f \n",cpu_id,0.0);
-                printf ("[%d] SSE Mops/s: %f \n",cpu_id,0.0);
-                printf ("[%d] L2 MMiss/s: %f \n",cpu_id,0.0);
+                printf ("[%d] X87 Mops/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] SSE Mops/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] L2 MMiss/s: %f \n",cpu_id,0.0F);
             }
             else
             {
@@ -409,10 +408,10 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
         case CLUSTER_FLOPS:
             if (time < 1.0E-12)
             {
-                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0);
-                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0);
-                printf ("[%d] SP MUOPS/s: %f \n",cpu_id,0.0);
-                printf ("[%d] DP MUOPS/s: %f \n",cpu_id,0.0);
+                printf ("[%d] Packed MUOPS/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] Scalar MUOPS/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] SP MUOPS/s: %f \n",cpu_id,0.0F);
+                printf ("[%d] DP MUOPS/s: %f \n",cpu_id,0.0F);
             }
             else
             {

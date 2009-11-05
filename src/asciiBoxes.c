@@ -39,15 +39,9 @@
 #include <string.h>
 
 #include <types.h>
-#include <textcolor.h>
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-#define PRINT_VALUE(color,string)  \
-    color_on(BRIGHT,(color));      \
-    printf(#string"\n");            \
-    color_reset()
 
 #define BOXWIDTH 5
 
