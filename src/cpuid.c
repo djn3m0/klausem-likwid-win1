@@ -77,7 +77,8 @@ static char* pentium_m_d_str = "Intel Pentium M Dothan processor";
 static char* core_duo_str = "Intel Core Duo processor";
 static char* core_2a_str = "Intel Core 2 65nm processor";
 static char* core_2b_str = "Intel Core 2 45nm processor";
-static char* nehalem_str = "Intel Core i7 processor";
+static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
+static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
@@ -203,6 +204,8 @@ amdGetAssociativity(uint32_t flag)
 void
 cpuid_init (void)
 {
+    int isIntel = 1;
+
     if (lock) return;
     lock =1;
 
@@ -211,6 +214,10 @@ cpuid_init (void)
 
     printf("CPUID Largest supported basic function 0x%X \n",eax);
     largest_function = eax;
+    if (ebx == 0x68747541U)
+    {
+        isIntel = 0;
+    }
 
     eax = 0x01;
     CPUID;
@@ -218,10 +225,6 @@ cpuid_init (void)
     cpuid_info.model = (((eax>>16)&0xFU)<<4) + ((eax>>4)&0xFU);
     cpuid_info.stepping =  (eax&0xFU);
     cpuid_info.clock =  timer_getCpuClock();
-
-    /*FIXME Add rejection of Netburst CPUs
-     * Netburst is same family than K8
-     */
 
     switch ( cpuid_info.family ) 
     {
@@ -248,8 +251,12 @@ cpuid_init (void)
                     cpuid_info.name = core_2b_str;
                     break;
 
-                case NEHALEM:
-                    cpuid_info.name = nehalem_str;
+                case NEHALEM_BLOOMFIELD:
+                    cpuid_info.name = nehalem_bloom_str;
+                    break;
+
+                case NEHALEM_LYNNFIELD:
+                    cpuid_info.name = nehalem_lynn_str;
                     break;
 
                 case XEON_MP:
@@ -264,6 +271,13 @@ cpuid_init (void)
             break;
 
         case K8_FAMILY:
+
+            if (isIntel)
+            {
+                fprintf(stderr, "Netburst architecture is not supported\n");
+                exit(EXIT_FAILURE);
+            }
+
             switch ( cpuid_info.model ) 
             {
                 case OPTERON_DC_E:
@@ -474,10 +488,10 @@ cpuid_initTopology(void)
     {
         switch ( cpuid_info.family ) 
         {
+
             case P6_FAMILY:
                 eax = 0x01;
                 CPUID;
-                /* Check number of cores per package */
                 maxNumLogicalProcs = extractBitField(ebx,8,16);
 
                 /* Check number of cores per package */
@@ -539,7 +553,73 @@ cpuid_initTopology(void)
                 }
                 break;
 
+            case K8_FAMILY:
+                /* AMD Bios manual Rev. 2.28 section 3.1
+                 * Legacy method */
+                /*FIXME: This is a bit of a hack */
+
+                maxNumLogicalProcsPerCore = 1;
+                maxNumLogicalProcs = 1;
+
+                eax = 0x80000008;
+                CPUID;
+
+                maxNumCores =  extractBitField(ecx,8,0)+1;
+
+                for (i=0; i< cpuid_topology.numHWThreads; i++)
+                {
+                    CPU_ZERO(&set);
+                    CPU_SET(i,&set);
+                    if (sched_setaffinity(0, sizeof(cpu_set_t), &set))
+                    {
+                        if (errno == EFAULT) 
+                        {
+                            fprintf(stderr, 
+                                    "A supplied memory address was invalid\n");
+                            exit(EXIT_FAILURE);
+                        }
+                        else if (errno == EINVAL) 
+                        {
+                            fprintf(stderr, "Processor is not available\n");
+                            exit(EXIT_FAILURE);
+                        }
+                        else
+                        {
+                            fprintf(stderr, "Unknown error\n");
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+
+                    eax = 0x01;
+                    CPUID;
+                    hwThreadPool[i].apicId = extractBitField(ebx,8,24);
+
+                    /* ThreadId is extracted from th apicId using the bit width
+                     * of the number of logical processors
+                     * */
+                    hwThreadPool[i].threadId =
+                        extractBitField(hwThreadPool[i].apicId,
+                            getBitFieldWidth(maxNumLogicalProcsPerCore),0); 
+
+                    /* CoreId is extracted from th apicId using the bitWidth 
+                     * of the number of logical processors as offset and the
+                     * bit width of the number of cores as width
+                     * */
+                    hwThreadPool[i].coreId =
+                        extractBitField(hwThreadPool[i].apicId,
+                            getBitFieldWidth(maxNumCores),
+                            0); 
+
+                    hwThreadPool[i].packageId =
+                        extractBitField(hwThreadPool[i].apicId,
+                            8-getBitFieldWidth(maxNumCores),
+                            getBitFieldWidth(maxNumCores)); 
+                }
+                break;
+
             case K10_FAMILY:
+                /* AMD Bios manual Rev. 2.28 section 3.2
+                 * Extended method */
                 eax = 0x80000008;
                 CPUID;
 
@@ -692,6 +772,43 @@ cpuid_initCacheTopology()
                 }
                 cachePool[i].inclusive = edx&0x2;
             }
+
+            break;
+
+        case K8_FAMILY:
+            maxNumLevels = 2;
+            cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
+
+            eax = 0x80000005;
+            CPUID;
+            cachePool[0].level = 1;
+            cachePool[0].type = DATACACHE;
+            cachePool[0].associativity = extractBitField(ecx,8,16);
+            cachePool[0].lineSize = extractBitField(ecx,8,0);
+            cachePool[0].size =  extractBitField(ecx,8,24) * 1024;
+            if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
+            {
+                cachePool[0].sets = cachePool[0].size/
+                    (cachePool[0].associativity * cachePool[0].lineSize);
+            }
+            cachePool[0].threads = 1;
+            cachePool[0].inclusive = 1;
+
+            eax = 0x80000006;
+            CPUID;
+            cachePool[1].level = 2;
+            cachePool[1].type = UNIFIEDCACHE;
+            cachePool[1].associativity = 
+                amdGetAssociativity(extractBitField(ecx,4,12));
+            cachePool[1].lineSize = extractBitField(ecx,8,0);
+            cachePool[1].size =  extractBitField(ecx,16,16) * 1024;
+            if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
+            {
+                cachePool[1].sets = cachePool[1].size/
+                    (cachePool[1].associativity * cachePool[1].lineSize);
+            }
+            cachePool[1].threads = 1;
+            cachePool[1].inclusive = 1;
 
             break;
 

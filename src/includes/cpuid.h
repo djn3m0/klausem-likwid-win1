@@ -47,6 +47,8 @@
 #define CORE2_65  0x0FU
 #define CORE2_45  0x17U
 #define NEHALEM   0x1AU
+#define NEHALEM_BLOOMFIELD   0x1AU
+#define NEHALEM_LYNNFIELD    0x1EU
 #define XEON_MP   0x1DU
 
 /* AMD K10 */
@@ -67,7 +69,7 @@
 
 
 #define  P6_FAMILY        0x6U
-#define  NETBURST_FAMILY  0xFU
+#define  NETBURST_FAMILY  0xFFU
 #define  K10_FAMILY       0x10U
 #define  K8_FAMILY        0xFU
 
