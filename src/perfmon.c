@@ -46,6 +46,7 @@
 #include <perfmon_pm_events.h>
 #include <perfmon_core2_events.h>
 #include <perfmon_nehalem_events.h>
+#include <perfmon_k8_events.h>
 #include <perfmon_k10_events.h>
 
 
@@ -74,6 +75,7 @@ static int setupCounterThread(int , PerfmonCounterIndex , char* );
 #include <perfmon_pm.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
+#include <perfmon_k8.h>
 #include <perfmon_k10.h>
 
 /* #####   FUNCTION POINTERS  -  LOCAL TO THIS SOURCE FILE ################ */
@@ -450,37 +452,31 @@ perfmon_init(int numThreads_local, int threads[])
             }
             break;
 
-        case NETBURST_FAMILY:
-            fprintf(stderr, "Unsupported Processor!\n");
-            exit(EXIT_FAILURE);
+        case K8_FAMILY:
+            eventHash = k8_arch_events;
+            num_arch_events = NUM_ARCH_EVENTS_K8;
+
+            initThreadArch = perfmon_init_k10;
+            getGroupId = perfmon_getGroupId_k8;
+            setupGroupThread = perfmon_setupGroupThread_k8;
+            startCountersThread = perfmon_startCountersThread_k10;
+            stopCountersThread = perfmon_stopCountersThread_k10;
+            printResults = perfmon_printResults_k8;
+            perfmon_printAvailableGroups = perfmon_printGroups_k8;
             break;
 
+
         case K10_FAMILY:
-            switch ( cpuid_info.model ) 
-            {
-                case BARCELONA:
+            eventHash = k10_arch_events;
+            num_arch_events = NUM_ARCH_EVENTS_K10;
 
-                case SHANGHAI:
-
-                case ISTANBUL:
-                    eventHash = k10_arch_events;
-                    num_arch_events = NUM_ARCH_EVENTS_K10;
-
-                    initThreadArch = perfmon_init_k10;
-                    getGroupId = perfmon_getGroupId_k10;
-                    setupGroupThread = perfmon_setupGroupThread_k10;
-                    startCountersThread = perfmon_startCountersThread_k10;
-                    stopCountersThread = perfmon_stopCountersThread_k10;
-                    printResults = perfmon_printResults_k10;
-                    perfmon_printAvailableGroups = perfmon_printGroups_k10;
-                    break;
-
-                default:
-                    fprintf(stderr, "Unsupported Processor!\n");
-                    exit(EXIT_FAILURE);
-                    break;
-            }
-
+            initThreadArch = perfmon_init_k10;
+            getGroupId = perfmon_getGroupId_k10;
+            setupGroupThread = perfmon_setupGroupThread_k10;
+            startCountersThread = perfmon_startCountersThread_k10;
+            stopCountersThread = perfmon_stopCountersThread_k10;
+            printResults = perfmon_printResults_k10;
+            perfmon_printAvailableGroups = perfmon_printGroups_k10;
             break;
 
         default:

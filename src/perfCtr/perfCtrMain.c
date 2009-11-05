@@ -214,12 +214,17 @@ int main (int argc, char** argv)
 
     timer_init();
     cpuid_init();
-    cpuFeatures_init(0);
 
-    if (cpuFeatureFlags.speedstep)
+
+    if( cpuid_info.family == P6_FAMILY ) 
+        cpuFeatures_init(0);
     {
-        fprintf (stderr, "Speedstep is enabled!\nThis produces inaccurate timing measurements.\n");
-        fprintf (stderr, "For reliable clock measurements disable speedstep.\n");
+
+        if (cpuFeatureFlags.speedstep)
+        {
+            fprintf (stderr, "Speedstep is enabled!\nThis produces inaccurate timing measurements.\n");
+            fprintf (stderr, "For reliable clock measurements disable speedstep.\n");
+        }
     }
 
     printf(HLINE);
