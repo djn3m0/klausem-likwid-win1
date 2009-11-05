@@ -83,12 +83,14 @@ static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
 static char* istanbul_str = "AMD Istanbul processor";
+static char* opteron_sc_str = "AMD Opteron single core 130nm processor";
 static char* opteron_dc_e_str = "AMD Opteron Dual Core Rev E 90nm processor";
 static char* opteron_dc_f_str = "AMD Opteron Dual Core Rev F 90nm processor";
 static char* athlon64_str = "AMD Athlon64 X2 (AM2) Rev F 90nm processor";
 static char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
 static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
+static char* amd_k8_str = "AMD K8 architecture";
 
 
 static int lock = 0;
@@ -310,9 +312,12 @@ cpuid_init (void)
                     cpuid_info.name = athlon64_g_str;
                     break;
 
+                case OPTERON_SC_1MB:
+                    cpuid_info.name = opteron_sc_str;
+                    break;
+
                 default:
-                    fprintf(stderr, "Processor is not supported\n");
-                    exit(EXIT_FAILURE);
+                    cpuid_info.name = amd_k8_str;
                     break;
             }
 

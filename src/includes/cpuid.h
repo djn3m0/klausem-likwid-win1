@@ -57,15 +57,16 @@
 #define ISTANBUL  0x08U
 
 /* AMD K8 */
-#define OPTERON_DC_E  0x21
-#define OPTERON_DC_F  0x41
-#define ATHLON64_X2   0x43
-#define ATHLON64_X2_F 0x4B
-#define ATHLON64_F1   0x4F
-#define ATHLON64_F2   0x5F
-#define ATHLON64_X2_G 0x6B
-#define ATHLON64_G1   0x6F
-#define ATHLON64_G2   0x7F
+#define OPTERON_SC_1MB  0x05U
+#define OPTERON_DC_E  0x21U
+#define OPTERON_DC_F  0x41U
+#define ATHLON64_X2   0x43U
+#define ATHLON64_X2_F 0x4BU
+#define ATHLON64_F1   0x4FU
+#define ATHLON64_F2   0x5FU
+#define ATHLON64_X2_G 0x6BU
+#define ATHLON64_G1   0x6FU
+#define ATHLON64_G2   0x7FU
 
 
 #define  P6_FAMILY        0x6U
