@@ -1,18 +1,18 @@
 #ifndef CPUID_TYPES_H
 #define CPUID_TYPES_H
 
-typedef enum cacheType {
+typedef enum {
     DATACACHE=1,
     INSTRUCTIONCACHE,
     UNIFIEDCACHE} CacheType;
 
-typedef enum nodeLevel {
+typedef enum {
     NODE=0,
     SOCKET,
     CORE,
     THREAD} NodeLevel;
 
-typedef struct cpu_info {
+typedef struct {
     uint32_t family;
     uint32_t model;
     uint32_t stepping;
@@ -25,14 +25,14 @@ typedef struct cpu_info {
     uint32_t perf_num_fixed_ctr;
 } CpuInfo;
 
-typedef struct hwThread {
+typedef struct {
     int threadId;
     int coreId;
     int packageId;
     int apicId;
 } HWThread;
 
-typedef struct cacheLevel {
+typedef struct {
     int level;
     CacheType type;
     int associativity;
@@ -43,7 +43,7 @@ typedef struct cacheLevel {
     int inclusive;
 } CacheLevel;
 
-typedef struct cpu_topology {
+typedef struct {
     uint32_t numHWThreads;
     uint32_t numSockets;
     uint32_t numCoresPerSocket;

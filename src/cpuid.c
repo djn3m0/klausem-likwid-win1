@@ -756,7 +756,7 @@ cpuid_initCacheTopology()
                 CPUID;
 
                 cachePool[i].level = extractBitField(eax,3,5);
-                cachePool[i].type = extractBitField(eax,5,0);
+                cachePool[i].type = (CacheType) extractBitField(eax,5,0);
                 cachePool[i].associativity = extractBitField(ebx,8,22)+1;
                 cachePool[i].sets = ecx+1;
                 cachePool[i].lineSize = extractBitField(ebx,12,0)+1;
