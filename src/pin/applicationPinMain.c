@@ -3,14 +3,14 @@
  *
  *       Filename:  applicationPin.c
  *
- *    Description:  An application to pin a program including gernated threads
+ *    Description:  An application to pin a program including threads
  *
- *        Version:  0.1
- *        Created:  11/03/2009
+ *        Version:  <VERSION>
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  HpcUtil
+ *        Project:  likwid
  *      Copyright:  Copyright (c) 2009, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -47,12 +47,12 @@
 #define MAX_NUM_THREADS 100
 
 #define HELP_MSG \
-printf("likwid-pin --  Version 0.1\n"); \
+printf("likwid-pin --  Version <VERSIOON>\n"); \
 printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t verbose output\n"); \
-printf("-c\t comma separated core ids to measure\n\n"); \
+printf("-c\t comma separated core ids\n\n"); \
 printf("-s\t bitmask with threads to skip\n\n")
 
 /* the next two functions were inspired and adopted from 
@@ -155,7 +155,7 @@ int main (int argc, char** argv)
     char * skipString = NULL;
     int verbose = 0;
     int numThreads=0;
-    /* It should be checked for size to prevent buffer overflow on threads */
+    /* FIXME It should be checked for size to prevent buffer overflow on threads */
     int threads[MAX_NUM_THREADS];
     int i;
 
