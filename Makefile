@@ -2,7 +2,6 @@ TAG = GCC
 VERSION=0.1
 
 #CONFIGURE BUILD SYSTEM
-TARGET_LIB = liblikwid.a
 BUILD_DIR  = ./$(TAG)
 SRC_DIR    = ./src
 DOC_DIR    = ./doc
@@ -13,32 +12,37 @@ Q         ?= @
 include $(MAKE_DIR)/include_$(TAG).mk
 include $(MAKE_DIR)/config.mk
 INCLUDES  += -I./src/includes
+DEFINES   += -DVERSION=$(VERSION) \
+			 -DRELEASE=$(RELEASE) \
+			 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
+			 -DLIBLIKWIDPIN=$(LIBLIKWIDPIN)
+
+ifneq ($(COLOR),NONE)
+DEFINES += -DCOLOR=$(COLOR)
+endif
+
+
+TARGET_LIB = liblikwid.a
 PINLIB  = liblikwidpin.so
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+APPS      = likwid-perfCtr  \
+			likwid-features \
+			likwid-topology \
+			likwid-pin
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
-LINKING =   @echo "===>  LINKING  $@"; \
-			${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $< $(OBJ)
 
-all: $(BUILD_DIR) $(OBJ) likwid-perfCtr likwid-features likwid-topology likwid-pin  $(TARGET_LIB)  $(PINLIB) 
+all: $(BUILD_DIR) $(OBJ) $(APPS) $(TARGET_LIB)  $(PINLIB) 
 
 tags:
 	@echo "===>  GENERATE  TAGS"
 	$(Q)ctags -R
 
-likwid-perfCtr:  $(SRC_DIR)/perfCtr/perfCtrMain.c
-	$(LINKING)
-
-likwid-features:  $(SRC_DIR)/features/cpuFeaturesMain.c
-	$(LINKING)
-
-likwid-topology:  $(SRC_DIR)/topology/cpuTopologyMain.c
-	$(LINKING)
-
-likwid-pin:  $(SRC_DIR)/pin/applicationPinMain.c
-	$(LINKING)
+$(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(OBJ)
+	@echo "===>  LINKING  $@"
+	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ)
 
 $(TARGET_LIB):
 	@echo "===>  CREATE LIB  $(TARGET_LIB)"
@@ -75,19 +79,30 @@ distclean: clean
 	@rm -f $(PINLIB)
 
 install:
-	@echo "===>INSTALL applications to $(PREFIX)/bin"
+	@echo "===> INSTALL applications to $(PREFIX)/bin"
 	@mkdir -p $(PREFIX)/bin
 	@cp -f likwid-*  $(PREFIX)/bin
 	@chmod 755 $(PREFIX)/bin/likwid-*
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-features.1 > $(MANPREFIX)/man1/likwid-features.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-perfCtr.1 > $(MANPREFIX)/man1/likwid-perfCtr.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-pin.1 > $(MANPREFIX)/man1/likwid-pin.1
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib
-	@cp -f liblikwid-*  $(PREFIX)/lib
+	@cp -f liblikwid*  $(PREFIX)/lib
+	@chmod 755 $(PREFIX)/lib/$(PINLIB)
 
 	
+uninstall:
+	@echo "===> REMOVING applications from $(PREFIX)/bin"
+	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS)) 
+	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
+	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(APPS))) 
+	@echo "===> REMOVING libs from $(PREFIX)/lib"
+	@rm -f $(PREFIX)/lib/$(TARGET_LIB) $(PREFIX)/lib/$(PINLIB)
 
 
 

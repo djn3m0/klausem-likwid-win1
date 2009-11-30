@@ -14,13 +14,12 @@
 #endif
 
 #define str(x) #x
-#define MAX_CORES 32
 
 extern int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize, const cpu_set_t *cpuset);
 
 static char * sosearchpaths[] = {
-#ifdef LIBPTHREADLOCATION
-    str(LIBPTHREADLOCATION),
+#ifdef LIBPTHREAD
+    str(LIBPTHREAD),
 #endif
     "/lib64/tls/libpthread.so.0",/* sles9 x86_64 */
     "libpthread.so.0",           /* Ubuntu */
@@ -40,7 +39,7 @@ pthread_create(pthread_t* thread,
     static int reallpthrindex = 0;
     static int npinned = 0;
     static int ncalled = 0;
-    static int pin_ids[MAX_CORES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    static int pin_ids[MAX_NUM_THREADS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     static int skipMask = 0;
 
 

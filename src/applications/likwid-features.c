@@ -6,7 +6,7 @@
  *    Description:  An application to read out and set the feature flag
  *                  register on Intel Core 2 processors.
  *
- *        Version:  1.0
+ *        Version:  <VERSION>
  *        Created:  08/13/2009
  *       Revision:  none
  *
@@ -41,22 +41,25 @@
 #include <ctype.h>
 
 #include <types.h>
-#include <timer.h>
+#include <msr.h>
 #include <cpuid.h>
 #include <cpuFeatures.h>
 
 
 #define HELP_MSG \
-printf("\ncpuFeatures --  Version 0.2\n\n"); \
+printf("\nlikwid-features --  Version  %d.%d \n\n",VERSION,RELEASE); \
 printf("A tool to print and toggle the feature flag msr on Intel CPUS.\n"); \
 printf("Supported Features: HW_PREFETCHER, CL_PREFETCHER, DCU_PREFETCHER, IP_PREFETCHER.\n\n"); \
 printf("Options:\n"); \
 printf("-h\t Help message\n"); \
+printf("-v\t Version information\n"); \
 printf("-i\t print cpu features\n"); \
 printf("-s <FEATURE>\t set cpu feature \n"); \
 printf("-u <FEATURE>\t unset cpu feature \n"); \
-printf("-t <ID>\t core id\n\n"); \
-exit(0);
+printf("-t <ID>\t core id\n\n")
+
+#define VERSION_MSG \
+printf("likwid-features  %d.%d \n\n",VERSION,RELEASE)
 
 int main (int argc, char** argv)
 { 
@@ -65,15 +68,16 @@ int main (int argc, char** argv)
     int c;
     CpuFeature feature = HW_PREFETCHER ;
 
-    if (argc ==  1) { HELP_MSG }
-
-    while ((c = getopt (argc, argv, "t:s:u:hvi")) != -1)
+    while ((c = getopt (argc, argv, "t:s:u:hv")) != -1)
     {
         switch (c)
         {
             case 'h':
-                HELP_MSG
-                    exit (EXIT_SUCCESS);    
+                HELP_MSG;
+                exit (EXIT_SUCCESS);    
+            case 'v':
+                VERSION_MSG;
+                exit (EXIT_SUCCESS);    
             case 'u':
                 optSetFeature = 2;
             case 's':
@@ -121,32 +125,26 @@ int main (int argc, char** argv)
                 }
                 return EXIT_FAILURE;
             default:
-                HELP_MSG
+                HELP_MSG;
+                exit (EXIT_SUCCESS);    
         }
     }
 
-	cpuFeatures_init(cpuId);
-
-    if (cpuFeatureFlags.speedstep)
-    {
-        fprintf (stderr, "Speedstep is enabled!\nThis produces inaccurate timing measurements.\n");
-        fprintf (stderr, "For reliable clock measurements disable speedstep.\n");
-    }
-
-    timer_init();
     cpuid_init();
 
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU clock:\t%llu Hz \n", LLU_CAST cpuid_info.clock);
+//    printf("CPU clock:\t%llu Hz \n", LLU_CAST cpuid_info.clock);
     printf("CPU core id:\t%d \n", cpuId);
 
     if (cpuid_info.family != P6_FAMILY)
     {
-        fprintf (stderr, "cpuFeature only supports Intel P6 based processors\n");
+        fprintf (stderr, "likwid-features only supports Intel P6 based processors!\n");
         exit(EXIT_FAILURE);
     }
 
+    msr_check();
+	cpuFeatures_init(cpuId);
     cpuFeatures_print(cpuId);
 
     if (optSetFeature == 1)

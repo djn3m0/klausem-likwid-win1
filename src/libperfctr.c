@@ -82,7 +82,9 @@ perfmon_markerStartCounters(int cpu_id)
                     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000003ULL);
                     break;
 
-                case NEHALEM:
+                case NEHALEM_BLOOMFIELD:
+
+                case NEHALEM_LYNNFIELD:
 
                     msr_write(cpu_id, MSR_PMC0 , 0x0ULL);
                     msr_write(cpu_id, MSR_PMC1 , 0x0ULL);

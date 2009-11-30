@@ -92,7 +92,7 @@ static void (*printResults) (
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-    static int
+static int
 getEvent(char* event_str, uint32_t* event, uint32_t* umask)
 {
     int i;
@@ -119,7 +119,7 @@ getEvent(char* event_str, uint32_t* event, uint32_t* umask)
 
 }
 
-    static void
+static void
 initThread(int thread_id, int cpu_id)
 {
     int i;
@@ -137,7 +137,7 @@ initThread(int thread_id, int cpu_id)
 
 }
 
-    static int
+static int
 setupCounterThread(int thread_id,
         PerfmonCounterIndex index,
         char* event_str)
@@ -191,7 +191,7 @@ setupCounterThread(int thread_id,
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 
-    void 
+void 
 perfmon_printResults()
 {
     int thread_id;
@@ -273,14 +273,14 @@ perfmon_printResults()
     }
 }
 
-    void
+void
 perfmon_setCycles(uint64_t cycles)
 {
     summary.cycles = cycles;
 }
 
 
-    void
+void
 perfmon_getCycles(void)
 {
     FILE *file;
@@ -293,7 +293,7 @@ perfmon_getCycles(void)
         exit (EXIT_FAILURE);
     }
 
-    if (fscanf(file,"%llu", &summary.cycles) != 1)
+    if (fscanf(file,"%llu",(long long unsigned int *) &summary.cycles) != 1)
     {
         fprintf(stderr, "Failed to fscanf cycles file!\n");
         exit(EXIT_FAILURE);
@@ -434,7 +434,9 @@ perfmon_init(int numThreads_local, int threads[])
                     perfmon_printAvailableGroups = perfmon_printGroups_core2;
                     break;
 
-                case NEHALEM:
+                case NEHALEM_BLOOMFIELD:
+
+                case NEHALEM_LYNNFIELD:
 
                     eventHash = nehalem_arch_events;
                     num_arch_events = NUM_ARCH_EVENTS_NEHALEM;

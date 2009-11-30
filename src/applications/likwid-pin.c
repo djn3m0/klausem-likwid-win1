@@ -44,16 +44,21 @@
 #include <textcolor.h>
 #endif
 
-#define MAX_NUM_THREADS 100
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
 
 #define HELP_MSG \
-printf("likwid-pin --  Version <VERSIOON>\n"); \
+printf("likwid-pin --  Version %d.%d \n\n",VERSION,RELEASE); \
 printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
-printf("-v\t verbose output\n"); \
-printf("-c\t comma separated core ids\n\n"); \
+printf("-v\t Version information\n"); \
+printf("-c\t comma separated processor ids\n"); \
 printf("-s\t bitmask with threads to skip\n\n")
+
+#define VERSION_MSG \
+printf("likwid-pin   %d.%d \n\n",VERSION,RELEASE)
+    
 
 /* the next two functions were inspired and adopted from 
  * the taskset application in linux-util package */
@@ -128,7 +133,7 @@ pinPid(int cpuid)
 	cpu_set_t cpuset;
 
 #ifdef COLOR
-    color_on(BRIGHT, CYAN);
+    color_on(BRIGHT, COLOR);
 #endif
 	CPU_ZERO(&cpuset);
 	CPU_SET(cpuid, &cpuset);
@@ -146,6 +151,8 @@ pinPid(int cpuid)
 #endif
 }
 
+#define LIB bla
+
 int main (int argc, char** argv)
 { 
     int c;
@@ -159,17 +166,23 @@ int main (int argc, char** argv)
     int threads[MAX_NUM_THREADS];
     int i;
 
-    if (argc ==  1) { HELP_MSG; }
+    if (argc ==  1) { 
+        HELP_MSG; 
+        exit (EXIT_SUCCESS);    
+    }
 
     skipString = (char*) malloc(10*sizeof(char));
     pinString = (char*) malloc(100*sizeof(char));
 
-    while ((c = getopt (argc, argv, "+c:s:t:hv")) != -1)
+    while ((c = getopt (argc, argv, "+c:s:t:hvV")) != -1)
     {
         switch (c)
         {
             case 'h':
                 HELP_MSG;
+                exit (EXIT_SUCCESS);    
+            case 'v':
+                VERSION_MSG;
                 exit (EXIT_SUCCESS);    
             case 'c':
                 numThreads = cstr_to_cpuset(threads, optarg);
@@ -187,11 +200,12 @@ int main (int argc, char** argv)
             case 's':
                 skipMask = strtoul(optarg,NULL,16);
                 break;
-            case 'v':
+            case 'V':
                 verbose = 1;
                 break;
             default:
                 HELP_MSG;
+                exit(EXIT_FAILURE);
         }
     }
 
@@ -201,9 +215,6 @@ int main (int argc, char** argv)
         strcpy(typeString,"NoType");
     }
 
-
-
-
 	/* CPU List:
 	 * pthread (default): pin main pid + all thread tids
 	 *
@@ -212,7 +223,7 @@ int main (int argc, char** argv)
 	 * gcc openmp: pin main pid + all thread tids (one less)
 	 */
 
-    if (!strcmp("omp_intel",typeString)) 
+    if (!strcmp("intel",typeString)) 
     {
 		skipMask = 0x2;
     }
@@ -229,7 +240,7 @@ int main (int argc, char** argv)
         sprintf(skipString,"%d",skipMask);
         setenv("LIKWID_PIN",pinString , 1);
         setenv("LIKWID_SKIP",skipString , 1);
-        setenv("LD_PRELOAD","./libptoverride.so", 1);
+        setenv("LD_PRELOAD",TOSTRING(LIBLIKWIDPIN), 1);
 
         if (verbose)
         {

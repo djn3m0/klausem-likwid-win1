@@ -4,9 +4,16 @@
 COLOR = CYAN
 
 # Path were to install likwid
-PREFIX = /tmp/install
+PREFIX = /home.local/jan/bin
 MANPREFIX = $(PREFIX)/man
 
+#LIBPTHREAD = 
+
 # Versioning Information
-VERSION = 0.1
+VERSION = 1
+RELEASE = 0
 DATE    = 10.10.2009
+
+LIBLIKWIDPIN = $(PREFIX)/lib/liblikwidpin.so
+MAX_NUM_THREADS = 32
+
