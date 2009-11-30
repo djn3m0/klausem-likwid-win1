@@ -60,7 +60,6 @@ exit(0);
 
 int main (int argc, char** argv)
 { 
-    int optInfo = 0;
     int optSetFeature = 0;
     int cpuId = 0;
     int c;
@@ -68,7 +67,7 @@ int main (int argc, char** argv)
 
     if (argc ==  1) { HELP_MSG }
 
-    while ((c = getopt (argc, argv, "t:s:u:hi")) != -1)
+    while ((c = getopt (argc, argv, "t:s:u:hvi")) != -1)
     {
         switch (c)
         {
@@ -108,9 +107,6 @@ int main (int argc, char** argv)
             case 't':
                 cpuId = atoi(optarg);
 
-                break;
-            case 'i':
-                optInfo = 1;
                 break;
             case '?':
                 if (isprint (optopt))

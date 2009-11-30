@@ -1,7 +1,10 @@
-TARGET   = libptoverride.so
+include  ../../config.mk
+TARGET   = liblikwidpin.so
 
 CC        = gcc
-DEFINES   = -DCOLOR=CYAN    # Color the output
+ifneq ($(COLOR),NONE)
+DEFINES  = -DCOLOR=$(COLOR)
+endif
 
 CFLAGS   = -O2 -Wall -std=c99 -shared -fPIC
 CPPFLAGS = $(DEFINES) -D_GNU_SOURCE -I.
