@@ -6,7 +6,7 @@
  *    Description:  An application to read out performance counter registers
  *                  on Intel Core, Nehalem and AMD K10 processors.
  *
- *        Version:  0.1
+ *        Version:  <VERSION>
  *        Created:  08/13/2009
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
@@ -45,19 +45,23 @@
 #include <cpuFeatures.h>
 #include <perfmon.h>
 
-#define MAX_NUM_THREADS 100
 
 #define HELP_MSG \
-printf("perfCtr --  Version 0.1\n"); \
+printf("likwid-perfCtr --  Version  %d.%d \n\n",VERSION,RELEASE); \
 printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
-printf("-v\t verbose output\n"); \
+printf("-v\t Version information\n"); \
+printf("-V\t verbose output\n"); \
 printf("-i\t print cpu info\n"); \
 printf("-m\t use markers inside code \n"); \
 printf("-g\t performance group  or event tag\n"); \
 printf("-a\t list available performance groups\n"); \
 printf("-t\t comma separated core ids to measure\n\n")
+
+
+#define VERSION_MSG \
+printf("likwid-perfCtr  %d.%d \n\n",VERSION,RELEASE);
 
 /* the next two functions were copied and adopted from 
  * the taskset application in linux-util package */
@@ -141,14 +145,21 @@ int main (int argc, char** argv)
     int threads[MAX_NUM_THREADS];
     int i,j;
 
-    if (argc ==  1) { HELP_MSG; }
+    if (argc ==  1) 
+    {
+        HELP_MSG;
+        exit (EXIT_SUCCESS);    
+    }
 
-    while ((c = getopt (argc, argv, "t:g:u:p:hmvai")) != -1)
+    while ((c = getopt (argc, argv, "t:g:u:p:hvmvai")) != -1)
     {
         switch (c)
         {
             case 'h':
                 HELP_MSG;
+                exit (EXIT_SUCCESS);    
+            case 'v':
+                VERSION_MSG;
                 exit (EXIT_SUCCESS);    
             case 'g':
                 eventString = (char*) malloc((strlen(optarg)+10)*sizeof(char));
@@ -171,7 +182,7 @@ int main (int argc, char** argv)
                 group = NOGROUP;
 #endif
                 break;
-            case 'v':
+            case 'V':
                 perfmon_verbose = 1;
                 break;
             case 'a':
@@ -198,6 +209,7 @@ int main (int argc, char** argv)
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
+                exit (EXIT_SUCCESS);    
         }
     }
 

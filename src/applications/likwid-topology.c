@@ -6,7 +6,7 @@
  *    Description:  A application to determine the thread and cache topology
  *                  on x86 processors.
  *
- *        Version:  1.0
+ *        Version:  <VERSION>
  *        Created:  08/13/2009
  *       Revision:  none
  *
@@ -46,15 +46,17 @@
 #include <tree.h>
 #include <asciiBoxes.h>
 
-
 #define HELP_MSG \
-    printf("\ncpuTopology --  Version 0.1\n\n"); \
+printf("\nlikwid-topology --  Version %d.%d \n\n",VERSION,RELEASE); \
 printf("A tool to print the thread and cache topology on x86 CPUs.\n"); \
 printf("Options:\n"); \
 printf("-h\t Help message\n"); \
+printf("-v\t Version information\n"); \
 printf("-c\t list cache information\n"); \
-printf("-g\t graphical output\n\n"); \
-exit(0);
+printf("-g\t graphical output\n\n")
+
+#define VERSION_MSG \
+printf("likwid-topology  %d.%d \n\n",VERSION,RELEASE)
 
 int main (int argc, char** argv)
 { 
@@ -72,13 +74,16 @@ int main (int argc, char** argv)
     char* boxLabel;
 
 
-    while ((c = getopt (argc, argv, "hcg")) != -1)
+    while ((c = getopt (argc, argv, "hvcg")) != -1)
     {
         switch (c)
         {
             case 'h':
-                HELP_MSG
-                    exit (EXIT_SUCCESS);    
+                HELP_MSG;
+                exit (EXIT_SUCCESS);    
+            case 'v':
+                VERSION_MSG;
+                exit (EXIT_SUCCESS);    
             case 'g':
                 optGraphical = 1;
                 break;
@@ -98,7 +103,8 @@ int main (int argc, char** argv)
                 }
                 return EXIT_FAILURE;
             default:
-                HELP_MSG
+                HELP_MSG;
+                exit (EXIT_SUCCESS);    
         }
     }
 

@@ -9,13 +9,13 @@
  *                  sys interface of the Linux 2.6 kernel. This module 
  *                  is based on the msr-util tools.
  *
- *        Version:  1.0
+ *        Version:  <VERSION>
  *        Created:  07/05/2009
  *       Revision:  none
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  none
+ *        Project:  likwid
  *      Copyright:  Copyright (c) 2009, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -58,13 +58,12 @@ msr_check()
 
     if (fd < 0)
     {
-        fprintf(stderr, "rdmsr: failed to open '%s': %s\n",msr_file_name , strerror(errno));                      
-        fprintf(stderr, "       check if the msr module is loaded and the file has correct permissions.\n");  
+        fprintf(stderr, "ERROR\n");                      
+        fprintf(stderr, "rdmsr: failed to open '%s': %s!\n",msr_file_name , strerror(errno));                      
+        fprintf(stderr, "       Please check if the msr module is loaded and the device file has correct permissions.\n\n");  
         exit(127);
     }
 }
-
-
 
 
 uint64_t 
