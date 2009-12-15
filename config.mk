@@ -9,11 +9,12 @@ MANPREFIX = $(PREFIX)/man
 
 #LIBPTHREAD = 
 
+MAX_NUM_THREADS = 32
+
 # Versioning Information
 VERSION = 1
 RELEASE = 0
-DATE    = 10.10.2009
+DATE    = 30.11.2009
 
 LIBLIKWIDPIN = $(PREFIX)/lib/liblikwidpin.so
-MAX_NUM_THREADS = 32
 

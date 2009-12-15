@@ -46,7 +46,7 @@
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
-perfmon_markerStartCounters(int cpu_id)
+likwid_markerStartCounters(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
     cpuid_init();
@@ -111,6 +111,8 @@ perfmon_markerStartCounters(int cpu_id)
 
                 case SHANGHAI:
 
+                case ISTANBUL:
+
                     msr_write(cpu_id, MSR_AMD_PMC0 , 0x0ULL);
                     msr_write(cpu_id, MSR_AMD_PMC1 , 0x0ULL);
                     msr_write(cpu_id, MSR_AMD_PMC2 , 0x0ULL);
@@ -145,7 +147,7 @@ perfmon_markerStartCounters(int cpu_id)
 
 
 void
-perfmon_markerStopCounters(int cpu_id)
+likwid_markerStopCounters(int cpu_id)
 {
     uint64_t flags;
 
@@ -183,7 +185,7 @@ perfmon_markerStopCounters(int cpu_id)
 
 }
 
-void perfmon_markerSetCycles(uint64_t cycles)
+void likwid_markerSetCycles(uint64_t cycles)
 {
     FILE *file;
 
