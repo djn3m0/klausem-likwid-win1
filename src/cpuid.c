@@ -83,6 +83,7 @@ static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
 static char* istanbul_str = "AMD Istanbul processor";
+static char* magnycours_str = "AMD Magny Cours processor";
 static char* opteron_sc_str = "AMD Opteron single core 130nm processor";
 static char* opteron_dc_e_str = "AMD Opteron Dual Core Rev E 90nm processor";
 static char* opteron_dc_f_str = "AMD Opteron Dual Core Rev F 90nm processor";
@@ -336,6 +337,10 @@ cpuid_init (void)
 
                 case ISTANBUL:
                     cpuid_info.name = istanbul_str;
+                    break;
+
+                case MAGNYCOURS:
+                    cpuid_info.name = magnycours_str;
                     break;
 
                 default:
