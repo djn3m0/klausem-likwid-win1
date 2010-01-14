@@ -55,7 +55,7 @@
 #define BARCELONA 0x02U
 #define SHANGHAI  0x04U
 #define ISTANBUL  0x08U
-#define MAGNYCOUR 0x09U
+#define MAGNYCOURS 0x09U
 
 /* AMD K8 */
 #define OPTERON_SC_1MB  0x05U

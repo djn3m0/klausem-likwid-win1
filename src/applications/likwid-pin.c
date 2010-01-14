@@ -151,7 +151,6 @@ pinPid(int cpuid)
 #endif
 }
 
-#define LIB bla
 
 int main (int argc, char** argv)
 { 
@@ -225,7 +224,7 @@ int main (int argc, char** argv)
 
     if (!strcmp("intel",typeString)) 
     {
-		skipMask = 0x2;
+		skipMask = 0x1;
     }
 
 	if (numThreads > 1)
