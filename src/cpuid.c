@@ -92,7 +92,8 @@ static char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
 static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
-
+static char* unknown_intel_str = "Unknown Intel Processor";
+static char* unknown_amd_str = "Unknown AMD Processor";
 
 static int lock = 0;
 static uint32_t eax, ebx, ecx, edx;
@@ -267,8 +268,7 @@ cpuid_init (void)
                     break;
 
                 default:
-                    fprintf(stderr, "Processor is not supported\n");
-                    exit(EXIT_FAILURE);
+                    cpuid_info.name = unknown_intel_str;
                     break;
             }
             break;
@@ -344,8 +344,7 @@ cpuid_init (void)
                     break;
 
                 default:
-                    fprintf(stderr, "Processor is not supported\n");
-                    exit(EXIT_FAILURE);
+                    cpuid_info.name = unknown_amd_str;
                     break;
             }
             break;

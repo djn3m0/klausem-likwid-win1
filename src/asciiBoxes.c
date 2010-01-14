@@ -43,7 +43,7 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define BOXWIDTH 5
+#define BOXWIDTH 6
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -168,13 +168,16 @@ asciiBoxes_print(BoxContainer* container)
         printf("| ");
         for (j=0; j<container->numColumns; j++)
         {
+            width = (container->boxes[i][j].width * BOXWIDTH+(container->boxes[i][j].width-1)*3-6)/2;
             printf("|");
-            width = (container->boxes[i][j].width * BOXWIDTH+(container->boxes[i][j].width-1)*3-5)/2;
+
             for (k=0; k<width; k++)
             {
                 printf(" ");
             }
-            printf("%5s",container->boxes[i][j].label);
+
+            printf("%6s",container->boxes[i][j].label);
+
             for (k=0; k<width; k++)
             {
                 printf(" ");
