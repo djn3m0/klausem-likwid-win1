@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <bstrlib.h>
 #include <types.h>
 #include <registers.h>
 
@@ -51,40 +52,40 @@ perfmon_printGroups_core2(void)
     printf("CPI: cycles per instruction\n\n");
 }
 
-    PerfmonGroup
-perfmon_getGroupId_core2(char* groupStr)
+PerfmonGroup
+perfmon_getGroupId_core2(bstring groupStr)
 {
     PerfmonGroup group;
 
-    if (!strcmp("FLOPS_DP",groupStr)) 
+    if (biseqcstr(groupStr,"FLOPS_DP")) 
     {
         group = FLOPS_DP;
     }
-    else if (!strcmp("FLOPS_SP",groupStr)) 
+    else if (biseqcstr(groupStr,"FLOPS_SP")) 
     {
         group = FLOPS_SP;
     }
-    else if (!strcmp("L2",groupStr)) 
+    else if (biseqcstr(groupStr,"L2")) 
     {
         group = L2;
     }
-    else if (!strcmp("MEM",groupStr)) 
+    else if (biseqcstr(groupStr,"MEM")) 
     {
         group = MEM;
     }
-    else if (!strcmp("DATA",groupStr)) 
+    else if (biseqcstr(groupStr,"DATA")) 
     {
         group = DATA;
     }
-    else if (!strcmp("BRANCH",groupStr)) 
+    else if (biseqcstr(groupStr,"BRANCH")) 
     {
         group = BRANCH;
     }
-    else if (!strcmp("TLB",groupStr)) 
+    else if (biseqcstr(groupStr,"TLB")) 
     {
         group = TLB;
     }
-    else if (!strcmp("CPI",groupStr)) 
+    else if (biseqcstr(groupStr,"CPI")) 
     {
         group = CPI;
     }
@@ -165,50 +166,66 @@ perfmon_stopCountersThread_core2(int thread_id)
     void
 perfmon_setupGroupThread_core2(int thread_id, PerfmonGroup group)
 {
+    bstring event_0 = bformat("NOINIT");
+    bstring event_1 = bformat("NOINIT");
 
     switch ( group ) 
     {
         case FLOPS_DP:
-            setupCounterThread(thread_id, PMC0, "SIMD_COMP_INST_RETIRED_PACKED_DOUBLE");
-            setupCounterThread(thread_id, PMC1, "SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE");
+            bassigncstr(event_0, "SIMD_COMP_INST_RETIRED_PACKED_DOUBLE");
+            bassigncstr(event_1, "SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case FLOPS_SP:
-            setupCounterThread(thread_id, PMC0, "SIMD_COMP_INST_RETIRED_PACKED_SINGLE");
-            setupCounterThread(thread_id, PMC1, "SIMD_COMP_INST_RETIRED_SCALAR_SINGLE");
+            bassigncstr(event_0, "SIMD_COMP_INST_RETIRED_PACKED_SINGLE");
+            bassigncstr(event_1, "SIMD_COMP_INST_RETIRED_SCALAR_SINGLE");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case L2:
-            setupCounterThread(thread_id, PMC0, "L1D_REPL");
-            setupCounterThread(thread_id, PMC1, "L1D_M_EVICT");
+            bassigncstr(event_0, "L1D_REPL");
+            bassigncstr(event_1, "L1D_M_EVICT");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case MEM:
-            setupCounterThread(thread_id, PMC0, "BUS_TRANS_MEM_THIS_CORE_THIS_A");
+            bassigncstr(event_0, "BUS_TRANS_MEM_THIS_CORE_THIS_A");
+            setupCounterThread(thread_id, PMC0, event_0);
             break;
 
         case DATA:
-            setupCounterThread(thread_id, PMC0, "INST_RETIRED_LOADS");
-            setupCounterThread(thread_id, PMC1, "INST_RETIRED_STORES");
+            bassigncstr(event_0, "INST_RETIRED_LOADS");
+            bassigncstr(event_1, "INST_RETIRED_STORES");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case BRANCH:
-            setupCounterThread(thread_id, PMC0, "BR_INST_RETIRED_ANY");
-            setupCounterThread(thread_id, PMC1, "BR_INST_RETIRED_MISPRED");
+            bassigncstr(event_0, "BR_INST_RETIRED_ANY");
+            bassigncstr(event_1, "BR_INST_RETIRED_MISPRED");
             break;
 
         case CPI:
-            setupCounterThread(thread_id, PMC0, "UOPS_RETIRED_ANY");
+            bassigncstr(event_0, "UOPS_RETIRED_ANY");
+            setupCounterThread(thread_id, PMC0, event_0);
             break;
 
         case TLB:
-            setupCounterThread(thread_id, PMC0, "DTLB_MISSES_ANY");
-            setupCounterThread(thread_id, PMC1, "DTLB_MISSES_MISS_LD");
+            bassigncstr(event_0, "DTLB_MISSES_ANY");
+            bassigncstr(event_1, "DTLB_MISSES_MISS_LD");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case FRONTEND:
-            setupCounterThread(thread_id, PMC0, "UOPS_RETIRED_ANY");
-            setupCounterThread(thread_id, PMC1, "DTLB_MISSES_MISS_LD");
+            bassigncstr(event_0, "UOPS_RETIRED_ANY");
+            bassigncstr(event_1, "DTLB_MISSES_MISS_LD");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         default:
@@ -216,6 +233,8 @@ perfmon_setupGroupThread_core2(int thread_id, PerfmonGroup group)
             break;
     }
 
+    bdestroy(event_0);
+    bdestroy(event_1);
 }
 
     void

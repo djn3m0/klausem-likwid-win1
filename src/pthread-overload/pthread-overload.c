@@ -39,7 +39,7 @@ pthread_create(pthread_t* thread,
     static int reallpthrindex = 0;
     static int npinned = 0;
     static int ncalled = 0;
-    static int pin_ids[MAX_NUM_THREADS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    static int pin_ids[MAX_NUM_THREADS];
     static int skipMask = 0;
 
 

@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <bstrlib.h>
 #include <types.h>
 #include <timer.h>
 #include <msr.h>
@@ -67,9 +68,9 @@ static int numThreads;
 
 /* #####   PROTOTYPES  -  LOCAL TO THIS SOURCE FILE   ##################### */
 
-static int getEvent(char* , uint32_t* , uint32_t* );
+static int getEvent(bstring , uint32_t* , uint32_t* );
 static void initThread(int , int );
-static int setupCounterThread(int , PerfmonCounterIndex , char* );
+static int setupCounterThread(int , PerfmonCounterIndex , bstring );
 
 /* These functions are all static and need access to the module variables */
 #include <perfmon_pm.h>
@@ -81,7 +82,7 @@ static int setupCounterThread(int , PerfmonCounterIndex , char* );
 /* #####   FUNCTION POINTERS  -  LOCAL TO THIS SOURCE FILE ################ */
 
 static void (*initThreadArch) (PerfmonThread *thread);
-static PerfmonGroup (*getGroupId) (char*);
+static PerfmonGroup (*getGroupId) (bstring);
 static void (*setupGroupThread) (int thread_id, PerfmonGroup group);
 static void (*startCountersThread) (int thread_id);
 static void (*stopCountersThread) (int thread_id);
@@ -93,14 +94,14 @@ static void (*printResults) (
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static int
-getEvent(char* event_str, uint32_t* event, uint32_t* umask)
+getEvent(bstring event_str, uint32_t* event, uint32_t* umask)
 {
     int i;
     int found = FALSE;
 
     for (i=0; i< num_arch_events; i++)
     {
-        if (strcmp(event_str, eventHash[i].key) == 0)
+        if (biseqcstr(event_str, eventHash[i].key))
         {
             *event = eventHash[i].event.event_id;
             *umask = eventHash[i].event.umask;
@@ -112,7 +113,7 @@ getEvent(char* event_str, uint32_t* event, uint32_t* umask)
     if (perfmon_verbose)
     {
         printf ("Found event %s : Event_id 0x%02X Umask 0x%02X \n",
-                event_str, *event, *umask);
+                event_str->data, *event, *umask);
     }
 
     return found;
@@ -126,9 +127,6 @@ initThread(int thread_id, int cpu_id)
 
     for (i=0; i<NUM_PMC; i++)
     {
-        threadData[thread_id].counters[i].label =
-            (char*) malloc(500*sizeof(char));
-
         threadData[thread_id].counters[i].init = FALSE;
     }
 
@@ -140,7 +138,7 @@ initThread(int thread_id, int cpu_id)
 static int
 setupCounterThread(int thread_id,
         PerfmonCounterIndex index,
-        char* event_str)
+        bstring event_str)
 {
     uint64_t flags;
     uint32_t umask = 0, event = 0;
@@ -149,11 +147,11 @@ setupCounterThread(int thread_id,
 
     if (!getEvent(event_str, &event, &umask))
     {
-        printf("ERROR: Event %s not found for current architecture\n",event_str);
+        printf("ERROR: Event %s not found for current architecture\n",event_str->data);
         return FALSE;
     }
 
-    strcpy(threadData[thread_id].counters[index].label, event_str);
+    threadData[thread_id].counters[index].label = bstrcpy(event_str);
     threadData[thread_id].counters[index].init = TRUE;
 
     flags = msr_read(cpu_id,reg);
@@ -200,7 +198,6 @@ perfmon_printResults()
 
     for (i=0;i<NUM_PMC;i++) 
     {
-        summary.counters[i].label = (char*) malloc(500*sizeof(char));
         summary.pc[i] = 0;
         summary.instructionsRetired = 0;
         summary.counters[i].init = FALSE;
@@ -227,7 +224,7 @@ perfmon_printResults()
                 summary.pc[i] += threadData[thread_id].pc[i];
                 printf ("[%d] %s: %llu \n",
                         threadData[thread_id].cpu_id,
-                        threadData[thread_id].counters[i].label,
+                        threadData[thread_id].counters[i].label->data,
                         LLU_CAST threadData[thread_id].pc[i]);
             }
         }
@@ -257,7 +254,7 @@ perfmon_printResults()
             {
                 printf ("[%d] %s: %llu \n",
                         summary.cpu_id,
-                        threadData[0].counters[i].label,
+                        threadData[0].counters[i].label->data,
                          LLU_CAST summary.pc[i]);
             }
         }
@@ -304,7 +301,7 @@ perfmon_getCycles(void)
 }
 
     int
-perfmon_setupGroup(char* groupString)
+perfmon_setupGroup(bstring groupString)
 {
     int i;
 
@@ -324,7 +321,7 @@ perfmon_setupGroup(char* groupString)
 }
 
     int
-perfmon_setupCounter(PerfmonCounterIndex index, char* event_str)
+perfmon_setupCounter(PerfmonCounterIndex index, bstring event_str)
 {
     int i;
 
@@ -332,7 +329,7 @@ perfmon_setupCounter(PerfmonCounterIndex index, char* event_str)
     {
         if (!setupCounterThread(i,index,event_str)) 
         {
-            fprintf (stderr, "Unknown performance event %s\n",event_str);
+            fprintf (stderr, "Unknown performance event %s\n",event_str->data);
             return FALSE;
         }
     }

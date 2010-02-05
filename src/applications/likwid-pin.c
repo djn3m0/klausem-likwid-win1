@@ -39,6 +39,8 @@
 #include <ctype.h>
 
 #include <types.h>
+#include <bstrlib.h>
+#include <strUtil.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -60,72 +62,6 @@ printf("-s\t bitmask with threads to skip\n\n")
 printf("likwid-pin   %d.%d \n\n",VERSION,RELEASE)
     
 
-/* the next two functions were inspired and adopted from 
- * the taskset application in linux-util package */
-static const char *nexttoken(const char *str,  int sep)
-{
-    if (str)
-    {
-        str = strchr(str, sep);
-    }
-
-    if (str)
-    {
-        str++;
-    }
-
-    return str;
-}
-
-static int cstr_to_cpuset(int* threads,  const char* str)
-{
-    int numThreads=0;
-    const char *p, *q;
-    q = str;
-
-    while (p = q, q = nexttoken(q, ','), p) 
-    {
-        unsigned int rangeBegin;
-        unsigned int rangeEnd;
-        const char *c1, *c2;
-
-        if (sscanf(p, "%u", &rangeBegin) < 1)
-        {
-            return 0;
-        }
-
-        rangeEnd = rangeBegin;
-
-        c1 = nexttoken(p, '-');
-        c2 = nexttoken(p, ',');
-
-        if (c1 != NULL && (c2 == NULL || c1 < c2)) 
-        {
-            if (sscanf(c1, "%u", &rangeEnd) < 1)
-            {
-                return 0;
-            }
-            else if(rangeEnd > 1000)
-            {
-                return 0;
-            }
-        }
-
-        if (!(rangeBegin <= rangeEnd))
-        {
-            return 0;
-        }
-
-        while (rangeBegin <= rangeEnd) {
-            numThreads++;
-            threads[numThreads-1] = rangeBegin;
-            rangeBegin++;
-        }
-    }
-
-    return numThreads;
-
-}
 
 void
 pinPid(int cpuid)
@@ -154,24 +90,20 @@ pinPid(int cpuid)
 
 int main (int argc, char** argv)
 { 
+    int i;
     int c;
 	int skipMask = 0;
-    char * typeString = NULL;
-    char * pinString = NULL;
-    char * skipString = NULL;
+    bstring  typeString = bformat("NoType");
+    bstring  pinString;
+    bstring  skipString;
     int verbose = 0;
     int numThreads=0;
-    /* FIXME It should be checked for size to prevent buffer overflow on threads */
     int threads[MAX_NUM_THREADS];
-    int i;
 
     if (argc ==  1) { 
         HELP_MSG; 
         exit (EXIT_SUCCESS);    
     }
-
-    skipString = (char*) malloc(10*sizeof(char));
-    pinString = (char*) malloc(100*sizeof(char));
 
     while ((c = getopt (argc, argv, "+c:s:t:hvV")) != -1)
     {
@@ -193,8 +125,7 @@ int main (int argc, char** argv)
                 }
                 break;
             case 't':
-                typeString = (char*) malloc((strlen(optarg)+10)*sizeof(char));
-                strcpy(typeString,optarg);
+                bassigncstr(typeString, optarg);
                 break;
             case 's':
                 skipMask = strtoul(optarg,NULL,16);
@@ -208,12 +139,6 @@ int main (int argc, char** argv)
         }
     }
 
-    if (typeString == NULL)
-    {
-        typeString = (char*) malloc(30*sizeof(char));
-        strcpy(typeString,"NoType");
-    }
-
 	/* CPU List:
 	 * pthread (default): pin main pid + all thread tids
 	 *
@@ -222,30 +147,30 @@ int main (int argc, char** argv)
 	 * gcc openmp: pin main pid + all thread tids (one less)
 	 */
 
-    if (!strcmp("intel",typeString)) 
+    if (biseqcstr(typeString,"intel")) 
     {
 		skipMask = 0x1;
     }
 
 	if (numThreads > 1)
 	{
-		sprintf(pinString,"%d",threads[1]);
+		pinString = bformat("%d",threads[1]);
 
 		for (i=2; i < numThreads;i++)
 		{
-			sprintf(pinString,"%s,%d",pinString,threads[i]);
+			bformata(pinString,",%d",threads[i]);
 		}
 
-        sprintf(skipString,"%d",skipMask);
-        setenv("LIKWID_PIN",pinString , 1);
-        setenv("LIKWID_SKIP",skipString , 1);
+        skipString = bformat("%d",skipMask);
+        setenv("LIKWID_PIN",(char*) pinString->data , 1);
+        setenv("LIKWID_SKIP",(char*) skipString->data , 1);
         setenv("LD_PRELOAD",TOSTRING(LIBLIKWIDPIN), 1);
 
         if (verbose)
         {
             printf("Threads: %d \n",numThreads);
-            printf("Pin list: %s\n",pinString);
-            printf("Skip mask: %s\n",skipString);
+            printf("Pin list: %s\n",pinString->data);
+            printf("Skip mask: %s\n",skipString->data);
         }
 	}
 

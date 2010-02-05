@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <bstrlib.h>
 #include <types.h>
 #include <registers.h>
 
@@ -156,47 +157,47 @@ perfmon_startCountersThread_nehalem(int thread_id)
 
 
 PerfmonGroup
-perfmon_getGroupId_nehalem (char* groupStr)
+perfmon_getGroupId_nehalem (bstring groupStr)
 {
 	PerfmonGroup group;
 
-	if (!strcmp("FLOPS_DP",groupStr)) 
+	if (biseqcstr(groupStr,"FLOPS_DP")) 
 	{
 		group = FLOPS_DP;
 	}
-	else if (!strcmp("FLOPS_SP",groupStr)) 
+	else if (biseqcstr(groupStr,"FLOPS_SP")) 
 	{
 		group = FLOPS_SP;
 	}
-	else if (!strcmp("L2",groupStr)) 
+	else if (biseqcstr(groupStr,"L2")) 
 	{
 		group = L2;
 	}
-	else if (!strcmp("MEM",groupStr)) 
+	else if (biseqcstr(groupStr,"MEM")) 
 	{
 		group = MEM;
 	}
-	else if (!strcmp("DATA",groupStr)) 
+	else if (biseqcstr(groupStr,"DATA")) 
 	{
 		group = DATA;
 	}
-	else if (!strcmp("BRANCH",groupStr)) 
+	else if (biseqcstr(groupStr,"BRANCH")) 
 	{
 		group = BRANCH;
 	}
-	else if (!strcmp("TLB",groupStr)) 
+	else if (biseqcstr(groupStr,"TLB")) 
 	{
 		group = TLB;
 	}
-	else if (!strcmp("CPI",groupStr)) 
+	else if (biseqcstr(groupStr,"CPI")) 
 	{
 		group = CPI;
 	}
-	else if (!strcmp("CLUSTER",groupStr)) 
+	else if (biseqcstr(groupStr,"CLUSTER")) 
 	{
 		group = CLUSTER;
 	}
-	else if (!strcmp("CLUSTER_FLOPS",groupStr)) 
+	else if (biseqcstr(groupStr,"CLUSTER_FLOPS")) 
 	{
 		group = CLUSTER_FLOPS;
 	}
@@ -213,76 +214,116 @@ perfmon_getGroupId_nehalem (char* groupStr)
 
 void perfmon_setupGroupThread_nehalem(int thread_id,PerfmonGroup group)
 {
+    bstring event_0 = bformat("NOINIT");
+    bstring event_1 = bformat("NOINIT");
+    bstring event_2 = bformat("NOINIT");
+    bstring event_3 = bformat("NOINIT");
 
     switch ( group ) {
         case FLOPS_DP:
-            setupCounterThread(thread_id, PMC0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
-            setupCounterThread(thread_id, PMC1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
-            setupCounterThread(thread_id, PMC2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
-            setupCounterThread(thread_id, PMC3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
+            bassigncstr(event_0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
+            bassigncstr(event_1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
+            bassigncstr(event_2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
+            bassigncstr(event_3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
+            setupCounterThread(thread_id, PMC2, event_2);
+            setupCounterThread(thread_id, PMC3, event_3);
             break;
 
         case FLOPS_SP:
-            setupCounterThread(thread_id, PMC0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
-            setupCounterThread(thread_id, PMC1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
-            setupCounterThread(thread_id, PMC2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
-            setupCounterThread(thread_id, PMC3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
+            bassigncstr(event_0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
+            bassigncstr(event_1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
+            bassigncstr(event_2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
+            bassigncstr(event_3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
+            setupCounterThread(thread_id, PMC2, event_2);
+            setupCounterThread(thread_id, PMC3, event_3);
             break;
 
         case L2:
-            setupCounterThread(thread_id, PMC0, "L1D_REPL");
-            setupCounterThread(thread_id, PMC1, "L1D_M_EVICT");
+            bassigncstr(event_0, "L1D_REPL");
+            bassigncstr(event_1, "L1D_M_EVICT");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case L3:
-            setupCounterThread(thread_id, PMC0, "L2_LINES_IN_ANY");
-            setupCounterThread(thread_id, PMC1, "L2_LINES_OUT_ANY");
+            bassigncstr(event_0, "L2_LINES_IN_ANY");
+            bassigncstr(event_1, "L2_LINES_OUT_ANY");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case MEM:
-            setupCounterThread(thread_id, PMCU0, "UNC_L3_LINES_IN_ANY");
-            setupCounterThread(thread_id, PMCU1, "UNC_L3_LINES_OUT_ANY");
-            setupCounterThread(thread_id, PMCU2, "UNC_L3_MISS_READ");
-            setupCounterThread(thread_id, PMCU3, "UNC_GQ_DATA_FROM_L3");
+            bassigncstr(event_0, "UNC_L3_LINES_IN_ANY");
+            bassigncstr(event_1, "UNC_L3_LINES_OUT_ANY");
+            bassigncstr(event_2, "UNC_L3_MISS_READ");
+            bassigncstr(event_3, "UNC_GQ_DATA_FROM_L3");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
+            setupCounterThread(thread_id, PMC2, event_2);
+            setupCounterThread(thread_id, PMC3, event_3);
+            /*
             setupCounterThread(thread_id, PMC0, "L2_LINES_IN_ANY");
+            */
             break;
 
         case DATA:
-            setupCounterThread(thread_id, PMC0, "MEM_INST_RETIRED_LOADS");
-            setupCounterThread(thread_id, PMC1, "MEM_INST_RETIRED_STORES");
+            bassigncstr(event_0, "MEM_INST_RETIRED_LOADS");
+            bassigncstr(event_1, "MEM_INST_RETIRED_STORES");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case BRANCH:
-            setupCounterThread(thread_id, PMC0, "BR_INST_RETIRED_ALL_BRANCHES");
-            setupCounterThread(thread_id, PMC1, "BR_MISP_RETIRED_ALL_BRANCHES");
+            bassigncstr(event_0, "BR_INST_RETIRED_ALL_BRANCHES");
+            bassigncstr(event_1, "BR_MISP_RETIRED_ALL_BRANCHES");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case CPI:
-            setupCounterThread(thread_id, PMC0, "UOPS_RETIRED_ANY");
+            bassigncstr(event_0, "UOPS_RETIRED_ANY");
+            setupCounterThread(thread_id, PMC0, event_0);
             break;
 
         case TLB:
-            setupCounterThread(thread_id, PMC0, "DTLB_MISSES_ANY");
-            setupCounterThread(thread_id, PMC1, "DTLB_MISSES_MISS_LD");
+            bassigncstr(event_0, "DTLB_MISSES_ANY");
+            bassigncstr(event_1, "DTLB_MISSES_MISS_LD");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case CLUSTER:
-            setupCounterThread(thread_id, PMC0, "FP_COMP_OPS_EXE_X87");
-            setupCounterThread(thread_id, PMC1, "FP_COMP_OPS_EXE_SSE_FP");
-            setupCounterThread(thread_id, PMC2, "L2_RQSTS_MISS");
+            bassigncstr(event_0, "FP_COMP_OPS_EXE_X87");
+            bassigncstr(event_1, "FP_COMP_OPS_EXE_SSE_FP");
+            bassigncstr(event_2, "L2_RQSTS_MISS");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
+            setupCounterThread(thread_id, PMC2, event_2);
             break;
 
         case CLUSTER_FLOPS:
-            setupCounterThread(thread_id, PMC0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
-            setupCounterThread(thread_id, PMC1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
-            setupCounterThread(thread_id, PMC2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
-            setupCounterThread(thread_id, PMC3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
+            bassigncstr(event_0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
+            bassigncstr(event_1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
+            bassigncstr(event_2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
+            bassigncstr(event_3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
+            setupCounterThread(thread_id, PMC2, event_2);
+            setupCounterThread(thread_id, PMC3, event_3);
             break;
 
         default:
             break;
     }
 
+    bdestroy(event_0);
+    bdestroy(event_1);
+    bdestroy(event_2);
+    bdestroy(event_3);
 }
 
 
@@ -383,6 +424,10 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
             break;
 
         case BRANCH:
+            printf ("[%d] Ratio Mispredicted Branches: %f \n",cpu_id,(float)thread->pc[1]/(float)thread->pc[0]);
+            break;
+
+        case TLB:
             printf ("[%d] Ratio Mispredicted Branches: %f \n",cpu_id,(float)thread->pc[1]/(float)thread->pc[0]);
             break;
 

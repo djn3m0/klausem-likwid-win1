@@ -9,7 +9,7 @@ MANPREFIX = $(PREFIX)/man
 
 #LIBPTHREAD = 
 
-MAX_NUM_THREADS = 32
+MAX_NUM_THREADS = 128
 
 # Versioning Information
 VERSION = 1
