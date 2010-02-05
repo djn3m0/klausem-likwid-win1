@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <bstrlib.h>
 #include <types.h>
 #include <registers.h>
 
@@ -92,27 +93,27 @@ perfmon_stopCountersThread_pm(int thread_id)
 
 
     PerfmonGroup
-perfmon_getGroupId_pm (char* groupStr)
+perfmon_getGroupId_pm (bstring groupStr)
 {
     PerfmonGroup group;
 
-    if (!strcmp("FLOPS_DP",groupStr)) 
+    if (biseqcstr(groupStr,"FLOPS_DP")) 
     {
         group = FLOPS_DP;
     }
-    else if (!strcmp("FLOPS_SP",groupStr)) 
+    else if (biseqcstr(groupStr,"FLOPS_SP")) 
     {
         group = FLOPS_SP;
     }
-    else if (!strcmp("L2",groupStr)) 
+    else if (biseqcstr(groupStr,"L2")) 
     {
         group = L2;
     }
-    else if (!strcmp("BRANCH",groupStr)) 
+    else if (biseqcstr(groupStr,"BRANCH")) 
     {
         group = BRANCH;
     }
-    else if (!strcmp("CPI",groupStr)) 
+    else if (biseqcstr(groupStr,"CPI")) 
     {
         group = CPI;
     }
@@ -129,37 +130,50 @@ perfmon_getGroupId_pm (char* groupStr)
 
 void perfmon_setupGroupThread_pm(int thread_id, PerfmonGroup group)
 {
+    bstring event_0 = bformat("NOINIT");
+    bstring event_1 = bformat("NOINIT");
 
     switch ( group ) 
     {
         case FLOPS_DP:
-            setupCounterThread(thread_id, PMC0, "EMON_SSE_SSE2_COMP_INST_RETIRED_PACKED_DP");
-            setupCounterThread(thread_id, PMC1, "EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_DP");
+            bassigncstr(event_0,"EMON_SSE_SSE2_COMP_INST_RETIRED_PACKED_DP");
+            bassigncstr(event_1,"EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_DP");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case FLOPS_SP:
-            setupCounterThread(thread_id, PMC0, "EMON_SSE_SSE2_COMP_INST_RETIRED_ALL_SP");
-            setupCounterThread(thread_id, PMC1, "EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_SP");
+            bassigncstr(event_0,"EMON_SSE_SSE2_COMP_INST_RETIRED_ALL_SP");
+            bassigncstr(event_1,"EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_SP");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case L2:
-            setupCounterThread(thread_id, PMC0, "L2_LINES_IN_ALL_ALL");
-            setupCounterThread(thread_id, PMC1, "L2_LINES_OUT_ALL_ALL");
+            bassigncstr(event_0,"L2_LINES_IN_ALL_ALL");
+            bassigncstr(event_1,"L2_LINES_OUT_ALL_ALL");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case BRANCH:
-            setupCounterThread(thread_id, PMC0, "BR_INST_EXEC");
-            setupCounterThread(thread_id, PMC1, "BR_INST_MISSP_EXEC");
+            bassigncstr(event_0,"BR_INST_EXEC");
+            bassigncstr(event_1,"BR_INST_MISSP_EXEC");
+            setupCounterThread(thread_id, PMC0, event_0);
+            setupCounterThread(thread_id, PMC1, event_1);
             break;
 
         case CPI:
-            setupCounterThread(thread_id, PMC0, "UOPS_RETIRED");
+            bassigncstr(event_0,"UOPS_RETIRED");
+            setupCounterThread(thread_id, PMC0, event_0);
             break;
 
         default:
             break;
     }
 
+    bdestroy(event_0);
+    bdestroy(event_1);
 }
 
 void perfmon_print_results_pm(PerfmonThread *thread, PerfmonGroup group_set, float time)

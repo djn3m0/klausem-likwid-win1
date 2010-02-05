@@ -1,6 +1,7 @@
 #ifndef PERFMON_TYPES_H
 #define PERFMON_TYPES_H
 
+#include <bstrlib.h>
 
 /* #####   EXPORTED TYPE DEFINITIONS   #################################### */
 
@@ -46,7 +47,7 @@ typedef struct perfmon_hash_entry {
 } PerfmonHashEntry;
 
 typedef struct perfmon_counter {
-    char*  label;
+    bstring  label;
     int  init;
     uint64_t  config_reg;
     uint64_t  counter_reg;

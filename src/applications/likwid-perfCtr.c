@@ -11,7 +11,7 @@
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  HpcUtil
+ *        Project:  LIKWID
  *      Copyright:  Copyright (c) 2009, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,8 @@
 #include <cpuid.h>
 #include <cpuFeatures.h>
 #include <perfmon.h>
+#include <bstrlib.h>
+#include <strUtil.h>
 
 
 #define HELP_MSG \
@@ -63,72 +65,7 @@ printf("-t\t comma separated core ids to measure\n\n")
 #define VERSION_MSG \
 printf("likwid-perfCtr  %d.%d \n\n",VERSION,RELEASE);
 
-/* the next two functions were copied and adopted from 
- * the taskset application in linux-util package */
-static const char *nexttoken(const char *str,  int sep)
-{
-    if (str)
-    {
-        str = strchr(str, sep);
-    }
 
-    if (str)
-    {
-        str++;
-    }
-
-    return str;
-}
-
-static int cstr_to_cpuset(int* threads,  const char* str)
-{
-    int numThreads=0;
-    const char *p, *q;
-    q = str;
-
-    while (p = q, q = nexttoken(q, ','), p) 
-    {
-        unsigned int rangeBegin;
-        unsigned int rangeEnd;
-        const char *c1, *c2;
-
-        if (sscanf(p, "%u", &rangeBegin) < 1)
-        {
-            return 0;
-        }
-
-        rangeEnd = rangeBegin;
-
-        c1 = nexttoken(p, '-');
-        c2 = nexttoken(p, ',');
-
-        if (c1 != NULL && (c2 == NULL || c1 < c2)) 
-        {
-            if (sscanf(c1, "%u", &rangeEnd) < 1)
-            {
-                return 0;
-            }
-            else if(rangeEnd > 1000)
-            {
-                return 0;
-            }
-        }
-
-        if (!(rangeBegin <= rangeEnd))
-        {
-            return 0;
-        }
-
-        while (rangeBegin <= rangeEnd) {
-            numThreads++;
-            threads[numThreads-1] = rangeBegin;
-            rangeBegin++;
-        }
-    }
-
-    return numThreads;
-
-}
 
 int main (int argc, char** argv)
 { 
@@ -137,8 +74,7 @@ int main (int argc, char** argv)
     int optUncoreEvent = 0;
     int optUseMarker = 0;
     int c;
-    char * cmd_str;
-    char * eventString = NULL;
+    bstring eventString = bformat("FLOPS_DP");
     PerfmonGroup group= FLOPS_DP;
     int num_threads=0;
     /* It should be checked for size to prevent buffer overflow on threads */
@@ -151,7 +87,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);    
     }
 
-    while ((c = getopt (argc, argv, "t:g:u:p:hvmvai")) != -1)
+    while ((c = getopt (argc, argv, "+t:g:u:p:hvmvai")) != -1)
     {
         switch (c)
         {
@@ -162,8 +98,7 @@ int main (int argc, char** argv)
                 VERSION_MSG;
                 exit (EXIT_SUCCESS);    
             case 'g':
-                eventString = (char*) malloc((strlen(optarg)+10)*sizeof(char));
-                strcpy(eventString,optarg);
+                bassigncstr(eventString, optarg);
                 break;
             case 't':
                 num_threads = cstr_to_cpuset(threads, optarg);
@@ -281,14 +216,9 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);
     }
 
-    if (eventString == NULL)
-    {
-        eventString = "FLOPS_DP";
-    }
-
     if (perfmon_setupGroup(eventString)) 
     {
-        printf("Measuring Performance group: %s\n", eventString);
+        printf("Measuring Performance group: %s\n", eventString->data);
     }
     else
     {
@@ -296,10 +226,6 @@ int main (int argc, char** argv)
     }
 
 
-    cmd_str = (char*) malloc((strlen(argv[optind])+200)*sizeof(char));
-    sprintf(cmd_str,"%s",argv[optind]);
-
-    if (perfmon_verbose) printf("Executing: %s \n",cmd_str);
 
 
     if (group == NOGROUP) 
@@ -312,24 +238,27 @@ int main (int argc, char** argv)
         {
             if (perfmon_setupCounter(PMC0,eventString))
             {
-                printf("Measuring Performance event: %s\n", eventString);
+                printf("Measuring Performance event: %s\n", eventString->data);
             }
             else
             {
-                printf("ERROR: Performance event %s not supported!\n", eventString);
+                printf("ERROR: Performance event %s not supported!\n", eventString->data);
                 exit (EXIT_FAILURE);
             }
         }
     }
     printf(HLINE);
 
+	argv +=  optind;
+    if (perfmon_verbose) printf("Executing: %s \n",argv[0]);
+
     if (!optUseMarker)
     {
         perfmon_startAllCounters();
     }
-    if (system(cmd_str) == EOF)
+    if (system(argv[0]) == EOF)
     {
-        fprintf(stderr, "Failed to execute %s!\n", cmd_str);
+        fprintf(stderr, "Failed to execute %s!\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 

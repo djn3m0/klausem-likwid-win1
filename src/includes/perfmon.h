@@ -40,13 +40,14 @@
 #ifndef PERFMON_H
 #define PERFMON_H
 
+#include <bstrlib.h>
 #include <types.h>
 
 extern int perfmon_verbose;
 
 extern void perfmon_init (int numThreads, int threads[]);
-extern int  perfmon_setupCounter (PerfmonCounterIndex index, char* event);
-extern int  perfmon_setupGroup(char* );
+extern int  perfmon_setupCounter (PerfmonCounterIndex index, bstring event);
+extern int  perfmon_setupGroup(bstring );
 extern void perfmon_startAllCounters (void);
 extern void perfmon_stopAllCounters (void);
 extern void perfmon_startCounters (int thread_id);
