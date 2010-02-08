@@ -1,9 +1,11 @@
 #ifndef ASCIIBOXES_TYPES_H
 #define ASCIIBOXES_TYPES_H
 
+#include  <bstrlib.h>
+
 typedef struct box {
     int width;
-    char* label;
+    bstring label;
 } Box;
 
 typedef struct boxContainer {

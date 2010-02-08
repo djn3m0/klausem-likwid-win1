@@ -4,7 +4,7 @@
  *       Filename:  asciiBoxes.h
  *
  *    Description:  Header File cpuid Module. 
- *                  Reads out cpuid information and initilaizes a global 
+ *                  Reads out cpuid information and initializes a global 
  *                  data structure cpuid_info.
  *
  *        Version:  1.0
@@ -35,10 +35,11 @@
 #ifndef ASCIIBOXES_H
 #define ASCIIBOXES_H
 #include <types.h>
+#include <bstrlib.h>
 
 extern BoxContainer* asciiBoxes_allocateContainer(int numLines,int numColumns);
-extern void asciiBoxes_addBox(BoxContainer* container, int line, int column, char* label);
-extern void asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int endColumn, char* label);
+extern void asciiBoxes_addBox(BoxContainer* container, int line, int column, bstring label);
+extern void asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int endColumn, bstring label);
 extern void asciiBoxes_print(BoxContainer* container);
 
 #endif /*ASCIIBOXES_H*/
