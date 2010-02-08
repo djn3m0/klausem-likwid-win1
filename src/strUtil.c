@@ -42,10 +42,10 @@ int str2int(const char* str)
 {
     char* endptr;
     errno = 0;
-    long val;
-    val = strtol(str, &endptr, 10);
+    unsigned long val;
+    val = strtoul(str, &endptr, 10);
 
-    if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
+    if ((errno == ERANGE && val == LONG_MAX )
             || (errno != 0 && val == 0)) 
     {
         perror("strtol");
