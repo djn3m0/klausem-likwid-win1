@@ -71,7 +71,6 @@ int main (int argc, char** argv)
     TreeNode* coreNode;
     TreeNode* threadNode;
     BoxContainer* container;
-    char* boxLabel;
 
 
     while ((c = getopt (argc, argv, "hvcg")) != -1)
@@ -112,7 +111,7 @@ int main (int argc, char** argv)
     cpuid_init();
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU clock:\t%llu Hz \n\n", LLU_CAST cpuid_info.clock);
+    printf("CPU clock:\t%3.2f GHz \n\n",  (float) cpuid_info.clock * 1.E-09);
 
     cpuid_initTopology();
     cpuid_initCacheTopology();
@@ -267,6 +266,8 @@ int main (int argc, char** argv)
      *----------------------------------------------------------------------*/
     if(optGraphical)
     {
+        bstring  boxLabel = bfromcstr("0");
+
         printf(SLINE);
         printf("Graphical:\n");
         printf(SLINE);
@@ -285,8 +286,6 @@ int main (int argc, char** argv)
                     cpuid_topology.numCoresPerSocket);
         }
 
-        /* add threads */
-        boxLabel = (char*) malloc(10*sizeof(char));
         socketNode = tree_getChildNode(cpuid_topology.topologyTree);
         while (socketNode != NULL)
         {
@@ -294,6 +293,7 @@ int main (int argc, char** argv)
             j=0;
             coreNode = tree_getChildNode(socketNode);
 
+            /* add threads */
             while (coreNode != NULL)
             {
                 threadNode = tree_getChildNode(coreNode);
@@ -303,16 +303,16 @@ int main (int argc, char** argv)
                 {
                     if (tmp > 0)
                     {
-                        sprintf(boxLabel,"%s %d",boxLabel, threadNode->id);
+                        bformata(boxLabel,"  %d", threadNode->id);
                     }
                     else
                     {
-                        sprintf(boxLabel,"%d ",threadNode->id);
+                        boxLabel = bformat("%d",threadNode->id);
                     }
                     tmp++;
                     threadNode = tree_getNextNode(threadNode);
                 }
-                asciiBoxes_addBox(container, 0, j,boxLabel); 
+                asciiBoxes_addBox(container, 0, j, boxLabel); 
                 j++;
                 coreNode = tree_getNextNode(coreNode);
             }
@@ -347,12 +347,12 @@ int main (int argc, char** argv)
                         {
                             if (cpuid_topology.cacheLevels[i].size < 1048576)
                             {
-                                sprintf(boxLabel,"%dkB",
+                                boxLabel = bformat("%dkB",
                                         cpuid_topology.cacheLevels[i].size/1024);
                             }
                             else 
                             {
-                                sprintf(boxLabel,"%dMB",
+                                boxLabel = bformat("%dMB",
                                         cpuid_topology.cacheLevels[i].size/1048576);
                             }
 
@@ -395,6 +395,7 @@ int main (int argc, char** argv)
             asciiBoxes_print(container);
             socketNode = tree_getNextNode(socketNode);
         }
+        bdestroy(boxLabel);
     }
 
     return EXIT_SUCCESS;

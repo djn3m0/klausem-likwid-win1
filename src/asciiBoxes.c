@@ -39,11 +39,7 @@
 #include <string.h>
 
 #include <types.h>
-
-
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-#define BOXWIDTH 6
+#include <asciiBoxes.h>
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -52,7 +48,6 @@ BoxContainer*
 asciiBoxes_allocateContainer(int numLines, int numColumns)
 {
     int i;
-    int j;
     BoxContainer* container;
 
     container = (BoxContainer*) malloc(sizeof(BoxContainer));
@@ -66,6 +61,7 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
         container->boxes[i] = (Box*) malloc(numColumns * sizeof(Box));
     }
 
+#if 0
     for(i=0; i<numLines; i++)
     {
         for(j=0; j<numColumns; j++)
@@ -74,13 +70,14 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
             container->boxes[i][j].label = NULL;
         }
     }
+#endif
 
 
     return container;
 }
 
 void 
-asciiBoxes_addBox(BoxContainer* container, int line, int column, char* label)
+asciiBoxes_addBox(BoxContainer* container, int line, int column, bstring label)
 {
     if( line >= container->numLines)
     {
@@ -93,18 +90,17 @@ asciiBoxes_addBox(BoxContainer* container, int line, int column, char* label)
         exit(EXIT_FAILURE);
     }
 
-    if (container->boxes[line][column].label == NULL)
-    {
-        container->boxes[line][column].label = (char*) malloc(strlen(label) * sizeof(char));
-    }
-
     container->boxes[line][column].width = 1;
-    strcpy(container->boxes[line][column].label,label);
+    container->boxes[line][column].label = bstrcpy(label);
 }
 
 
 void
-asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int endColumn,  char* label)
+asciiBoxes_addJoinedBox(BoxContainer* container,
+        int line,
+        int startColumn,
+        int endColumn,
+        bstring label)
 {
     if( line >= container->numLines)
     {
@@ -117,13 +113,8 @@ asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int 
         exit(EXIT_FAILURE);
     }
 
-    if (container->boxes[line][startColumn].label == NULL)
-    {
-        container->boxes[line][startColumn].label = (char*) malloc(strlen(label) * sizeof(char));
-    }
-
     container->boxes[line][startColumn].width = (endColumn-startColumn)+1;
-    strcpy(container->boxes[line][startColumn].label,label);
+    container->boxes[line][startColumn].label = bstrcpy(label);
 }
 
 void
@@ -133,9 +124,25 @@ asciiBoxes_print(BoxContainer* container)
     int j;
     int k;
     int width;
+    int boxwidth=0; /* box width is inner width of box */
 
+    /* determine maximum label width */
+    for (i=0; i<container->numLines; i++)
+    {
+        for (j=0; j<container->numColumns; j++)
+        {
+            btrimws(container->boxes[i][j].label);
+            boxwidth = MAX(boxwidth,blength(container->boxes[i][j].label));
+        }
+    }
+    boxwidth += 2;  /* add one space each side */
+
+    /* top line */
     printf("+");
-    for (i=0; i< (container->numColumns * (BOXWIDTH+2)+container->numColumns+1); i++)
+    for (i=0;
+            i<(container->numColumns * (boxwidth+2) +
+                (container->numColumns+1));  /* one space between boxes */
+            i++)
     {
         printf("-");
     }
@@ -143,20 +150,24 @@ asciiBoxes_print(BoxContainer* container)
 
     for (i=0; i<container->numLines; i++)
     {
+        /* Box top line */
         printf("| ");
         for (j=0; j<container->numColumns; j++)
         {
             printf("+");
             if(container->boxes[i][j].width == 1)
             {
-                for (k=0; k<BOXWIDTH; k++)
+                for (k=0; k<boxwidth; k++)
                 {
                     printf("-");
                 }
             }
             else 
             {
-                for (k=0; k<(container->boxes[i][j].width * BOXWIDTH+(container->boxes[i][j].width-1)*3); k++)
+                for (k=0;
+                        k<(container->boxes[i][j].width * boxwidth +
+                            (container->boxes[i][j].width-1)*3);
+                        k++)
                 {
                     printf("-");
                 }
@@ -166,17 +177,39 @@ asciiBoxes_print(BoxContainer* container)
         }
         printf("|\n");
         printf("| ");
+
+        /* Box label line */
         for (j=0; j<container->numColumns; j++)
         {
-            width = (container->boxes[i][j].width * BOXWIDTH+(container->boxes[i][j].width-1)*3-6)/2;
+            int offset=0;
+
+            /* center label */
+            if(container->boxes[i][j].width == 1)
+            {
+         //       printf("\nblength %d\n",blength(container->boxes[i][j].label));
+                width = (boxwidth - blength(container->boxes[i][j].label))/2;
+
+                offset = (boxwidth - blength(container->boxes[i][j].label))%2;
+            }
+            else
+            {
+                width = (container->boxes[i][j].width * boxwidth +
+                        ((container->boxes[i][j].width-1)*3) -
+                        blength(container->boxes[i][j].label))/2;
+
+                offset = (container->boxes[i][j].width * boxwidth +
+                        ((container->boxes[i][j].width-1)*3) -
+                        blength(container->boxes[i][j].label))%2;
+            }
+
             printf("|");
 
-            for (k=0; k<width; k++)
+            for (k=0; k<(width+offset); k++)
             {
                 printf(" ");
             }
 
-            printf("%6s",container->boxes[i][j].label);
+            printf("%s",container->boxes[i][j].label->data);
 
             for (k=0; k<width; k++)
             {
@@ -188,23 +221,27 @@ asciiBoxes_print(BoxContainer* container)
             {
                 j+= container->boxes[i][j].width-1;
             }
-
         }
         printf("|\n");
         printf("| ");
+
+        /* Box bottom line */
         for (j=0; j<container->numColumns; j++)
         {
             printf("+");
             if(container->boxes[i][j].width == 1)
             {
-                for (k=0; k<BOXWIDTH; k++)
+                for (k=0; k<boxwidth; k++)
                 {
                     printf("-");
                 }
             }
             else 
             {
-                for (k=0; k<(container->boxes[i][j].width * BOXWIDTH+(container->boxes[i][j].width-1)*3); k++)
+                for (k=0;
+                        k<(container->boxes[i][j].width * boxwidth +
+                            (container->boxes[i][j].width-1)*3);
+                        k++)
                 {
                     printf("-");
                 }
@@ -216,8 +253,10 @@ asciiBoxes_print(BoxContainer* container)
         printf("|\n");
     }
 
+    /* bottom line */
     printf("+");
-    for (i=0; i< (container->numColumns * (BOXWIDTH+2)+container->numColumns+1); i++)
+    for (i=0; i< (container->numColumns * (boxwidth+2) + 
+                container->numColumns+1); i++)
     {
         printf("-");
     }
