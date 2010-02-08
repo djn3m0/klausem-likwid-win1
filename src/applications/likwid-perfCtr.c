@@ -87,7 +87,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);    
     }
 
-    while ((c = getopt (argc, argv, "+t:g:u:p:hvmvai")) != -1)
+    while ((c = getopt (argc, argv, "+t:g:u:p:hvmVai")) != -1)
     {
         switch (c)
         {
@@ -111,11 +111,9 @@ int main (int argc, char** argv)
 
                 break;
             case 'u':
-#if 0
                 optUncoreEvent = 1;
-                customEvent = optarg;
+                bassigncstr(eventString, optarg);
                 group = NOGROUP;
-#endif
                 break;
             case 'V':
                 perfmon_verbose = 1;

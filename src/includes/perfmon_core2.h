@@ -322,7 +322,6 @@ perfmon_printResults_core2(PerfmonThread *thread, PerfmonGroup group, float time
             break;
 
         default:
-            printf ("WARNING: Unknown Performance group %d \n",group);
             break;
     }
 

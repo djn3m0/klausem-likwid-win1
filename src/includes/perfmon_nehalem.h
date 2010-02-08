@@ -75,7 +75,7 @@ void perfmon_init_nehalem(PerfmonThread *thread)
      * FIXED 0: Instructions retired
      * FIXED 1: Clocks unhalted */
     msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x22ULL);
-    /* UNCORE FIXED 0: Uncore cyclesa */
+    /* UNCORE FIXED 0: Uncore cycles */
     msr_write(cpu_id, MSR_UNCORE_FIXED_CTR_CTRL, 0x01ULL);
 
     /* Preinit of PERFEVSEL registers */
@@ -127,10 +127,11 @@ perfmon_startCountersThread_nehalem(int thread_id)
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
     msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
+    msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
 
     /* Enable fixed counters */
     flags  = 0x300000000ULL;
-    uflags = 0x1000000FFULL;
+    uflags = 0x100000000ULL;
 
     for (i=0;i<NUM_PMC;i++) {
         if (threadData[thread_id].counters[i].init == TRUE) {
@@ -261,13 +262,10 @@ void perfmon_setupGroupThread_nehalem(int thread_id,PerfmonGroup group)
             bassigncstr(event_1, "UNC_L3_LINES_OUT_ANY");
             bassigncstr(event_2, "UNC_L3_MISS_READ");
             bassigncstr(event_3, "UNC_GQ_DATA_FROM_L3");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
-            setupCounterThread(thread_id, PMC3, event_3);
-            /*
-            setupCounterThread(thread_id, PMC0, "L2_LINES_IN_ANY");
-            */
+            setupCounterThread(thread_id, PMCU0, event_0);
+            setupCounterThread(thread_id, PMCU1, event_1);
+            setupCounterThread(thread_id, PMCU2, event_2);
+            setupCounterThread(thread_id, PMCU3, event_3);
             break;
 
         case DATA:
@@ -408,14 +406,10 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
             if (time < 1.0E-12)
             {
                 printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,0.0F);
-                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
-                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,0.0F);
             }
             else
             {
-                printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
-                printf ("[%d] L2 Load Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0])*64)/time);
-                printf ("[%d] L2 Evict Bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[1])*64)/time);
+                printf ("[%d] Memory bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[4]+thread->pc[5])*64)/time);
             }
             break;
 
@@ -428,7 +422,6 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
             break;
 
         case TLB:
-            printf ("[%d] Ratio Mispredicted Branches: %f \n",cpu_id,(float)thread->pc[1]/(float)thread->pc[0]);
             break;
 
         case CPI:
@@ -467,7 +460,6 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
             break;
 
         default:
-            printf ("WARNING: Unknown Performance group %d \n",group);
             break;
     }
 

@@ -34,22 +34,22 @@
 #define MSR_UNCORE_FIXED_CTR0             0x394  /* Uncore clock cycles */
 #define MSR_UNCORE_FIXED_CTR_CTRL         0x395
 #define MSR_UNCORE_ADDR_OPCODE_MATCH      0x396 
-#define MSR_UNCORE_PERFEVTSEL0         0x3B0
-#define MSR_UNCORE_PERFEVTSEL1         0x3B1
-#define MSR_UNCORE_PERFEVTSEL2         0x3B2
-#define MSR_UNCORE_PERFEVTSEL3         0x3B3
-#define MSR_UNCORE_PERFEVTSEL4         0x3B4
-#define MSR_UNCORE_PERFEVTSEL5         0x3B5
-#define MSR_UNCORE_PERFEVTSEL6         0x3B6
-#define MSR_UNCORE_PERFEVTSEL7         0x3B7
-#define MSR_UNCORE_PMC0                0x3C0
-#define MSR_UNCORE_PMC1                0x3C1
-#define MSR_UNCORE_PMC2                0x3C2
-#define MSR_UNCORE_PMC3                0x3C3
-#define MSR_UNCORE_PMC4                0x3C4
-#define MSR_UNCORE_PMC5                0x3C5
-#define MSR_UNCORE_PMC6                0x3C6
-#define MSR_UNCORE_PMC7                0x3C7
+#define MSR_UNCORE_PERFEVTSEL0         0x3C0
+#define MSR_UNCORE_PERFEVTSEL1         0x3C1
+#define MSR_UNCORE_PERFEVTSEL2         0x3C2
+#define MSR_UNCORE_PERFEVTSEL3         0x3C3
+#define MSR_UNCORE_PERFEVTSEL4         0x3C4
+#define MSR_UNCORE_PERFEVTSEL5         0x3C5
+#define MSR_UNCORE_PERFEVTSEL6         0x3C6
+#define MSR_UNCORE_PERFEVTSEL7         0x3C7
+#define MSR_UNCORE_PMC0                0x3B0
+#define MSR_UNCORE_PMC1                0x3B1
+#define MSR_UNCORE_PMC2                0x3B2
+#define MSR_UNCORE_PMC3                0x3B3
+#define MSR_UNCORE_PMC4                0x3B4
+#define MSR_UNCORE_PMC5                0x3B5
+#define MSR_UNCORE_PMC6                0x3B6
+#define MSR_UNCORE_PMC7                0x3B7
 
 /*
  * AMD

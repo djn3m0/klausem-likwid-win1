@@ -300,7 +300,7 @@ perfmon_getCycles(void)
     remove("/tmp/perfmon_cycles.txt");
 }
 
-    int
+int
 perfmon_setupGroup(bstring groupString)
 {
     int i;
@@ -320,7 +320,7 @@ perfmon_setupGroup(bstring groupString)
     return TRUE;
 }
 
-    int
+int
 perfmon_setupCounter(PerfmonCounterIndex index, bstring event_str)
 {
     int i;
@@ -337,7 +337,7 @@ perfmon_setupCounter(PerfmonCounterIndex index, bstring event_str)
     return TRUE;
 }
 
-    void
+void
 perfmon_startAllCounters(void)
 {
     int i;
@@ -350,7 +350,7 @@ perfmon_startAllCounters(void)
     timer_startCycles(&timeData);
 }
 
-    void
+void
 perfmon_stopAllCounters(void)
 {
     int i;
@@ -364,7 +364,7 @@ perfmon_stopAllCounters(void)
     perfmon_setCycles(timer_printCycles(&timeData));
 }
 
-    void
+void
 perfmon_startCounters(int thread_id)
 {
     startCountersThread(thread_id);
