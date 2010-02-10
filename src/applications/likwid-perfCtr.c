@@ -46,6 +46,7 @@
 #include <perfmon.h>
 #include <bstrlib.h>
 #include <strUtil.h>
+#include <multiplex.h>
 
 
 #define HELP_MSG \
@@ -71,14 +72,14 @@ int main (int argc, char** argv)
 { 
     int optInfo = 0;
     int optPrintGroups = 0;
-    int optUncoreEvent = 0;
     int optUseMarker = 0;
+    int optReport = 0;
     int c;
     bstring eventString = bformat("FLOPS_DP");
-    PerfmonGroup group= FLOPS_DP;
     int num_threads=0;
     /* It should be checked for size to prevent buffer overflow on threads */
     int threads[MAX_NUM_THREADS];
+    MultiplexCollections set;
     int i,j;
 
     if (argc ==  1) 
@@ -87,7 +88,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);    
     }
 
-    while ((c = getopt (argc, argv, "+t:g:u:p:hvmVai")) != -1)
+    while ((c = getopt (argc, argv, "+c:g:p:hvmVair")) != -1)
     {
         switch (c)
         {
@@ -100,7 +101,7 @@ int main (int argc, char** argv)
             case 'g':
                 bassigncstr(eventString, optarg);
                 break;
-            case 't':
+            case 'c':
                 num_threads = cstr_to_cpuset(threads, optarg);
 
                 if(!num_threads)
@@ -108,12 +109,6 @@ int main (int argc, char** argv)
                     fprintf (stderr, "ERROR: Failed to parse cpu list.\n");
                     exit(EXIT_FAILURE);
                 }
-
-                break;
-            case 'u':
-                optUncoreEvent = 1;
-                bassigncstr(eventString, optarg);
-                group = NOGROUP;
                 break;
             case 'V':
                 perfmon_verbose = 1;
@@ -123,6 +118,9 @@ int main (int argc, char** argv)
                 break;
             case 'm':
                 optUseMarker = 1;
+                break;
+            case 'r':
+                optReport = 1;
                 break;
             case 'i':
                 optInfo = 1;
@@ -174,8 +172,8 @@ int main (int argc, char** argv)
     }
 
     printf(HLINE);
-    printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU clock:\t%llu Hz \n", LLU_CAST cpuid_info.clock);
+    printf("CPU type:\t%s \n",cpuid_info.name);
+    printf("CPU clock:\t%3.2f GHz \n",  (float) cpuid_info.clock * 1.E-09);
 
     if (perfmon_verbose) 
     {
@@ -199,44 +197,49 @@ int main (int argc, char** argv)
     {
         exit (EXIT_SUCCESS);
     }
-
-    perfmon_init(num_threads, threads);
-
     if (optPrintGroups)
     {
         perfmon_printAvailableGroups();
         exit (EXIT_SUCCESS);    
     }
-
     if (optind == argc) 
     {
         printf("NOTICE: You have to specify a program to measure as argument!\n");
         exit (EXIT_SUCCESS);
     }
 
-    if (perfmon_setupGroup(eventString)) 
+
+    perfmon_init(num_threads, threads);
+
+    if(optReport)
+    {
+        perfmon_setupReport(&set);
+        multiplex_init(&set);
+    }
+    else if (perfmon_setupGroup(eventString)) 
     {
         printf("Measuring Performance group: %s\n", eventString->data);
     }
     else
     {
-        group = NOGROUP;
-    }
+        PerfmonEventSet set;
+        PerfmonCounterIndex index;
 
+        cstr_to_eventset(&set,(char*) eventString->data);
 
-
-
-    if (group == NOGROUP) 
-    {
-        if (optUncoreEvent) 
+        printf("Measuring Performance event:\n");
+        for (i=0; i<set.numberOfEvents; i++)
         {
-            perfmon_setupCounter(PMCU0,eventString);
-        }
-        else 
-        {
-            if (perfmon_setupCounter(PMC0,eventString))
+            
+            if (!perfmon_getIndex(set.events[i].reg, &index))
             {
-                printf("Measuring Performance event: %s\n", eventString->data);
+                printf("ERROR: Counter register %s not supported!\n", set.events[i].reg->data);
+                exit (EXIT_FAILURE);
+            }
+
+            if (perfmon_setupCounter(index,set.events[i].eventName))
+            {
+                printf("%s\n",set.events[i].eventName->data);
             }
             else
             {
@@ -245,27 +248,41 @@ int main (int argc, char** argv)
             }
         }
     }
+
     printf(HLINE);
 
 	argv +=  optind;
     if (perfmon_verbose) printf("Executing: %s \n",argv[0]);
 
-    if (!optUseMarker)
+    if (optReport)
+    {
+        multiplex_start();
+    }
+    else if (!optUseMarker)
     {
         perfmon_startAllCounters();
     }
+
     if (system(argv[0]) == EOF)
     {
         fprintf(stderr, "Failed to execute %s!\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    perfmon_stopAllCounters();
-    if (optUseMarker)
+    if (optReport)
     {
-        perfmon_getCycles();
+        multiplex_stop();
+        perfmon_printReport(&set);
     }
-    perfmon_printResults();
+    else
+    {
+        perfmon_stopAllCounters();
+        if (optUseMarker)
+        {
+            perfmon_getCycles();
+        }
+        perfmon_printResults();
+    }
 
     return EXIT_SUCCESS;
 }

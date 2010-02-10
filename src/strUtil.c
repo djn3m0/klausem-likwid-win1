@@ -35,10 +35,12 @@
 #include <errno.h>
 #include <sys/types.h>
 
+#include <multiplex.h>
 #include <bstrlib.h>
 #include <strUtil.h>
 
-int str2int(const char* str)
+int
+str2int(const char* str)
 {
     char* endptr;
     errno = 0;
@@ -61,7 +63,8 @@ int str2int(const char* str)
     return (int) val;
 }
 
-int cstr_to_cpuset(int* threads,  const char* str)
+int
+cstr_to_cpuset(int* threads,  const char* str)
 {
     int i;
     unsigned int rangeBegin;
@@ -119,6 +122,40 @@ int cstr_to_cpuset(int* threads,  const char* str)
     return numThreads;
 }
 
+
+void
+cstr_to_eventset(PerfmonEventSet* set, const char* str)
+{
+    int i;
+    struct bstrList* tokens;
+    struct bstrList* subtokens;
+    bstring q = bfromcstr(str);
+
+    tokens = bsplit(q,',');
+    set->numberOfEvents = tokens->qty;
+    set->events = (PerfmonEventSetEntry*) malloc(set->numberOfEvents * sizeof(PerfmonEventSetEntry));
+
+    for (i=0;i<tokens->qty;i++)
+    {
+        subtokens = bsplit(tokens->entry[i],':');
+
+        if ( subtokens->qty != 2 )
+        {
+            fprintf(stderr, "Error in parsing event string\n");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            set->events[i].eventName = bstrcpy(subtokens->entry[0]);
+            set->events[i].reg = bstrcpy(subtokens->entry[1]);
+        }
+
+        bstrListDestroy(subtokens);
+    }
+
+    bstrListDestroy(tokens);
+    bdestroy(q);
+}
 
 
 

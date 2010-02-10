@@ -3,7 +3,7 @@
  *
  *       Filename:  libperfctr.c
  *
- *    Description:  Library interface of module perfmon
+ *    Description:  Marker API interface of module perfmon
  *
  *        Version:  1.0
  *        Created:  07/15/2009

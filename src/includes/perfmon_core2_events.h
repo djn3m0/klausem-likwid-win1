@@ -1,4 +1,4 @@
-#define NUM_ARCH_EVENTS_CORE2 295
+#define NUM_ARCH_EVENTS_CORE2 300
 
 static PerfmonHashEntry  core2_arch_events[NUM_ARCH_EVENTS_CORE2] = {
     {"LOAD_BLOCK_STA",
@@ -591,5 +591,15 @@ static PerfmonHashEntry  core2_arch_events[NUM_ARCH_EVENTS_CORE2] = {
         {0xCA,0x04}}
     ,{"SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE",
         {0xCA,0x08}}
+    ,{"MEM_LOAD_RETIRED_L1D_MISS",
+        {0xCB,0x01}}
+    ,{"MEM_LOAD_RETIRED_L1D_LINE_MISS",
+        {0xCB,0x02}}
+    ,{"MEM_LOAD_RETIRED_L2_MISS",
+        {0xCB,0x04}}
+    ,{"MEM_LOAD_RETIRED_L2_LINE_MISS",
+        {0xCB,0x08}}
+    ,{"MEM_LOAD_RETIRED_DTLB_MISS",
+        {0xCB,0x10}}
 };
 
