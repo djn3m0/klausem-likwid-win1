@@ -99,6 +99,7 @@ int main (int argc, char** argv)
     int verbose = 0;
     int numThreads=0;
     int threads[MAX_NUM_THREADS];
+    threads[0] = 0;
 
     if (argc ==  1) { 
         HELP_MSG; 

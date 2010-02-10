@@ -155,6 +155,40 @@ perfmon_startCountersThread_nehalem(int thread_id)
     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
 
 }
+void 
+perfmon_stopCountersThread_nehalem(int thread_id)
+{
+    uint64_t flags;
+    int i;
+    int cpu_id = threadData[thread_id].cpu_id;
+
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    if (cpuid_info.model == NEHALEM)
+    {
+        msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
+    }
+
+    for (i=0;i<NUM_PMC;i++) 
+    {
+        if (threadData[thread_id].counters[i].init == TRUE) 
+        {
+            threadData[thread_id].pc[i] = msr_read(cpu_id, threadData[thread_id].counters[i].counter_reg);
+        }
+    }
+
+    threadData[thread_id].cycles = msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+    threadData[thread_id].instructionsRetired = msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
+
+    flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
+    printf ("Status: 0x%llX \n", LLU_CAST flags);
+    if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
+    {
+        printf ("Overflow occured \n");
+    }
+
+}
+
+
 
 
 PerfmonGroup
