@@ -256,7 +256,7 @@ int main (int argc, char** argv)
 
     if (optReport)
     {
-        multiplex_start();
+        multiplex_start(optUseMarker);
     }
     else if (!optUseMarker)
     {
@@ -277,10 +277,6 @@ int main (int argc, char** argv)
     else
     {
         perfmon_stopAllCounters();
-        if (optUseMarker)
-        {
-            perfmon_getCycles();
-        }
         perfmon_printResults();
     }
 
