@@ -64,7 +64,7 @@ perfmon_setupReport_core2(MultiplexCollections* collections)
     collections->numberOfCollections = 6;
     collections->collections = (PerfmonEventSet*) malloc(collections->numberOfCollections * sizeof(PerfmonEventSet));
 
-    /*  Code characterisitics Load/Store */
+    /*  Load/Store */
     collections->collections[0].numberOfEvents = 2;
     collections->collections[0].events = (PerfmonEventSetEntry*) malloc(2 * sizeof(PerfmonEventSetEntry));
     collections->collections[0].events[0].eventName = bfromcstr("INST_RETIRED_LOADS");
@@ -72,7 +72,7 @@ perfmon_setupReport_core2(MultiplexCollections* collections)
     collections->collections[0].events[1].eventName = bfromcstr("INST_RETIRED_STORES");
     collections->collections[0].events[1].reg = bfromcstr("PMC1");
 
-    /*  Code characterisitics Branches */
+    /*  Branches */
     collections->collections[1].numberOfEvents = 2;
     collections->collections[1].events = (PerfmonEventSetEntry*) malloc(2 * sizeof(PerfmonEventSetEntry));
     collections->collections[1].events[0].eventName = bfromcstr("BR_INST_RETIRED_ANY");
@@ -80,7 +80,7 @@ perfmon_setupReport_core2(MultiplexCollections* collections)
     collections->collections[1].events[1].eventName = bfromcstr("BR_INST_RETIRED_MISPRED");
     collections->collections[1].events[1].reg = bfromcstr("PMC1");
 
-    /*  Code characterisitics SIMD Double */
+    /*  SIMD Double */
     collections->collections[2].numberOfEvents = 2;
     collections->collections[2].events = (PerfmonEventSetEntry*) malloc(2 * sizeof(PerfmonEventSetEntry));
     collections->collections[2].events[0].eventName = bfromcstr("SIMD_INST_RETIRED_PACKED_DOUBLE");
@@ -88,7 +88,7 @@ perfmon_setupReport_core2(MultiplexCollections* collections)
     collections->collections[2].events[1].eventName = bfromcstr("SIMD_INST_RETIRED_SCALAR_DOUBLE");
     collections->collections[2].events[1].reg = bfromcstr("PMC1");
 
-    /*  Code characterisitics SIMD Single */
+    /*  L1 Utilization */
     collections->collections[3].numberOfEvents = 2;
     collections->collections[3].events = (PerfmonEventSetEntry*) malloc(2 * sizeof(PerfmonEventSetEntry));
     collections->collections[3].events[0].eventName = bfromcstr("MEM_LOAD_RETIRED_L1D_LINE_MISS");
@@ -96,7 +96,7 @@ perfmon_setupReport_core2(MultiplexCollections* collections)
     collections->collections[3].events[1].eventName = bfromcstr("L1D_ALL_REF");
     collections->collections[3].events[1].reg = bfromcstr("PMC1");
 
-    /*  Code characterisitics SIMD Double */
+    /*  Memory transfers/TLB misses */
     collections->collections[4].numberOfEvents = 2;
     collections->collections[4].events = (PerfmonEventSetEntry*) malloc(2 * sizeof(PerfmonEventSetEntry));
     collections->collections[4].events[0].eventName = bfromcstr("BUS_TRANS_MEM_THIS_CORE_THIS_A");
@@ -104,7 +104,7 @@ perfmon_setupReport_core2(MultiplexCollections* collections)
     collections->collections[4].events[1].eventName = bfromcstr("DTLB_MISSES_ANY");
     collections->collections[4].events[1].reg = bfromcstr("PMC1");
 
-    /*  Code characterisitics SIMD Single */
+    /*  L2 bandwidth */
     collections->collections[5].numberOfEvents = 2;
     collections->collections[5].events = (PerfmonEventSetEntry*) malloc(2 * sizeof(PerfmonEventSetEntry));
     collections->collections[5].events[0].eventName = bfromcstr("L1D_REPL");
@@ -120,18 +120,21 @@ perfmon_printReport_core2(MultiplexCollections* collections)
     printf("PERFORMANCE REPORT\n");
     printf(HLINE);
     printf("\nRuntime  %.2f s\n\n",collections->time);
+    /* Section 1 */
     printf("Code characteristics:\n");
     printf("\tLoad to store ratio %f \n",collections->collections[0].events[0].results[0]/collections->collections[0].events[1].results[0]);
     printf("\tPercentage SIMD vectorized double %.2f %\n",(collections->collections[2].events[0].results[0]*100.0)/
             (collections->collections[2].events[0].results[0]+collections->collections[2].events[1].results[0]));
     printf("\tPercentage mispredicted branches  %.2f % \n",(collections->collections[1].events[1].results[0]*100.0)/
             collections->collections[1].events[0].results[0]);
+    /* Section 2 */
     printf("\nCode intensity:\n");
     printf("\tDouble precision Flops/s  %.2f MFlops/s\n",1.0E-06*(collections->collections[2].events[0].results[0]*2.0+
                    collections->collections[2].events[1].results[0] )/(double) (collections->time*0.16666666));
     printf("\nResource Utilization:\n");
     printf("\tL1 Ref per miss %.2f \n",(collections->collections[3].events[1].results[0]/collections->collections[3].events[0].results[0]));
     printf("\tRefs per TLB miss  %.2f \n", (collections->collections[3].events[1].results[0]/collections->collections[4].events[1].results[0]));
+    /* Section 3 */
     printf("\nBandwidths:\n");
     printf("\tL2 bandwidth  %.2f MBytes/s\n",1.0E-06*((collections->collections[5].events[1].results[0]+
                 collections->collections[5].events[0].results[0])*64.0)/(double) (collections->time*0.16666666));
@@ -275,14 +278,12 @@ perfmon_stopCountersThread_core2(int thread_id)
     threadData[thread_id].cycles = msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
     threadData[thread_id].instructionsRetired = msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
 
-#if 0
     flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
-    printf ("Status: 0x%llX \n", LLU_CAST flags);
+ /*   printf ("Status: 0x%llX \n", LLU_CAST flags);*/
     if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
     {
         printf ("Overflow occured \n");
     }
-#endif
 }
 
 

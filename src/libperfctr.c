@@ -37,19 +37,70 @@
 #include <stdio.h>
 
 #include <types.h>
+#include <bstrlib.h>
 #include <cpuid.h>
 #include <msr.h>
+#include <timer.h>
 #include <registers.h>
-#include <perfmon.h>
+#include <likwid.h>
 
+typedef struct {
+    bstring  tag;
+    double*  cycles;
+    double*  instructions;
+    double*  time;
+    double** counters;
+} LikwidResults;
+
+static LikwidResults*  results;
+static CyclesData*  time;
+static int numberOfRegions = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+void
+likwid_markerInit(int numberOfThreads, int numberOfRegions)
+{
+    int i;
+    int j;
+    int k;
+
+    cpuid_init();
+    timer_init();
+
+    time = (CyclesData*) malloc(numberOfThreads * sizeof(CyclesData));
+    results = (LikwidResults*) malloc(numberOfRegions * sizeof(LikwidResults));
+
+    for (i=0;i<numberOfRegions; i++)
+    {
+        results[i].cycles = (double*) malloc(numberOfThreads * sizeof(double));
+        results[i].instructions = (double*) malloc(numberOfThreads * sizeof(double));
+        results[i].time = (double*) malloc(numberOfThreads * sizeof(double));
+        results[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
+
+        for (j=0;j<numberOfThreads; j++)
+        {
+            results[i].time[j] = 0.0;
+            results[i].cycles[j] = 0.0;
+            results[i].instructions[j] = 0.0;
+            results[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
+            for (k=0;k<NUM_PMC; k++)
+            {
+                results[i].counters[j][k] = 0.0;
+            }
+        }
+    }
+}
+
+void likwid_markerClose()
+{
+
+
+}
 
 void
-likwid_markerStartCounters(int cpu_id)
+likwid_markerStartRegion(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
-    cpuid_init();
 
     switch ( cpuid_info.family ) 
     {
@@ -143,19 +194,101 @@ likwid_markerStartCounters(int cpu_id)
             exit(EXIT_FAILURE);
             break;
     }
+
+    timer_startCycles(&time[cpu_id]);
+}
+
+int
+likwid_markerRegisterRegion(char* regionTag)
+{
+    static int lastRegion = -1;
+    bstring tag = bfromcstr(regionTag);
+
+    lastRegion++;
+
+    if ( lastRegion >= numberOfRegions)
+    {
+        fprintf(stderr, "Too many regions\n");
+        exit(EXIT_FAILURE);
+    }
+
+    results[lastRegion].tag = bstrcpy(tag);
+    return lastRegion;
+}
+
+int
+likwid_markerGetRegionId(char* regionTag)
+{
+    bstring tag = bfromcstr(regionTag);
+
+    for (int i=0; i<numberOfRegions;i++)
+    {
+        if (biseq(results[i].tag,tag))
+        {
+            return i;
+        }
+    }
+    fprintf(stderr, "WARNING: Region not found\n");
+
+    return -1;
 }
 
 
 void
-likwid_markerStopCounters(int cpu_id)
+likwid_markerStopRegion(int cpu_id, int regionId)
 {
     uint64_t flags;
+
+    timer_stopCycles(&time[cpu_id]);
 
     switch ( cpuid_info.family ) 
     {
         case P6_FAMILY:
 
             msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+
+            switch ( cpuid_info.model ) 
+            {
+                case PENTIUM_M_BANIAS:
+                    break;
+
+                case PENTIUM_M_DOTHAN:
+                    break;
+
+                case CORE_DUO:
+                    break;
+
+                case XEON_MP:
+
+                case CORE2_65:
+
+                case CORE2_45:
+
+                    results[regionId].cycles[cpu_id] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+                    results[regionId].instructions[cpu_id] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
+                    results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_PMC0);
+                    results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_PMC1);
+                    break;
+
+                case NEHALEM_BLOOMFIELD:
+
+                case NEHALEM_LYNNFIELD:
+                    results[regionId].cycles[cpu_id] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+                    results[regionId].instructions[cpu_id] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
+                    results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_PMC0);
+                    results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_PMC1);
+                    results[regionId].counters[cpu_id][2] += (double) msr_read(cpu_id, MSR_PMC2);
+                    results[regionId].counters[cpu_id][3] += (double) msr_read(cpu_id, MSR_PMC3);
+
+                    break;
+
+                default:
+                    fprintf(stderr, "Unsupported Processor!\n");
+                    exit(EXIT_FAILURE);
+                    break;
+            }
+            break;
+
 
         case NETBURST_FAMILY:
             break;
@@ -175,6 +308,10 @@ likwid_markerStopCounters(int cpu_id)
             flags &= ~(1<<22);  /* clear enable flag */
             msr_write(cpu_id, MSR_AMD_PERFEVTSEL3 , flags);
 
+            results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_AMD_PMC0);
+            results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_AMD_PMC1);
+            results[regionId].counters[cpu_id][2] += (double) msr_read(cpu_id, MSR_AMD_PMC2);
+            results[regionId].counters[cpu_id][3] += (double) msr_read(cpu_id, MSR_AMD_PMC3);
             break;
 
         default:
@@ -183,16 +320,7 @@ likwid_markerStopCounters(int cpu_id)
             break;
     }
 
+    results[regionId].time[cpu_id] += timer_printCyclesTime(&time[cpu_id]);
 }
-
-void likwid_markerSetCycles(uint64_t cycles)
-{
-    FILE *file;
-
-    file = fopen("/tmp/perfmon_cycles.txt","w");
-    fprintf(file,"%llu", LLU_CAST cycles);
-    fclose(file);
-}
-
 
 

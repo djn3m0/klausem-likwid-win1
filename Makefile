@@ -89,6 +89,9 @@ install:
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-features.1 > $(MANPREFIX)/man1/likwid-features.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-perfCtr.1 > $(MANPREFIX)/man1/likwid-perfCtr.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-pin.1 > $(MANPREFIX)/man1/likwid-pin.1
+	@echo "===> INSTALL header to $(PREFIX)/include"
+	@mkdir -p $(PREFIX)/include
+	@cp -f src/includes/likwid.h  $(PREFIX)/include
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib

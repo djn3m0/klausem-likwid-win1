@@ -44,6 +44,7 @@
 static int currentCollection = -1;
 static MultiplexCollections* multiplex_set = NULL;
 static CyclesData timeData;
+static int  multiplex_useMarker = 0;
 
 void
 multiplex_swapEventSet (int i)
@@ -57,7 +58,7 @@ multiplex_swapEventSet (int i)
     for (threadId = 0; threadId < numThreads; threadId++)
     {
         /* Stop counters */
-        perfmon_stopCountersThread(threadId);
+        if (!multiplex_useMarker) perfmon_stopCountersThread(threadId);
         /* Accumulate counters */
         for (int i=0; i<collection->numberOfEvents; i++)
         {
@@ -89,7 +90,7 @@ multiplex_swapEventSet (int i)
         }
 
         /* Start counters */
-        perfmon_startCountersThread(threadId);
+       if (!multiplex_useMarker)  perfmon_startCountersThread(threadId);
     }
 }
 
@@ -107,10 +108,12 @@ multiplex_init(MultiplexCollections* set)
 }
 
 void
-multiplex_start()
+multiplex_start(int useMarker)
 {
     struct itimerval val;
     struct sigaction sa;
+
+    multiplex_useMarker = useMarker;
 
     val.it_interval.tv_sec = 0;
     val.it_interval.tv_usec = 500;
