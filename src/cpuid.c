@@ -769,6 +769,22 @@ cpuid_initCacheTopology()
                     cachePool[i].lineSize;
                 cachePool[i].threads = extractBitField(eax,10,14)+1;
 
+                /* WORKAROUND cpuid reports wrong number of threads on SMT processor with SMT
+                 * turned off */
+                if (i < 3)
+                {
+                    if ((cpuid_info.model == NEHALEM_BLOOMFIELD) ||
+                            (cpuid_info.model == NEHALEM_LYNNFIELD) ||
+                            (cpuid_info.model == NEHALEM_WESTMERE) ||
+                            (cpuid_info.model == NEHALEM_NEHALEM_EX))
+                    {
+                        if (cpuid_topology.numThreadsPerCore == 1)
+                        {
+                            cachePool[i].threads = 1;
+                        }
+                    }
+                }
+
  /* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes 
   * too large in here. Ask Intel what is wrong here!
   * Limit threads per Socket than to the maximum possible value.*/

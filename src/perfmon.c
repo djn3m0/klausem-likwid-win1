@@ -164,6 +164,34 @@ setupCounterThread(int thread_id,
     return TRUE;
 }
 
+#if 0
+static void
+readMarkerFile(char* filename)
+{
+	for (i=0;i<numberOfRegions; i++)
+	{
+		results[i].cycles = (double*) malloc(numberOfThreads * sizeof(double));
+		results[i].instructions = (double*) malloc(numberOfThreads * sizeof(double));
+		results[i].time = (double*) malloc(numberOfThreads * sizeof(double));
+		results[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
+
+		for (j=0;j<numberOfThreads; j++)
+		{
+			results[i].time[j] = 0.0;
+			results[i].cycles[j] = 0.0;
+			results[i].instructions[j] = 0.0;
+			results[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
+			for (k=0;k<NUM_PMC; k++)
+			{
+				results[i].counters[j][k] = 0.0;
+			}
+		}
+	}
+}
+#endif
+
+
+
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -192,6 +220,78 @@ perfmon_getEvent(bstring event_str, uint32_t* event, uint32_t* umask)
 
     return found;
 }
+
+void 
+perfmon_printMarkerResults()
+{
+    int thread_id;
+    float time;
+    int i;
+
+    for (thread_id=0;thread_id<numThreads;thread_id++) 
+    {
+        printf(HLINE);
+        printf ("[%d] Instruction retired any: %llu \n",
+                threadData[thread_id].cpu_id,
+                LLU_CAST threadData[thread_id].instructionsRetired);
+        printf ("[%d] Cycles unhalted core: %llu \n",
+                threadData[thread_id].cpu_id,
+                LLU_CAST threadData[thread_id].cycles);
+        summary.instructionsRetired += threadData[thread_id].instructionsRetired;
+
+        for (i=0;i<NUM_PMC;i++) 
+        {
+            if (threadData[thread_id].counters[i].init == TRUE) 
+            {
+                summary.pc[i] += threadData[thread_id].pc[i];
+                printf ("[%d] %s: %llu \n",
+                        threadData[thread_id].cpu_id,
+                        threadData[thread_id].counters[i].label->data,
+                        LLU_CAST threadData[thread_id].pc[i]);
+            }
+        }
+        printf(HLINE);
+        printf("[%d] ==== Derived Metrics ====\n",
+                threadData[thread_id].cpu_id);
+        printf(HLINE);
+        time = (float)threadData[thread_id].cycles/(float)cpuid_info.clock;
+        printf ("[%d] Execution time: %e sec \n",
+                threadData[thread_id].cpu_id,time);
+
+        printResults(&threadData[thread_id], groupSet, time);
+        printf(HLINE);
+    }
+
+
+    if ( numThreads > 1) 
+    {
+        printf(HLINE);
+        printf("==== SUMMARY RESULTS ====\n");
+        printf(HLINE);
+        printf ("[%d] RDTSC Cycles: %llu \n",summary.cpu_id, LLU_CAST summary.cycles);
+        printf ("[%d] Instructions retired any: %llu \n",summary.cpu_id, LLU_CAST summary.instructionsRetired);
+        for (i=0;i<NUM_PMC;i++) 
+        {
+            if (threadData[0].counters[i].init == TRUE) 
+            {
+                printf ("[%d] %s: %llu \n",
+                        summary.cpu_id,
+                        threadData[0].counters[i].label->data,
+                         LLU_CAST summary.pc[i]);
+            }
+        }
+
+        printf(HLINE);
+        printf("==== Derived Metrics ====\n");
+        printf(HLINE);
+        time = (float)summary.cycles/(float)cpuid_info.clock;
+        printf ("[%d] Execution time: %e sec \n",summary.cpu_id,time);
+
+        printResults(&summary, groupSet, time);
+        printf(HLINE);
+    }
+}
+
 
 
 void 

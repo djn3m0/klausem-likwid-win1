@@ -47,7 +47,7 @@ static CyclesData timeData;
 static int  multiplex_useMarker = 0;
 
 void
-multiplex_swapEventSet (int i)
+multiplex_swapEventSet ()
 {
     int threadId;
     PerfmonEventSet* collection;

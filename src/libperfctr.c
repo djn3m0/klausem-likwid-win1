@@ -44,17 +44,10 @@
 #include <registers.h>
 #include <likwid.h>
 
-typedef struct {
-    bstring  tag;
-    double*  cycles;
-    double*  instructions;
-    double*  time;
-    double** counters;
-} LikwidResults;
-
 static LikwidResults*  results;
 static CyclesData*  time;
-static int numberOfRegions = 0;
+static int likwid_numberOfRegions = 0;
+static int likwid_numberOfThreads = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 void
@@ -67,9 +60,13 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
     cpuid_init();
     timer_init();
 
+	likwid_numberOfThreads = numberOfThreads;
+	likwid_numberOfRegions = numberOfRegions;
+
     time = (CyclesData*) malloc(numberOfThreads * sizeof(CyclesData));
     results = (LikwidResults*) malloc(numberOfRegions * sizeof(LikwidResults));
 
+	// TODO: Pad data structures to prevent false shared cache lines
     for (i=0;i<numberOfRegions; i++)
     {
         results[i].cycles = (double*) malloc(numberOfThreads * sizeof(double));
@@ -93,8 +90,33 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
 
 void likwid_markerClose()
 {
+	int i,j,k;
+    FILE *file;
 
+    file = fopen("/tmp/likwid_results.txt","w");
 
+	fprintf(file,"NUMTHREADS %d\n",likwid_numberOfThreads);
+	fprintf(file,"NUMREGIONS %d\n",likwid_numberOfRegions);
+
+    for (i=0;i<likwid_numberOfRegions; i++)
+    {
+		fprintf(file,"** BEGIN TAG %s **\n",results[i].tag->data);
+        for (j=0;j<likwid_numberOfThreads; j++)
+        {
+            fprintf(file,"** BEGIN THREAD %d **\n",j);
+            fprintf(file,"TIME %e\n",results[i].time[j]);
+            fprintf(file,"CYCLES %e\n",results[i].cycles[j]);
+            fprintf(file,"INSTR %e\n",results[i].instructions[j]);
+
+            for (k=0;k<NUM_PMC; k++)
+            {
+                fprintf(file,"PMC %d: %e\n",k,results[i].counters[j][k]);
+            }
+            fprintf(file,"** END THREAD %d **\n",j);
+        }
+		fprintf(file,"** END TAG %s **\n",results[i].tag->data);
+    }
+    fclose(file);
 }
 
 void
@@ -206,9 +228,9 @@ likwid_markerRegisterRegion(char* regionTag)
 
     lastRegion++;
 
-    if ( lastRegion >= numberOfRegions)
+    if ( lastRegion >= likwid_numberOfRegions)
     {
-        fprintf(stderr, "Too many regions\n");
+        fprintf(stderr, "Too many regions %d %d\n",lastRegion,likwid_numberOfRegions);
         exit(EXIT_FAILURE);
     }
 
@@ -221,7 +243,7 @@ likwid_markerGetRegionId(char* regionTag)
 {
     bstring tag = bfromcstr(regionTag);
 
-    for (int i=0; i<numberOfRegions;i++)
+    for (int i=0; i<likwid_numberOfRegions;i++)
     {
         if (biseq(results[i].tag,tag))
         {
