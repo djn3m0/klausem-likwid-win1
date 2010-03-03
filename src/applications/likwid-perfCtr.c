@@ -57,6 +57,7 @@ printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-V\t verbose output\n"); \
 printf("-i\t print cpu info\n"); \
+printf("-r\t Generate performance report\n"); \
 printf("-m\t use markers inside code \n"); \
 printf("-g\t performance group  or event tag\n"); \
 printf("-a\t list available performance groups\n"); \
@@ -275,10 +276,17 @@ int main (int argc, char** argv)
         perfmon_printReport(&set);
     }
     else
-    {
-        perfmon_stopAllCounters();
-        perfmon_printResults();
-    }
+	{
+		if (!optUseMarker)
+		{
+			perfmon_stopAllCounters();
+			perfmon_printResults();
+		}
+		else
+		{
+//			perfmon_printMarkerResults();
+		}
+	}
 
     return EXIT_SUCCESS;
 }

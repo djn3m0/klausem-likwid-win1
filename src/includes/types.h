@@ -5,6 +5,7 @@
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdint.h>
 
+#include <libperfctr_types.h>
 #include <timer_types.h>
 #include <tree_types.h>
 #include <cpuid_types.h>

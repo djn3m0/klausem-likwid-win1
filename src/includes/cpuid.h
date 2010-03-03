@@ -49,6 +49,8 @@
 #define NEHALEM   0x1AU
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU
+#define NEHALEM_WESTMERE     0x2CU
+#define NEHALEM_NEHALEM_EX   0x2EU
 #define XEON_MP   0x1DU
 
 /* AMD K10 */

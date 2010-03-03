@@ -123,9 +123,9 @@ perfmon_printReport_core2(MultiplexCollections* collections)
     /* Section 1 */
     printf("Code characteristics:\n");
     printf("\tLoad to store ratio %f \n",collections->collections[0].events[0].results[0]/collections->collections[0].events[1].results[0]);
-    printf("\tPercentage SIMD vectorized double %.2f %\n",(collections->collections[2].events[0].results[0]*100.0)/
+    printf("\tPercentage SIMD vectorized double %.2f \n",(collections->collections[2].events[0].results[0]*100.0)/
             (collections->collections[2].events[0].results[0]+collections->collections[2].events[1].results[0]));
-    printf("\tPercentage mispredicted branches  %.2f % \n",(collections->collections[1].events[1].results[0]*100.0)/
+    printf("\tPercentage mispredicted branches  %.2f \n",(collections->collections[1].events[1].results[0]*100.0)/
             collections->collections[1].events[0].results[0]);
     /* Section 2 */
     printf("\nCode intensity:\n");
