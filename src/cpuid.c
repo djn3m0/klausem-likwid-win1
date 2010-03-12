@@ -56,7 +56,7 @@ CpuTopology cpuid_topology;
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int largest_function;
+static int largest_function=0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -99,6 +99,78 @@ static int lock = 0;
 static uint32_t eax, ebx, ecx, edx;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+static void
+intelCpuidFunc_4()
+{
+	while (valid)
+	{
+		eax = 0x04;
+		ecx = level;
+		CPUID;
+		valid = extractBitField(eax,5,0);
+		if (!valid)
+		{
+			break;
+		}
+		level++;
+	}
+
+	maxNumLevels = level;
+	cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
+
+	for (i=0; i < maxNumLevels; i++) 
+	{
+		eax = 0x04;
+		ecx = i;
+		CPUID;
+
+		cachePool[i].level = extractBitField(eax,3,5);
+		cachePool[i].type = (CacheType) extractBitField(eax,5,0);
+		cachePool[i].associativity = extractBitField(ebx,8,22)+1;
+		cachePool[i].sets = ecx+1;
+		cachePool[i].lineSize = extractBitField(ebx,12,0)+1;
+		cachePool[i].size = cachePool[i].sets *
+			cachePool[i].associativity *
+			cachePool[i].lineSize;
+		cachePool[i].threads = extractBitField(eax,10,14)+1;
+
+		/* WORKAROUND cpuid reports wrong number of threads on SMT processor with SMT
+		 * turned off */
+		if (i < 3)
+		{
+			if ((cpuid_info.model == NEHALEM_BLOOMFIELD) ||
+					(cpuid_info.model == NEHALEM_LYNNFIELD) ||
+					(cpuid_info.model == NEHALEM_WESTMERE) ||
+					(cpuid_info.model == NEHALEM_NEHALEM_EX))
+			{
+				if (cpuid_topology.numThreadsPerCore == 1)
+				{
+					cachePool[i].threads = 1;
+				}
+			}
+		}
+
+		/* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes 
+		 * too large in here. Ask Intel what is wrong here!
+		 * Limit threads per Socket than to the maximum possible value.*/
+		if(cachePool[i].threads > (int)
+				(cpuid_topology.numCoresPerSocket*
+				 cpuid_topology.numThreadsPerCore))
+		{
+			cachePool[i].threads = cpuid_topology.numCoresPerSocket*
+				cpuid_topology.numThreadsPerCore;
+		}
+		cachePool[i].inclusive = edx&0x2;
+	}
+}
+
+static void
+intelCpuidFunc_2()
+{
+
+
+}
+
 
 static uint32_t 
 extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
@@ -402,14 +474,6 @@ cpuid_initTopology(void)
         exit(EXIT_FAILURE);
     }
 
-    if (cpuid_topology.numHWThreads == 1)
-    {
-        fprintf(stderr, "Single Core processor, exiting!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
-
     /* check if 0x0B cpuid leaf is supported */
     eax = 0x0;
     CPUID;
@@ -425,6 +489,14 @@ cpuid_initTopology(void)
             hasBLeaf = 1;
         }
     }
+
+    if (cpuid_topology.numHWThreads == 1)
+    {
+        fprintf(stderr, "Single Core processor, exiting!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
 
     tree_init(&cpuid_topology.topologyTree, 0);
 
@@ -737,66 +809,14 @@ cpuid_initCacheTopology()
     {
         case P6_FAMILY:
 
-            while (valid)
-            {
-                eax = 0x04;
-                ecx = level;
-                CPUID;
-                valid = extractBitField(eax,5,0);
-                if (!valid)
-                {
-                    break;
-                }
-                level++;
-            }
-
-            maxNumLevels = level;
-            cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
-
-            for (i=0; i < maxNumLevels; i++) 
-            {
-                eax = 0x04;
-                ecx = i;
-                CPUID;
-
-                cachePool[i].level = extractBitField(eax,3,5);
-                cachePool[i].type = (CacheType) extractBitField(eax,5,0);
-                cachePool[i].associativity = extractBitField(ebx,8,22)+1;
-                cachePool[i].sets = ecx+1;
-                cachePool[i].lineSize = extractBitField(ebx,12,0)+1;
-                cachePool[i].size = cachePool[i].sets *
-                    cachePool[i].associativity *
-                    cachePool[i].lineSize;
-                cachePool[i].threads = extractBitField(eax,10,14)+1;
-
-                /* WORKAROUND cpuid reports wrong number of threads on SMT processor with SMT
-                 * turned off */
-                if (i < 3)
-                {
-                    if ((cpuid_info.model == NEHALEM_BLOOMFIELD) ||
-                            (cpuid_info.model == NEHALEM_LYNNFIELD) ||
-                            (cpuid_info.model == NEHALEM_WESTMERE) ||
-                            (cpuid_info.model == NEHALEM_NEHALEM_EX))
-                    {
-                        if (cpuid_topology.numThreadsPerCore == 1)
-                        {
-                            cachePool[i].threads = 1;
-                        }
-                    }
-                }
-
- /* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes 
-  * too large in here. Ask Intel what is wrong here!
-  * Limit threads per Socket than to the maximum possible value.*/
-                if(cachePool[i].threads > (int)
-                        (cpuid_topology.numCoresPerSocket*
-                         cpuid_topology.numThreadsPerCore))
-                {
-                    cachePool[i].threads = cpuid_topology.numCoresPerSocket*
-                         cpuid_topology.numThreadsPerCore;
-                }
-                cachePool[i].inclusive = edx&0x2;
-            }
+			if (largest_function >= 4)
+			{
+				intelCpuidFunc_4();
+			}
+			else
+			{
+				intelCpuidFunc_2();
+			}
 
             break;
 

@@ -1,9 +1,68 @@
+/*
+ * ===========================================================================
+ *
+ *       Filename:  perfmon_k10.h
+ *
+ *    Description:  K10 specific subroutines
+ *
+ *        Version:  1.0
+ *        Created:  07/15/2009
+ *       Revision:  none
+ *
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  none
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ * ===========================================================================
+ */
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <bstrlib.h>
 #include <types.h>
 #include <registers.h>
+
+
+int
+perfmon_getIndex_k10 (bstring str, PerfmonCounterIndex* index)
+{
+   if (biseqcstr(str,"PMC0"))
+   {
+       *index = PMC0;
+   }
+   else if (biseqcstr(str,"PMC1"))
+   {
+       *index = PMC1;
+   }
+   else if (biseqcstr(str,"PMC2"))
+   {
+       *index = PMC2;
+   }
+   else if (biseqcstr(str,"PMC3"))
+   {
+       *index = PMC3;
+   }
+   else
+   {
+       return FALSE;
+   }
+
+   return TRUE;
+}
 
 
 void perfmon_init_k10(PerfmonThread *thread)
@@ -31,7 +90,17 @@ void perfmon_init_k10(PerfmonThread *thread)
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL1, flags);
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL2, flags);
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL3, flags);
+}
 
+void
+perfmon_setupReport_k10(MultiplexCollections* collections)
+{
+
+}
+
+void
+perfmon_printReport_k10(MultiplexCollections* collections)
+{
 
 }
 
@@ -86,6 +155,33 @@ perfmon_getGroupId_k10 (bstring groupStr)
 
 	return group;
 }
+
+void
+perfmon_setupCounterThread_k10(int thread_id,
+        uint32_t event, uint32_t umask,
+        PerfmonCounterIndex index)
+{
+    uint64_t flags;
+    uint64_t reg = threadData[thread_id].counters[index].config_reg;
+    int cpu_id = threadData[thread_id].cpu_id;
+    threadData[thread_id].counters[index].init = TRUE;
+
+    flags = msr_read(cpu_id,reg);
+    flags &= ~(0xFFFFU); 
+
+	/* AMD uses a 12 bit Event mask: [35:32][7:0] */
+	flags |= ((uint64_t)(event>>8)<<32) + (umask<<8) + (event & ~(0xF00U));
+
+    if (perfmon_verbose)
+    {
+        printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
+               cpu_id,
+               LLU_CAST reg,
+               LLU_CAST flags);
+    }
+    msr_write(cpu_id, reg , flags);
+}
+
 
 void
 perfmon_startCountersThread_k10(int thread_id)

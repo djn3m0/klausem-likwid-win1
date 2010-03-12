@@ -1,9 +1,70 @@
+/*
+ * ===========================================================================
+ *
+ *       Filename:  perfmon_nehalem.h
+ *
+ *    Description:  Header File of perfmon module.
+ *                  Configures and reads out performance counters
+ *                  on x86 based architectures. Supports multi threading.
+ *
+ *        Version:  1.0
+ *        Created:  07/15/2009
+ *       Revision:  none
+ *
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  none
+ *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ * ===========================================================================
+ */
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <bstrlib.h>
 #include <types.h>
 #include <registers.h>
+
+int
+perfmon_getIndex_nehalem (bstring str, PerfmonCounterIndex* index)
+{
+   if (biseqcstr(str,"PMC0"))
+   {
+       *index = PMC0;
+   }
+   else if (biseqcstr(str,"PMC1"))
+   {
+       *index = PMC1;
+   }
+   else if (biseqcstr(str,"PMC2"))
+   {
+       *index = PMC2;
+   }
+   else if (biseqcstr(str,"PMC3"))
+   {
+       *index = PMC3;
+   }
+   else
+   {
+       return FALSE;
+   }
+
+   return TRUE;
+}
+
 
 
 void perfmon_init_nehalem(PerfmonThread *thread)
