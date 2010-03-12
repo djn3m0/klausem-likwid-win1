@@ -1,7 +1,7 @@
 /*
  * ===========================================================================
  *
- *       Filename:  cpuTopologyMain.c
+ *       Filename:  likwid-topology.c
  *
  *    Description:  A application to determine the thread and cache topology
  *                  on x86 processors.
@@ -30,8 +30,6 @@
  *
  * ===========================================================================
  */
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -72,7 +70,6 @@ int main (int argc, char** argv)
     TreeNode* threadNode;
     BoxContainer* container;
 
-
     while ((c = getopt (argc, argv, "hvcg")) != -1)
     {
         switch (c)
@@ -110,9 +107,8 @@ int main (int argc, char** argv)
     timer_init();
     cpuid_init();
     printf(HLINE);
-    printf("CPU name:\t%s \n",cpuid_info.name);
+    printf("CPU type:\t%s \n",cpuid_info.name);
     printf("CPU clock:\t%3.2f GHz \n\n",  (float) cpuid_info.clock * 1.E-09);
-
     cpuid_initTopology();
     cpuid_initCacheTopology();
 
