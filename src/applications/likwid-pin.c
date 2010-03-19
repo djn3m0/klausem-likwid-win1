@@ -56,7 +56,9 @@ printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-c\t comma separated processor ids\n"); \
-printf("-s\t bitmask with threads to skip\n\n")
+printf("-s\t bitmask with threads to skip\n\n"); \
+printf("-t\t Threading implementation type (at the moment only intel)\n\n"); \
+printf("-t\t No special type necessary for gcc OpenMP\n\n")
 
 #define VERSION_MSG \
 printf("likwid-pin   %d.%d \n\n",VERSION,RELEASE)
@@ -96,7 +98,7 @@ int main (int argc, char** argv)
     bstring  typeString = bformat("NoType");
     bstring  pinString;
     bstring  skipString;
-    int verbose = 0;
+    bstring  argString;
     int numThreads=0;
     int threads[MAX_NUM_THREADS];
     threads[0] = 0;
@@ -106,7 +108,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);    
     }
 
-    while ((c = getopt (argc, argv, "+c:s:t:hvV")) != -1)
+    while ((c = getopt (argc, argv, "+c:s:t:hv")) != -1)
     {
         switch (c)
         {
@@ -117,22 +119,41 @@ int main (int argc, char** argv)
                 VERSION_MSG;
                 exit (EXIT_SUCCESS);    
             case 'c':
-                numThreads = cstr_to_cpuset(threads, optarg);
+                if (! (argString = bSecureInput(200,optarg)))
+                {
+                    fprintf(stderr,"Failed to read argument string!\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                numThreads = bstr_to_cpuset(threads, argString);
 
                 if(!numThreads)
                 {
                     fprintf (stderr, "ERROR: Failed to parse cpu list.\n");
                     exit(EXIT_FAILURE);
                 }
+
+                bdestroy(argString);
                 break;
             case 't':
-                bassigncstr(typeString, optarg);
+                if (! (argString = bSecureInput(10,optarg)))
+                {
+                    fprintf(stderr,"Failed to read argument string!\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                typeString = bstrcpy(argString);
+                bdestroy(argString);
                 break;
             case 's':
-                skipMask = strtoul(optarg,NULL,16);
-                break;
-            case 'V':
-                verbose = 1;
+                if (! (argString = bSecureInput(10,optarg)))
+                {
+                    fprintf(stderr,"Failed to read argument string!\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                skipMask = strtoul((char*) argString->data,NULL,16);
+                bdestroy(argString);
                 break;
             default:
                 HELP_MSG;
@@ -166,13 +187,6 @@ int main (int argc, char** argv)
         setenv("LIKWID_PIN",(char*) pinString->data , 1);
         setenv("LIKWID_SKIP",(char*) skipString->data , 1);
         setenv("LD_PRELOAD",TOSTRING(LIBLIKWIDPIN), 1);
-
-        if (verbose)
-        {
-            printf("Threads: %d \n",numThreads);
-            printf("Pin list: %s\n",pinString->data);
-            printf("Skip mask: %s\n",skipString->data);
-        }
 	}
 
 	pinPid(threads[0]);

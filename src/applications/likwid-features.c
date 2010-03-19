@@ -31,7 +31,6 @@
  * ===========================================================================
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,10 +40,10 @@
 #include <ctype.h>
 
 #include <types.h>
+#include <strUtil.h>
 #include <msr.h>
 #include <cpuid.h>
 #include <cpuFeatures.h>
-
 
 #define HELP_MSG \
 printf("\nlikwid-features --  Version  %d.%d \n\n",VERSION,RELEASE); \
@@ -53,10 +52,9 @@ printf("Supported Features: HW_PREFETCHER, CL_PREFETCHER, DCU_PREFETCHER, IP_PRE
 printf("Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
-printf("-i\t print cpu features\n"); \
 printf("-s <FEATURE>\t set cpu feature \n"); \
 printf("-u <FEATURE>\t unset cpu feature \n"); \
-printf("-t <ID>\t core id\n\n")
+printf("-c <ID>\t core id\n\n")
 
 #define VERSION_MSG \
 printf("likwid-features  %d.%d \n\n",VERSION,RELEASE)
@@ -66,9 +64,10 @@ int main (int argc, char** argv)
     int optSetFeature = 0;
     int cpuId = 0;
     int c;
+    bstring argString;
     CpuFeature feature = HW_PREFETCHER ;
 
-    while ((c = getopt (argc, argv, "t:s:u:hv")) != -1)
+    while ((c = getopt (argc, argv, "c:s:u:hv")) != -1)
     {
         switch (c)
         {
@@ -81,19 +80,25 @@ int main (int argc, char** argv)
             case 'u':
                 optSetFeature = 2;
             case 's':
-                if (!strcmp("HW_PREFETCHER",optarg)) 
+                if (! (argString = bSecureInput(20,optarg)))
+                {
+                    fprintf(stderr,"Failed to read argument string!\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                if (biseqcstr(argString,"HW_PREFETCHER")) 
                 {
                     feature = HW_PREFETCHER;
                 }
-                else if (!strcmp("CL_PREFETCHER",optarg)) 
+                else if (biseqcstr(argString,"CL_PREFETCHER")) 
                 {
                     feature = CL_PREFETCHER;
                 }
-                else if (!strcmp("DCU_PREFETCHER",optarg)) 
+                else if (biseqcstr(argString,"DCU_PREFETCHER")) 
                 {
                     feature = DCU_PREFETCHER;
                 }
-                else if (!strcmp("IP_PREFETCHER",optarg)) 
+                else if (biseqcstr(argString,"IP_PREFETCHER")) 
                 {
                     feature = IP_PREFETCHER;
                 }
@@ -103,13 +108,22 @@ int main (int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
 
+                bdestroy(argString);
+
                 if (!optSetFeature)
                 {
                     optSetFeature = 1;
                 }
                 break;
-            case 't':
-                cpuId = atoi(optarg);
+            case 'c':
+                if (! (argString = bSecureInput(10,optarg)))
+                {
+                    fprintf(stderr,"Failed to read argument string!\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                cpuId = str2int((char*) argString->data);
+                bdestroy(argString);
 
                 break;
             case '?':
@@ -134,7 +148,6 @@ int main (int argc, char** argv)
 
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
-//    printf("CPU clock:\t%llu Hz \n", LLU_CAST cpuid_info.clock);
     printf("CPU core id:\t%d \n", cpuId);
 
     if (cpuid_info.family != P6_FAMILY)

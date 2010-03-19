@@ -36,7 +36,6 @@
 #include <sys/types.h>
 
 #include <multiplex.h>
-#include <bstrlib.h>
 #include <strUtil.h>
 
 int
@@ -64,7 +63,7 @@ str2int(const char* str)
 }
 
 int
-cstr_to_cpuset(int* threads,  const char* str)
+bstr_to_cpuset(int* threads,  bstring q)
 {
     int i;
     unsigned int rangeBegin;
@@ -72,7 +71,7 @@ cstr_to_cpuset(int* threads,  const char* str)
     int numThreads=0;
     struct bstrList* tokens;
     struct bstrList* subtokens;
-    bstring q = bfromcstr(str);
+//    bstring q = bfromcstr(str);
 
     tokens = bsplit(q,',');
 
@@ -124,12 +123,12 @@ cstr_to_cpuset(int* threads,  const char* str)
 
 
 void
-cstr_to_eventset(PerfmonEventSet* set, const char* str)
+bstr_to_eventset(PerfmonEventSet* set, bstring q)
 {
     int i;
     struct bstrList* tokens;
     struct bstrList* subtokens;
-    bstring q = bfromcstr(str);
+ //   bstring q = bfromcstr(str);
 
     tokens = bsplit(q,',');
     set->numberOfEvents = tokens->qty;
@@ -157,5 +156,74 @@ cstr_to_eventset(PerfmonEventSet* set, const char* str)
     bdestroy(q);
 }
 
+#define INIT_SECURE_INPUT_LENGTH 256
 
+bstring
+bSecureInput (int maxlen, char* vgcCtx) {
+    int i, m, c = 1;
+    bstring b, t;
+    int termchar = 0;
+
+    if (!vgcCtx) return NULL;
+
+    b = bfromcstralloc (INIT_SECURE_INPUT_LENGTH, "");
+
+    for (i=0; ; i++)
+    {
+        if (termchar == c)
+        {
+            break;
+        }
+        else if ((maxlen > 0) && (i >= maxlen))
+        {
+            b = NULL;
+            return b;
+        }
+        else
+        {
+            c = *(vgcCtx++);
+        }
+
+        if (EOF == c)
+        {
+            break;
+        }
+
+        if (i+1 >= b->mlen) {
+
+            /* Double size, but deal with unusual case of numeric
+               overflows */
+
+            if ((m = b->mlen << 1)   <= b->mlen     &&
+                    (m = b->mlen + 1024) <= b->mlen &&
+                    (m = b->mlen + 16)   <= b->mlen &&
+                    (m = b->mlen + 1)    <= b->mlen)
+            {
+                t = NULL;
+            }
+            else
+            {
+                t = bfromcstralloc (m, "");
+            }
+
+            if (t)
+            {
+                memcpy (t->data, b->data, i);
+            }
+
+            bdestroy (b); /* Clean previous buffer */
+            b = t;
+            if (!b)
+            {
+                return b;
+            }
+        }
+
+        b->data[i] = (unsigned char) c;
+    }
+
+    b->slen = i;
+    b->data[i] = (unsigned char) '\0';
+    return b;
+}
 
