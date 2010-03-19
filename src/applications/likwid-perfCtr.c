@@ -77,8 +77,8 @@ int main (int argc, char** argv)
     int optReport = 0;
     int c;
     bstring eventString = bformat("FLOPS_DP");
+    bstring  argString;
     int num_threads=0;
-    /* It should be checked for size to prevent buffer overflow on threads */
     int threads[MAX_NUM_THREADS];
     MultiplexCollections set;
     int i,j;
@@ -100,16 +100,30 @@ int main (int argc, char** argv)
                 VERSION_MSG;
                 exit (EXIT_SUCCESS);    
             case 'g':
-                bassigncstr(eventString, optarg);
+                if (! (argString = bSecureInput(200,optarg)))
+                {
+                    fprintf(stderr,"Failed to read argument string!\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                eventString = bstrcpy(argString);
+                bdestroy(argString);
                 break;
             case 'c':
-                num_threads = cstr_to_cpuset(threads, optarg);
+                if (! (argString = bSecureInput(200,optarg)))
+                {
+                    fprintf(stderr,"Failed to read argument string!\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                numThreads = bstr_to_cpuset(threads, argString);
 
                 if(!num_threads)
                 {
                     fprintf (stderr, "ERROR: Failed to parse cpu list.\n");
                     exit(EXIT_FAILURE);
                 }
+                bdestroy(argString);
                 break;
             case 'V':
                 perfmon_verbose = 1;
@@ -226,7 +240,7 @@ int main (int argc, char** argv)
         PerfmonEventSet set;
         PerfmonCounterIndex index;
 
-        cstr_to_eventset(&set,(char*) eventString->data);
+        bstr_to_eventset(&set, eventString);
 
         printf("Measuring Performance event:\n");
         for (i=0; i<set.numberOfEvents; i++)
