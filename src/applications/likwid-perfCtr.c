@@ -61,7 +61,7 @@ printf("-r\t Generate performance report\n"); \
 printf("-m\t use markers inside code \n"); \
 printf("-g\t performance group  or event tag\n"); \
 printf("-a\t list available performance groups\n"); \
-printf("-t\t comma separated core ids to measure\n\n")
+printf("-c\t comma separated core ids to measure\n\n")
 
 
 #define VERSION_MSG \
@@ -78,7 +78,7 @@ int main (int argc, char** argv)
     int c;
     bstring eventString = bformat("FLOPS_DP");
     bstring  argString;
-    int num_threads=0;
+    int numThreads=0;
     int threads[MAX_NUM_THREADS];
     MultiplexCollections set;
     int i,j;
@@ -118,7 +118,7 @@ int main (int argc, char** argv)
 
                 numThreads = bstr_to_cpuset(threads, argString);
 
-                if(!num_threads)
+                if(!numThreads)
                 {
                     fprintf (stderr, "ERROR: Failed to parse cpu list.\n");
                     exit(EXIT_FAILURE);
@@ -159,9 +159,9 @@ int main (int argc, char** argv)
         }
     }
 
-    for (i = 0; i< num_threads;i++)
+    for (i = 0; i< numThreads;i++)
     {
-        for (j = 0; j< num_threads;j++)
+        for (j = 0; j< numThreads;j++)
         {
             if(i != j && threads[i] == threads[j])
             {
@@ -212,6 +212,8 @@ int main (int argc, char** argv)
     {
         exit (EXIT_SUCCESS);
     }
+    perfmon_init(numThreads, threads);
+
     if (optPrintGroups)
     {
         perfmon_printAvailableGroups();
@@ -223,45 +225,14 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);
     }
 
-
-    perfmon_init(num_threads, threads);
-
     if(optReport)
     {
         perfmon_setupReport(&set);
         multiplex_init(&set);
     }
-    else if (perfmon_setupGroup(eventString)) 
-    {
-        printf("Measuring Performance group: %s\n", eventString->data);
-    }
     else
     {
-        PerfmonEventSet set;
-        PerfmonCounterIndex index;
-
-        bstr_to_eventset(&set, eventString);
-
-        printf("Measuring Performance event:\n");
-        for (i=0; i<set.numberOfEvents; i++)
-        {
-            
-            if (!perfmon_getIndex(set.events[i].reg, &index))
-            {
-                printf("ERROR: Counter register %s not supported!\n", set.events[i].reg->data);
-                exit (EXIT_FAILURE);
-            }
-
-            if (perfmon_setupCounter(index,set.events[i].eventName))
-            {
-                printf("%s\n",set.events[i].eventName->data);
-            }
-            else
-            {
-                printf("ERROR: Performance event %s not supported!\n", eventString->data);
-                exit (EXIT_FAILURE);
-            }
-        }
+        perfmon_setupEventSet(eventString);
     }
 
     printf(HLINE);
@@ -298,7 +269,7 @@ int main (int argc, char** argv)
 		}
 		else
 		{
-//			perfmon_printMarkerResults();
+			perfmon_printMarkerResults();
 		}
 	}
 

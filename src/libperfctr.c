@@ -95,26 +95,29 @@ void likwid_markerClose()
 
     file = fopen("/tmp/likwid_results.txt","w");
 
-	fprintf(file,"NUMTHREADS %d\n",likwid_numberOfThreads);
-	fprintf(file,"NUMREGIONS %d\n",likwid_numberOfRegions);
+	fprintf(file,"%d %d\n",likwid_numberOfThreads,likwid_numberOfRegions);
 
     for (i=0;i<likwid_numberOfRegions; i++)
     {
-		fprintf(file,"** BEGIN TAG %s **\n",results[i].tag->data);
+		fprintf(file,"%d:%s\n",i,results[i].tag->data);
+    }
+
+    for (i=0;i<likwid_numberOfRegions; i++)
+    {
         for (j=0;j<likwid_numberOfThreads; j++)
         {
-            fprintf(file,"** BEGIN THREAD %d **\n",j);
-            fprintf(file,"TIME %e\n",results[i].time[j]);
-            fprintf(file,"CYCLES %e\n",results[i].cycles[j]);
-            fprintf(file,"INSTR %e\n",results[i].instructions[j]);
+            fprintf(file,"%d ",i);
+            fprintf(file,"%d ",j);
+            fprintf(file,"%e ",results[i].time[j]);
+            fprintf(file,"%e ",results[i].cycles[j]);
+            fprintf(file,"%e ",results[i].instructions[j]);
 
             for (k=0;k<NUM_PMC; k++)
             {
-                fprintf(file,"PMC %d: %e\n",k,results[i].counters[j][k]);
+                fprintf(file,"%e ",results[i].counters[j][k]);
             }
-            fprintf(file,"** END THREAD %d **\n",j);
+            fprintf(file,"\n");
         }
-		fprintf(file,"** END TAG %s **\n",results[i].tag->data);
     }
     fclose(file);
 }

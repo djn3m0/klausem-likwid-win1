@@ -45,12 +45,12 @@
 
 extern int perfmon_verbose;
 extern PerfmonThread* threadData;
-extern int numThreads;
+extern int perfmon_numThreads;
 
 extern void (*perfmon_printAvailableGroups)(void);
 extern void (*perfmon_startCountersThread) (int thread_id);
 extern void (*perfmon_stopCountersThread) (int thread_id);
-extern int (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
+extern int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
 extern void (*perfmon_setupCounterThread) (int thread_id,
         uint32_t umask, uint32_t event, PerfmonCounterIndex index);
 extern void (*perfmon_setupReport) (MultiplexCollections* collections);

@@ -37,26 +37,25 @@
 #include <types.h>
 #include <registers.h>
 
+#define NUM_COUNTERS_CORE2 4
+#define NUM_GROUPS_CORE2 7
 
-int
-perfmon_getIndex_core2 (bstring str, PerfmonCounterIndex* index)
-{
-   if (biseqcstr(str,"PMC0"))
-   {
-       *index = PMC0;
-   }
-   else if (biseqcstr(str,"PMC1"))
-   {
-       *index = PMC1;
-   }
-   else
-   {
-       return FALSE;
-   }
+static PerfmonCounterMap core2_counter_map[NUM_COUNTERS_CORE2] = {
+    {"PMC0",PMC2},
+    {"PMC1",PMC3},
+    {"FIXC0",PMC0},
+    {"FIXC1",PMC1}
+};
 
-   return TRUE;
-}
-
+static PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
+    {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s"},
+    {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s"},
+    {"L2",L2,"L2: L2 cache bandwidth in MBytes/s"},
+    {"MEM",MEM,"Main memory bandwidth in MBytes/s"},
+    {"DATA",DATA,"Load to store ratio"},
+    {"BRANCH",BRANCH,"Branch prediction miss rate"},
+    {"TLB",TLB,"Translation lookaside buffer miss rate"}
+};
 
 void 
 perfmon_init_core2(PerfmonThread *thread)
@@ -254,64 +253,6 @@ perfmon_printReport_core2(MultiplexCollections* collections)
     printf(HLINE);
 }
 
-void
-perfmon_printGroups_core2(void)
-{
-    printf("Performance Groups: Core 2\n\n");
-    printf("FLOPS_DP: Double Precision MFlops/s\n");
-    printf("FLOPS_SP: Single Precision MFlops/s\n");
-    printf("L2: L2 cache bandwidth in MBytes/s\n");
-    printf("MEM: Main memory bandwidth in MBytes/s\n");
-    printf("DATA: Load to store ratio\n");
-    printf("BRANCH: Branch prediction miss rate\n");
-    printf("TLB: Translation lookaside buffer miss rate\n");
-    printf("CPI: cycles per instruction\n\n");
-}
-
-PerfmonGroup
-perfmon_getGroupId_core2(bstring groupStr)
-{
-    PerfmonGroup group;
-
-    if (biseqcstr(groupStr,"FLOPS_DP")) 
-    {
-        group = FLOPS_DP;
-    }
-    else if (biseqcstr(groupStr,"FLOPS_SP")) 
-    {
-        group = FLOPS_SP;
-    }
-    else if (biseqcstr(groupStr,"L2")) 
-    {
-        group = L2;
-    }
-    else if (biseqcstr(groupStr,"MEM")) 
-    {
-        group = MEM;
-    }
-    else if (biseqcstr(groupStr,"DATA")) 
-    {
-        group = DATA;
-    }
-    else if (biseqcstr(groupStr,"BRANCH")) 
-    {
-        group = BRANCH;
-    }
-    else if (biseqcstr(groupStr,"TLB")) 
-    {
-        group = TLB;
-    }
-    else if (biseqcstr(groupStr,"CPI")) 
-    {
-        group = CPI;
-    }
-    else
-    {
-        return NOGROUP;
-    }
-
-    return group;
-}
 
 void
 perfmon_setupCounterThread_core2(int thread_id,
@@ -321,13 +262,17 @@ perfmon_setupCounterThread_core2(int thread_id,
     uint64_t flags;
     uint64_t reg = threadData[thread_id].counters[index].config_reg;
     int cpu_id = threadData[thread_id].cpu_id;
+    threadData[thread_id].counters[index].label = bstrcpy(event_str);
     threadData[thread_id].counters[index].init = TRUE;
 
+    for (int i=0;i<perfmon_numThreads;i++)
     flags = msr_read(cpu_id,reg);
     flags &= ~(0xFFFFU); 
 
     /* Intel with standard 8 bit event mask: [7:0] */
     flags |= (umask<<8) + event;
+
+    msr_write(cpu_id, reg , flags);
 
     if (perfmon_verbose)
     {
@@ -336,7 +281,6 @@ perfmon_setupCounterThread_core2(int thread_id,
                LLU_CAST reg,
                LLU_CAST flags);
     }
-    msr_write(cpu_id, reg , flags);
 
 }
 
@@ -476,22 +420,34 @@ perfmon_setupGroupThread_core2(int thread_id, PerfmonGroup group)
 }
 
 void
-perfmon_printResults_core2(PerfmonThread *thread, PerfmonGroup group, float time)
+perfmon_printResults_core2(PerfmonGroup group)
 {
-    int cpu_id = thread->cpu_id;
+    TableContainer* table;
+    bstrList* labelStrings;
+    int numRows = 1; /* Default Row CPI */
+    int numColumns = perfmon_numThreads+1; /* Default Row CPI */
 
-    if (thread->instructionsRetired < 1.0E-06)
+    labelStrings = bstrListCreate();
+    bstrListAlloc(labelStrings, numColumns);
+
+    label = bfromcstr("Metric");
+    labelStrings->entry[0] = bstrcpy(label);
+    labelStrings->qty++;
+
+    for (i=0; i<perfmon_numThreads;i++)
     {
-        printf ("[%d] Cycles per uop/s: %f \n",cpu_id,0.0);
+        label = bformat("core %d",threadData[i].cpu_id);
+        labelStrings->entry[1+i] = bstrcpy(label);
+        labelStrings->qty++;
     }
-    else
-    {
-        printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->instructionsRetired);
-    }
+
+    printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->instructionsRetired);
 
     switch ( group ) 
     {
         case FLOPS_DP:
+            numRows += 1;
+
             if (time < 1.0E-12)
             {
                 printf ("[%d] Double Precision MFlops/s: %f \n",
@@ -562,6 +518,9 @@ perfmon_printResults_core2(PerfmonThread *thread, PerfmonGroup group, float time
         default:
             break;
     }
+
+    table = asciiTable_allocate(numRows, numColumns,labelStrings);
+
 }
 
 
