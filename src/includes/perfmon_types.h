@@ -44,21 +44,22 @@ typedef enum {
     PMC1,
     PMC2,
     PMC3,
-    PMCU0,
-    PMCU1,
-    PMCU2,
-    PMCU3,
-    PMCU4,
-    PMCU5,
-    PMCU6,
-    PMCU7,
+    PMC4,
+    PMC5,
+    PMC6,
+    PMC7,
+    PMC8,
+    PMC9,
+    PMC10,
+    PMC11,
+    PMC12,
+    PMC13,
     NUM_PMC} PerfmonCounterIndex;
 
 typedef enum {
     NOGROUP = 0,
     FLOPS_DP,
     FLOPS_SP,
-    L1,
     L2,
     L3,
     MEM,
@@ -69,6 +70,19 @@ typedef enum {
     CLUSTER,
     CLUSTER_FLOPS,
     TLB} PerfmonGroup;
+
+typedef struct {
+    char* key;
+    PerfmonCounterIndex index;
+} PerfmonCounterMap;
+
+typedef struct {
+    char* key;
+    PerfmonGroup index;
+    char* info;
+} PerfmonGroupMap;
+
+
 
 typedef struct {
     uint32_t event_id;
@@ -83,14 +97,14 @@ typedef struct {
 typedef struct {
     bstring  label;
     int  init;
+    PerfmonType  type;
+    int  id;
     uint64_t  config_reg;
     uint64_t  counter_reg;
 } PerfmonCounter;
 
 typedef struct {
     int cpu_id;
-    uint64_t cycles;
-    uint64_t instructionsRetired;
     PerfmonCounter counters[NUM_PMC];
     uint64_t pc[NUM_PMC];
 } PerfmonThread;
@@ -108,6 +122,19 @@ typedef struct {
     int numberOfEvents;
     PerfmonEventSetEntry* events;
 } PerfmonEventSet;
+
+
+typedef struct {
+    bstring label;
+    double* value;
+} PerfmonResult;
+
+typedef struct {
+    bstrList* header;
+    int numRows;
+    int numColumns;
+    PerfmonResult* rows;
+} PerfmonResultTable;
 
 
 #endif /*PERFMON_TYPES_H*/

@@ -13,6 +13,7 @@
 #include <perfmon_types.h>
 #include <multiplex_types.h>
 #include <asciiBoxes_types.h>
+#include <asciiTable_types.h>
 
 
 /* #####   EXPORTED MACROS   ############################################## */

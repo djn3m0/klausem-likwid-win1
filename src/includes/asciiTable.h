@@ -1,18 +1,18 @@
 /*
  * ===========================================================================
  *
- *       Filename:  asciiBoxes.h
+ *       Filename:  asciiTable.h
  *
- *    Description:  Module to draw nested ascii art boxes.
+ *       Description:  Module to create and print a ascii table
  *
  *        Version:  1.0
- *        Created:  07/15/2009
+ *        Created:  03/24/2010
  *       Revision:  none
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
  *        Project:  none
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
@@ -30,14 +30,16 @@
  * ===========================================================================
  */
 
-#ifndef ASCIIBOXES_H
-#define ASCIIBOXES_H
+#ifndef ASCIITABLE_H
+#define ASCIITABLE_H
 #include <types.h>
 #include <bstrlib.h>
 
-extern BoxContainer* asciiBoxes_allocateContainer(int numLines,int numColumns);
-extern void asciiBoxes_addBox(BoxContainer* container, int line, int column, bstring label);
-extern void asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int endColumn, bstring label);
-extern void asciiBoxes_print(BoxContainer* container);
+extern TableContainer* asciiTable_allocate(int numRows,int numColumns, bstrList* headerLabels);
+extern void asciiTable_free(TableContainer* container);
+extern void asciiTable_insertRow(TableContainer* container, int row,  bstrList* fields);
+extern void asciiTable_appendRow(TableContainer* container, bstrList* fields);
+extern void asciiTable_setCurrentRow(TableContainer* container, int row);
+extern void asciiTable_print(TableContainer* container);
 
-#endif /*ASCIIBOXES_H*/
+#endif /*ASCIITABLE_H*/

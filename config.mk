@@ -4,7 +4,7 @@
 COLOR = CYAN
 
 # Path were to install likwid
-PREFIX = /home.local/jan/bin
+PREFIX =  /usr/local
 MANPREFIX = $(PREFIX)/man
 
 #LIBPTHREAD = 

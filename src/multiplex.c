@@ -55,7 +55,7 @@ multiplex_swapEventSet ()
     /* collection from last run */
     collection = multiplex_set->collections + currentCollection;
 
-    for (threadId = 0; threadId < numThreads; threadId++)
+    for (threadId = 0; threadId < perfmon_numThreads; threadId++)
     {
         /* Stop counters */
         if (!multiplex_useMarker) perfmon_stopCountersThread(threadId);
@@ -78,7 +78,7 @@ multiplex_swapEventSet ()
     }
     collection = multiplex_set->collections + currentCollection;
 
-    for (threadId = 0; threadId < numThreads; threadId++)
+    for (threadId = 0; threadId < perfmon_numThreads; threadId++)
     {
         /* Reconfigure counters */
         for (int i=0; i<collection->numberOfEvents; i++)

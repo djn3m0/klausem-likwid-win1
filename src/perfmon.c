@@ -43,6 +43,7 @@
 #include <msr.h>
 #include <cpuid.h>
 #include <perfmon.h>
+#include <asciiTable.h>
 #include <registers.h>
 #include <perfmon_pm_events.h>
 #include <perfmon_core2_events.h>
@@ -56,7 +57,9 @@
 int num_arch_events;
 int perfmon_verbose=0;
 PerfmonThread* threadData;
-int numThreads;
+int perfmon_numThreads;
+int perfmon_numRegions;
+LikwidResults* perfmon_results;
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -114,26 +117,23 @@ initThread(int thread_id, int cpu_id)
 
 }
 
-static int
-setupCounterThread(int thread_id,
-        PerfmonCounterIndex index,
-        bstring event_str)
+static void
+setupCounter( PerfmonCounterIndex index, bstring event_str)
 {
     uint64_t flags;
     uint32_t umask = 0, event = 0;
     uint64_t reg = threadData[thread_id].counters[index].config_reg;
-    int cpu_id = threadData[thread_id].cpu_id;
 
     if (!perfmon_getEvent(event_str, &event, &umask))
     {
-        printf("ERROR: Event %s not found for current architecture\n",event_str->data);
-        return FALSE;
+        fprintf (stderr,"ERROR: Event %s not found for current architecture\n",event_str->data );
+        exit (EXIT_FAILURE);
     }
 
     threadData[thread_id].counters[index].label = bstrcpy(event_str);
     threadData[thread_id].counters[index].init = TRUE;
 
-    flags = msr_read(cpu_id,reg);
+    flags = msr_read(threadData[0].cpu_id,reg);
     flags &= ~(0xFFFFU); 
 
     if (cpuid_info.family == P6_FAMILY)
@@ -141,7 +141,8 @@ setupCounterThread(int thread_id,
 
         if (cpuid_info.model > 0x0FU)
         {
-            msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+             for (int i=0;i<perfmon_numThreads;i++)
+                 msr_write(threadData[i].cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
         }
         /* Intel with standard 8 bit event mask: [7:0] */
         flags |= (umask<<8) + event;
@@ -159,37 +160,287 @@ setupCounterThread(int thread_id,
                LLU_CAST reg,
                LLU_CAST flags);
     }
-    msr_write(cpu_id, reg , flags);
+    
+    for (int i=0;i<perfmon_numThreads;i++)
+        msr_write(threadData[i].cpu_id, reg , flags);
 
     return TRUE;
 }
 
-#if 0
+struct cbsScan{
+	/* Parse state */
+	bstring src;
+	int line;
+};
+
+#define CHECKERROR \
+        if (ret == EOF) \
+        { \
+            fprintf (stderr, "sscanf: Failed to read marker file!\n" ); \
+            exit (EXIT_FAILURE); \
+        }
+
+
+static int lineCb (void* parm, int ofs, int len)
+{
+    int ret;
+    struct cbsScan* st = (struct cbsScan*) parm;
+    struct bstrList* strList;
+    bstring line;
+
+    if (!len) return 1;
+
+    line = blk2bstr (st->src->data + ofs, len);
+
+    if (st->line < perfmon_numRegions)
+    {
+        int id;
+        strList = bsplit(line,':');
+
+        if( strList->qty < 2 )
+        {
+            fprintf (stderr, "bsplit 0: Failed to read marker file!\n" );
+            exit (EXIT_FAILURE);
+        }
+        ret = sscanf (bdata(strList->entry[0]), "%d", &id); CHECKERROR;
+        perfmon_results[id].tag = bstrcpy(strList->entry[1]);
+        bstrListDestroy(strList);
+    }
+    else
+    {
+        int tagId;
+        int threadId;
+
+        strList = bsplit(line,32);
+
+        if( strList->qty < (5+NUM_PMC))
+        {
+            fprintf (stderr, "bsplit 1: Failed to read marker file!\n" );
+            exit (EXIT_FAILURE);
+        }
+
+        ret = sscanf (bdata(strList->entry[0]), "%d", &tagId); CHECKERROR;
+        ret = sscanf (bdata(strList->entry[1]), "%d", &threadId); CHECKERROR;
+        ret = sscanf (bdata(strList->entry[2]), "%lf", &perfmon_results[tagId].time[threadId]); CHECKERROR;
+        ret = sscanf (bdata(strList->entry[3]), "%lf", &perfmon_results[tagId].cycles[threadId]); CHECKERROR;
+        ret = sscanf (bdata(strList->entry[4]), "%lf", &perfmon_results[tagId].instructions[threadId]); CHECKERROR;
+
+        for (int i=0;i<NUM_PMC; i++)
+        {
+            ret = sscanf (bdata(strList->entry[5+i]), "%lf", &perfmon_results[tagId].counters[threadId][i]); CHECKERROR;
+        }
+
+        bstrListDestroy(strList);
+    }
+
+    st->line++;
+    bdestroy(line);
+    return 1;
+}
+
 static void
 readMarkerFile(char* filename)
 {
-	for (i=0;i<numberOfRegions; i++)
-	{
-		results[i].cycles = (double*) malloc(numberOfThreads * sizeof(double));
-		results[i].instructions = (double*) malloc(numberOfThreads * sizeof(double));
-		results[i].time = (double*) malloc(numberOfThreads * sizeof(double));
-		results[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
+	int numberOfThreads=0;
+	int ret;
+	int i,j,k;
+    struct cbsScan sl;
+	FILE * fp;
 
-		for (j=0;j<numberOfThreads; j++)
+	if (NULL != (fp = fopen (filename, "r"))) 
+	{
+		bstring src = bread ((bNread) fread, fp);
+
+		/* read header info */
+		ret = sscanf (bdata(src), "%d %d", &numberOfThreads, &perfmon_numRegions); CHECKERROR;
+		perfmon_results = (LikwidResults*) malloc(perfmon_numRegions * sizeof(LikwidResults));
+
+		/* allocate  LikwidResults struct */
+		for (i=0;i<perfmon_numRegions; i++)
 		{
-			results[i].time[j] = 0.0;
-			results[i].cycles[j] = 0.0;
-			results[i].instructions[j] = 0.0;
-			results[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
-			for (k=0;k<NUM_PMC; k++)
+			perfmon_results[i].time = (double*) malloc(numberOfThreads * sizeof(double));
+			perfmon_results[i].cycles = (double*) malloc(numberOfThreads * sizeof(double));
+			perfmon_results[i].instructions = (double*) malloc(numberOfThreads * sizeof(double));
+			perfmon_results[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
+
+			for (j=0;j<numberOfThreads; j++)
 			{
-				results[i].counters[j][k] = 0.0;
+				perfmon_results[i].time[j] = 0.0;
+				perfmon_results[i].cycles[j] = 0.0;
+				perfmon_results[i].instructions[j] = 0.0;
+				perfmon_results[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
+				for (k=0;k<NUM_PMC; k++)
+				{
+					perfmon_results[i].counters[j][k] = 0.0;
+				}
 			}
 		}
+
+        sl.src = src;
+        sl.line = 0;
+        bsplitcb (src, (char) '\n', bstrchr(src,10)+1, lineCb, &sl);
+
+		fclose (fp);
+		bdestroy (src);
 	}
+}
+
+#if 0
+static void
+printResultTable()
+{
+    int thread_id;
+    int i,j;
+    TableContainer* table;
+    bstrList* labelStrings;
+    bstring label;
+    int numRows = 2; /* Default Rows instruction, cycles */
+
+    for (j=0;j<NUM_PMC;j++) 
+    {
+        if (threadData[0].counters[j].init == TRUE) 
+        {
+            numRows++;
+        }
+    }
+    labelStrings = bstrListCreate();
+    bstrListAlloc(labelStrings, perfmon_numThreads+1);
+    label = bfromcstr("Event");
+    labelStrings->entry[0] = bstrcpy(label);
+    labelStrings->qty++;
+
+    for (i=0; i<perfmon_numThreads;i++)
+    {
+        label = bformat("core %d",threadData[i].cpu_id);
+        labelStrings->entry[1+i] = bstrcpy(label);
+        labelStrings->qty++;
+    }
+
+    table = asciiTable_allocate(numRows, perfmon_numThreads+1,labelStrings);
+
+    for(int regionId=0; regionId < perfmon_numRegions; regionId++)
+    {
+        asciiTable_setCurrentRow(table,0);
+        printf ("Region  %s \n",bdata(perfmon_results[regionId].tag));
+        label = bfromcstr("Instructions");
+        labelStrings->entry[0] = bstrcpy(label);
+        for (i=0; i<perfmon_numThreads;i++)
+        {
+            label = bformat("%e", perfmon_results[regionId].instructions[i]);
+            labelStrings->entry[1+i] = bstrcpy(label);
+        }
+        asciiTable_appendRow(table,labelStrings);
+
+        label = bfromcstr("Cycles");
+        labelStrings->entry[0] = bstrcpy(label);
+        for (i=0; i<perfmon_numThreads;i++)
+        {
+            label = bformat("%e", perfmon_results[regionId].cycles[i]);
+            labelStrings->entry[1+i] = bstrcpy(label);
+        }
+        asciiTable_appendRow(table,labelStrings);
+
+        for (j=0;j<NUM_PMC;j++) 
+        {
+            if (threadData[0].counters[j].init == TRUE) 
+            {
+                labelStrings->entry[0] = bstrcpy(threadData[0].counters[j].label);
+
+                for (i=0;i<perfmon_numThreads;i++) 
+                {
+                    label = bformat("%e", perfmon_results[regionId].counters[i][j]);
+                    labelStrings->entry[1+i] = bstrcpy(label);
+                }
+
+                asciiTable_appendRow(table,labelStrings);
+            }
+        }
+
+        asciiTable_print(table);
+    }
 }
 #endif
 
+
+static void
+printResultTable(PerfmonResultTable* tableData)
+{
+    int i,j;
+    TableContainer* table;
+    bstrList* labelStrings;
+    bstring label;
+
+    table = asciiTable_allocate(tableData->numRows,
+            tableData->numColumns,
+            tableData->header);
+
+    for (i=0; i<tableData->numRows; i++)
+    {
+        labelStrings->entry[0] = bstrcpy(tableData->rows[i].label);
+        for (j=0; j<(tableData->numColumns-1);j++)
+        {
+            label = bformat("%e", tableData->rows[i].value[j]);
+            labelStrings->entry[1+j] = bstrcpy(label);
+        }
+        asciiTable_appendRow(table,labelStrings);
+    }
+
+    asciiTable_print(table);
+//    asciiTable_free(table);
+}
+
+
+static PerfmonGroup
+perfmon_getGroupId(bstring groupStr)
+{
+    PerfmonGroup group = NOGROUP;
+
+    for (int i=0; i<numGroups; i++)
+    {
+        if (biseqcstr(groupStr,group_map[i].key)) 
+        {
+            group = group_map[i].index;
+        }
+    }
+
+    return group;
+}
+
+
+void
+setupEventSet(PerfmonEventSet* set)
+{
+    PerfmonCounterIndex index;
+    uint32_t event;
+    uint32_t umask;
+
+    for (i=0; i<set.numberOfEvents; i++)
+    {
+        if (!perfmon_getIndex(set.events[i].reg, &index))
+        {
+            fprintf (stderr,"ERROR: Counter register %s not supported!\n",
+                    set.events[i].reg->data);
+            exit (EXIT_FAILURE);
+        }
+
+        if (!perfmon_getEvent(set.events[i].eventName, &event, &umask))
+        {
+            fprintf (stderr,"ERROR: Event %s not found for current architecture\n",event_str->data );
+            exit (EXIT_FAILURE);
+        }
+
+        if (perfmon_setupCounter(event, umask, index))
+        {
+            printf("%s\n",bdata(set.events[i].eventName));
+        }
+        else
+        {
+            fprintf (stderr,"ERROR: Performance event %s not supported!\n",
+                    bdata(set.events[i].eventName));
+            exit (EXIT_FAILURE);
+        }
+    }
+}
 
 
 
@@ -221,96 +472,72 @@ perfmon_getEvent(bstring event_str, uint32_t* event, uint32_t* umask)
     return found;
 }
 
+#define bstrListAdd(id,name) \
+    label = bfromcstr(#name);  \
+    header->entry[id] = bstrcpy(label);  \
+    header->qty++;
+
+
 void 
 perfmon_printMarkerResults()
 {
-    int thread_id;
-    float time;
     int i;
+    PerfmonResultTable tableData;
+    bstrList* header;
+    bstring label;
+    int numRows = 2; /* Default Rows instruction, cycles */
+    int numColumns = (perfmon_numThreads+1);
 
-    for (thread_id=0;thread_id<numThreads;thread_id++) 
+    readMarkerFile("/tmp/likwid_results.txt");
+
+    for (j=0;j<NUM_PMC;j++) 
     {
-        printf(HLINE);
-        printf ("[%d] Instruction retired any: %llu \n",
-                threadData[thread_id].cpu_id,
-                LLU_CAST threadData[thread_id].instructionsRetired);
-        printf ("[%d] Cycles unhalted core: %llu \n",
-                threadData[thread_id].cpu_id,
-                LLU_CAST threadData[thread_id].cycles);
-        summary.instructionsRetired += threadData[thread_id].instructionsRetired;
-
-        for (i=0;i<NUM_PMC;i++) 
+        if (threadData[0].counters[j].init == TRUE) 
         {
-            if (threadData[thread_id].counters[i].init == TRUE) 
-            {
-                summary.pc[i] += threadData[thread_id].pc[i];
-                printf ("[%d] %s: %llu \n",
-                        threadData[thread_id].cpu_id,
-                        threadData[thread_id].counters[i].label->data,
-                        LLU_CAST threadData[thread_id].pc[i]);
-            }
+            numRows++;
         }
-        printf(HLINE);
-        printf("[%d] ==== Derived Metrics ====\n",
-                threadData[thread_id].cpu_id);
-        printf(HLINE);
-        time = (float)threadData[thread_id].cycles/(float)cpuid_info.clock;
-        printf ("[%d] Execution time: %e sec \n",
-                threadData[thread_id].cpu_id,time);
+    }
+    header = bstrListCreate();
+    bstrListAlloc(header, numColumns);
+    bstrListAdd(0,Event);
 
-        printResults(&threadData[thread_id], groupSet, time);
-        printf(HLINE);
+    for (i=0; i<perfmon_numThreads;i++)
+    {
+        bstrListAdd(0,Event);
+        label = bformat("core %d",threadData[i].cpu_id);
+        header->entry[1+i] = bstrcpy(label);
+        header->qty++;
+    }
+
+    tableData.numRows = numRows;
+    tableData.numColumns = numColumns;
+    tableData.header = header;
+    tableData.rows = (PerfmonResult*) malloc(numRows*sizeof(PerfmonResult));
+
+    for (i=0; i<numRows; i++)
+    {
+        tableData.rows[i].label = bfromcstr("Instructions");
+
+
+
     }
 
 
-    if ( numThreads > 1) 
-    {
-        printf(HLINE);
-        printf("==== SUMMARY RESULTS ====\n");
-        printf(HLINE);
-        printf ("[%d] RDTSC Cycles: %llu \n",summary.cpu_id, LLU_CAST summary.cycles);
-        printf ("[%d] Instructions retired any: %llu \n",summary.cpu_id, LLU_CAST summary.instructionsRetired);
-        for (i=0;i<NUM_PMC;i++) 
-        {
-            if (threadData[0].counters[i].init == TRUE) 
-            {
-                printf ("[%d] %s: %llu \n",
-                        summary.cpu_id,
-                        threadData[0].counters[i].label->data,
-                         LLU_CAST summary.pc[i]);
-            }
-        }
+    printResultTable(&tableData);
 
-        printf(HLINE);
-        printf("==== Derived Metrics ====\n");
-        printf(HLINE);
-        time = (float)summary.cycles/(float)cpuid_info.clock;
-        printf ("[%d] Execution time: %e sec \n",summary.cpu_id,time);
 
-        printResults(&summary, groupSet, time);
-        printf(HLINE);
-    }
+
+ //   printResults(groupSet);
 }
-
 
 
 void 
 perfmon_printResults()
 {
-    int thread_id;
-    float time;
-    int i;
+#if 0
+    /* Fill LikwidREsults */
 
-    for (i=0;i<NUM_PMC;i++) 
-    {
-        summary.pc[i] = 0;
-        summary.instructionsRetired = 0;
-        summary.counters[i].init = FALSE;
-    }
-    summary.cpu_id = 100;
-
-
-    for (thread_id=0;thread_id<numThreads;thread_id++) 
+    for (thread_id=0;thread_id<perfmon_numThreads;thread_id++) 
     {
 
         printf(HLINE);
@@ -344,102 +571,28 @@ perfmon_printResults()
         printResults(&threadData[thread_id], groupSet, time);
         printf(HLINE);
     }
-
-
-    if ( numThreads > 1) 
-    {
-        printf(HLINE);
-        printf("==== SUMMARY RESULTS ====\n");
-        printf(HLINE);
-        printf ("[%d] RDTSC Cycles: %llu \n",summary.cpu_id, LLU_CAST summary.cycles);
-        printf ("[%d] Instructions retired any: %llu \n",summary.cpu_id, LLU_CAST summary.instructionsRetired);
-        for (i=0;i<NUM_PMC;i++) 
-        {
-            if (threadData[0].counters[i].init == TRUE) 
-            {
-                printf ("[%d] %s: %llu \n",
-                        summary.cpu_id,
-                        threadData[0].counters[i].label->data,
-                         LLU_CAST summary.pc[i]);
-            }
-        }
-
-        printf(HLINE);
-        printf("==== Derived Metrics ====\n");
-        printf(HLINE);
-        time = (float)summary.cycles/(float)cpuid_info.clock;
-        printf ("[%d] Execution time: %e sec \n",summary.cpu_id,time);
-
-        printResults(&summary, groupSet, time);
-        printf(HLINE);
-    }
-}
-
-void
-perfmon_setCycles(uint64_t cycles)
-{
-    summary.cycles = cycles;
+#endif
 }
 
 
 void
-perfmon_getCycles(void)
+perfmon_setupEventSet(bstring eventString)
 {
-    FILE *file;
-
-    file = fopen("/tmp/perfmon_cycles.txt","r");
-
-    if (!file) 
-    {
-        fprintf (stderr, "Could not open file for read!\n" );
-        exit (EXIT_FAILURE);
-    }
-
-    if (fscanf(file,"%llu",(long long unsigned int *) &summary.cycles) != 1)
-    {
-        fprintf(stderr, "Failed to fscanf cycles file!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    fclose(file);
-    remove("/tmp/perfmon_cycles.txt");
-}
-
-int
-perfmon_setupGroup(bstring groupString)
-{
-    int i;
-
-    groupSet = getGroupId(groupString);
+    PerfmonEventSet set;
+    PerfmonGroup group = getGroupId(eventString);
 
     if (groupSet == NOGROUP)
     {
-        return FALSE;
+        /* eventString is a custom eventSet */
+        bstr_to_eventset(&set, eventString);
     }
-
-    for (i=0;i<numThreads;i++)
+    else
     {
-        setupGroupThread(i,groupSet);
+        /* eventString is a group */
+        setupGroup(&set, group);
     }
 
-    return TRUE;
-}
-
-int
-perfmon_setupCounter(PerfmonCounterIndex index, bstring event_str)
-{
-    int i;
-
-    for (i=0;i<numThreads;i++)
-    {
-        if (!setupCounterThread(i,index,event_str)) 
-        {
-            fprintf (stderr, "Unknown performance event %s\n",event_str->data);
-            return FALSE;
-        }
-    }
-
-    return TRUE;
+    setupEventSet(&set);
 }
 
 void
@@ -447,7 +600,7 @@ perfmon_startAllCounters(void)
 {
     int i;
 
-    for (i=0;i<numThreads;i++)
+    for (i=0;i<perfmon_numThreads;i++)
     {
         perfmon_startCountersThread(i);
     }
@@ -461,7 +614,7 @@ perfmon_stopAllCounters(void)
     int i;
 
     timer_stopCycles(&timeData);
-    for (i=0;i<numThreads;i++)
+    for (i=0;i<perfmon_numThreads;i++)
     {
         perfmon_stopCountersThread(i);
     }
@@ -506,8 +659,8 @@ perfmon_initEventset(PerfmonEventSet* set)
             exit(EXIT_FAILURE);
         }
 
-        set->events[i].results = (double*) malloc(numThreads* sizeof(double));
-        set->events[i].time = (double*) malloc(numThreads* sizeof(double));
+        set->events[i].results = (double*) malloc(perfmon_numThreads* sizeof(double));
+        set->events[i].time = (double*) malloc(perfmon_numThreads* sizeof(double));
         set->events[i].results[0] = 0.0;
     }
 }
@@ -519,8 +672,8 @@ perfmon_init(int numThreads_local, int threads[])
 {
     int i;
 
-    numThreads = numThreads_local;
-    threadData = (PerfmonThread*) malloc(numThreads * sizeof(PerfmonThread));
+    perfmon_numThreads = numThreads_local;
+    threadData = (PerfmonThread*) malloc(perfmon_numThreads * sizeof(PerfmonThread));
 
     switch ( cpuid_info.family ) 
     {
@@ -628,7 +781,7 @@ perfmon_init(int numThreads_local, int threads[])
     }
 
 
-    for (i=0;i<numThreads;i++) 
+    for (i=0;i<perfmon_numThreads;i++) 
     {
         initThread(i,threads[i]);
     }

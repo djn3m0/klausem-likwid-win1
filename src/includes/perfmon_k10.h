@@ -93,7 +93,7 @@ void perfmon_init_k10(PerfmonThread *thread)
 }
 
 void
-perfmon_setupReport_k10(MultiplexCollections* collections)
+perfmon_setupReport_k11(MultiplexCollections* collections)
 {
 
 }

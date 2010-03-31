@@ -222,8 +222,28 @@ bSecureInput (int maxlen, char* vgcCtx) {
         b->data[i] = (unsigned char) c;
     }
 
+    i--;
     b->slen = i;
     b->data[i] = (unsigned char) '\0';
     return b;
 }
+
+
+int bJustifyCenter (bstring b, int width) 
+{
+    unsigned char space  = ' ';
+    int alignSpace = (width - b->slen) / 2;
+    int restSpace = (width - b->slen) % 2;
+    if (width <= 0) return -__LINE__;
+
+    if (b->slen <= width)
+    {
+        binsertch (b, 0, alignSpace, space);
+    }
+
+    binsertch (b, b->slen , alignSpace+restSpace, space);
+
+    return BSTR_OK;
+}
+
 
