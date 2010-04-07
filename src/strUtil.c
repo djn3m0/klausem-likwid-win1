@@ -123,16 +123,16 @@ bstr_to_cpuset(int* threads,  bstring q)
 
 
 void
-bstr_to_eventset(PerfmonEventSet* set, bstring q)
+bstr_to_eventset(StrUtilEventSet* set, bstring q)
 {
     int i;
     struct bstrList* tokens;
     struct bstrList* subtokens;
- //   bstring q = bfromcstr(str);
 
     tokens = bsplit(q,',');
     set->numberOfEvents = tokens->qty;
-    set->events = (PerfmonEventSetEntry*) malloc(set->numberOfEvents * sizeof(PerfmonEventSetEntry));
+    set->events = (StrUtilEvent*)
+        malloc(set->numberOfEvents * sizeof(StrUtilEvent));
 
     for (i=0;i<tokens->qty;i++)
     {
@@ -146,7 +146,7 @@ bstr_to_eventset(PerfmonEventSet* set, bstring q)
         else
         {
             set->events[i].eventName = bstrcpy(subtokens->entry[0]);
-            set->events[i].reg = bstrcpy(subtokens->entry[1]);
+            set->events[i].counterName = bstrcpy(subtokens->entry[1]);
         }
 
         bstrListDestroy(subtokens);

@@ -60,7 +60,7 @@ extern void perfmon_init (int numThreads, int threads[]);
 extern void perfmon_initEventset(PerfmonEventSet* set);
 extern int  perfmon_setupCounter (PerfmonCounterIndex index, bstring event);
 extern int  perfmon_setupGroup(bstring group);
-extern int  perfmon_getEvent(bstring event_str, uint32_t* event, uint32_t* umask);
+extern int  perfmon_getEvent(bstring event_str, PerfmonEvent* event);
 extern void perfmon_startAllCounters (void);
 extern void perfmon_stopAllCounters (void);
 extern void perfmon_startCounters (int thread_id);
@@ -68,11 +68,5 @@ extern void perfmon_stopCounters (int thread_id);
 extern void perfmon_printResults(void);
 extern void perfmon_getCycles(void);
 extern void perfmon_setCycles(uint64_t);
-
-extern void perfmon_markerStartCounters(int core_id);
-extern void perfmon_markerStopCounters(int core_id);
-extern void perfmon_markerPauseCounters(int core_id);
-extern void perfmon_markerResumeCounters(int core_id);
-extern void perfmon_markerSetCycles(uint64_t cycles);
 
 #endif /*PERFMON_H*/

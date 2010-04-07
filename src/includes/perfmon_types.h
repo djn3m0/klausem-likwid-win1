@@ -71,6 +71,11 @@ typedef enum {
     CLUSTER_FLOPS,
     TLB} PerfmonGroup;
 
+typedef enum {
+    PMC = 0,
+    FIXED,
+    UNCORE} PerfmonType;
+
 typedef struct {
     char* key;
     PerfmonCounterIndex index;
@@ -82,39 +87,29 @@ typedef struct {
     char* info;
 } PerfmonGroupMap;
 
-
+typedef struct {
+    PerfmonType  type;
+    int       init;
+    uint64_t  configRegister;
+    uint64_t  counterRegister;
+    uint64_t  counterData;
+} PerfmonCounter;
 
 typedef struct {
-    uint32_t event_id;
+    int processorId;
+    PerfmonCounter counters[NUM_PMC];
+} PerfmonThread;
+
+typedef struct {
+    char*    name;
+    uint32_t eventId;
     uint32_t umask;
 } PerfmonEvent;
 
 typedef struct {
-    char*  key;
-    PerfmonEvent  event;
-} PerfmonHashEntry;
-
-typedef struct {
-    bstring  label;
-    int  init;
-    PerfmonType  type;
-    int  id;
-    uint64_t  config_reg;
-    uint64_t  counter_reg;
-} PerfmonCounter;
-
-typedef struct {
-    int cpu_id;
-    PerfmonCounter counters[NUM_PMC];
-    uint64_t pc[NUM_PMC];
-} PerfmonThread;
-
-typedef struct {
-    bstring reg;
-    bstring eventName;
     PerfmonEvent event;
     PerfmonCounterIndex index;
-    double* results;
+    double* result;
     double* time;
 } PerfmonEventSetEntry;
 
