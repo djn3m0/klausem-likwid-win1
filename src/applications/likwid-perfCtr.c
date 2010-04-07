@@ -4,7 +4,7 @@
  *       Filename:  perfCtrMain.c
  *
  *    Description:  An application to read out performance counter registers
- *                  on Intel Core, Nehalem and AMD K10 processors.
+ *                  on x86 processors
  *
  *        Version:  <VERSION>
  *        Created:  08/13/2009

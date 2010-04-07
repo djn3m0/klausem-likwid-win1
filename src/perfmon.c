@@ -67,6 +67,7 @@ static PerfmonGroup groupSet = NOGROUP;
 static const PerfmonHashEntry* eventHash;
 static PerfmonThread summary;
 static CyclesData timeData;
+static PerfmonEventSet perfmon_set;
 
 /* #####   PROTOTYPES  -  LOCAL TO THIS SOURCE FILE   ##################### */
 
@@ -390,53 +391,48 @@ printResultTable(PerfmonResultTable* tableData)
 }
 
 
-static PerfmonGroup
-perfmon_getGroupId(bstring groupStr)
+static int
+perfmon_getGroupId(bstring groupStr,PerfmonGroup* group)
 {
-    PerfmonGroup group = NOGROUP;
+    *group = NOGROUP;
 
     for (int i=0; i<numGroups; i++)
     {
         if (biseqcstr(groupStr,group_map[i].key)) 
         {
-            group = group_map[i].index;
+            *group = group_map[i].index;
+            return i;
         }
     }
 
-    return group;
+    return -1;
 }
 
 
 void
-setupEventSet(PerfmonEventSet* set)
+initEventSet(StrUtilEventSet* eventSetConfig)
 {
-    PerfmonCounterIndex index;
-    uint32_t event;
-    uint32_t umask;
+    perfmon_set.numberOfEvents = eventSetConfig->numberOfEvents;
+    perfmon_set->events = (PerfmonEventSetEntry*)
+        malloc(perfmon_set->numberOfEvents * sizeof(PerfmonEventSetEntry));
 
-    for (i=0; i<set.numberOfEvents; i++)
+    for (i=0; i<perfmon_set.numberOfEvents; i++)
     {
-        if (!perfmon_getIndex(set.events[i].reg, &index))
+        /* get register index */
+        if (!perfmon_getIndex(eventSetConfig.events[i].counterName,
+                    &perfmon_set.events[i].index))
         {
             fprintf (stderr,"ERROR: Counter register %s not supported!\n",
-                    set.events[i].reg->data);
+                    bdata(eventSetConfig.events[i].configName));
             exit (EXIT_FAILURE);
         }
 
-        if (!perfmon_getEvent(set.events[i].eventName, &event, &umask))
+        /* setup event */
+        if (!perfmon_getEvent(eventSetConfig.events[i].eventName,
+                    &perfmon_set.events[i].event))
         {
-            fprintf (stderr,"ERROR: Event %s not found for current architecture\n",event_str->data );
-            exit (EXIT_FAILURE);
-        }
-
-        if (perfmon_setupCounter(event, umask, index))
-        {
-            printf("%s\n",bdata(set.events[i].eventName));
-        }
-        else
-        {
-            fprintf (stderr,"ERROR: Performance event %s not supported!\n",
-                    bdata(set.events[i].eventName));
+            fprintf (stderr,"ERROR: Event %s not found for current architecture\n",
+                    bdata(eventSetConfig.events[i].eventName));
             exit (EXIT_FAILURE);
         }
     }
@@ -447,29 +443,27 @@ setupEventSet(PerfmonEventSet* set)
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
-perfmon_getEvent(bstring event_str, uint32_t* event, uint32_t* umask)
+perfmon_getEvent(bstring event_str, PerfmonEvent* event)
 {
     int i;
-    int found = FALSE;
 
     for (i=0; i< num_arch_events; i++)
     {
         if (biseqcstr(event_str, eventHash[i].key))
         {
-            *event = eventHash[i].event.event_id;
-            *umask = eventHash[i].event.umask;
-            found = TRUE;
-            break;
+            event->eventId = eventHash[i].event.eventId;
+            event->umask   = eventHash[i].event.umask;
+
+            if (perfmon_verbose)
+            {
+                printf ("Found event %s : Event_id 0x%02X Umask 0x%02X \n",
+                        bdata(event_str), event->eventId, event->umask);
+            }
+            return TRUE;
         }
     }
 
-    if (perfmon_verbose)
-    {
-        printf ("Found event %s : Event_id 0x%02X Umask 0x%02X \n",
-                event_str->data, *event, *umask);
-    }
-
-    return found;
+    return FALSE;
 }
 
 #define bstrListAdd(id,name) \
@@ -578,25 +572,55 @@ perfmon_printResults()
 void
 perfmon_setupEventSet(bstring eventString)
 {
-    PerfmonEventSet set;
-    PerfmonGroup group = getGroupId(eventString);
+    int groupId;
+    bstring eventName;
+    PerfmonGroup group;
+    StrUtilEventSet eventSetConfig;
 
-    if (groupSet == NOGROUP)
+    groupId = perfmon_getGroupId(eventString, &group);
+
+    if (group == NOGROUP)
     {
         /* eventString is a custom eventSet */
-        bstr_to_eventset(&set, eventString);
+        bstr_to_eventset(&eventSetConfig, eventString);
     }
     else
     {
         /* eventString is a group */
-        setupGroup(&set, group);
+        bassigncstr(eventName, perfmon_group_config[groupId]);
+        bstr_to_eventset(&eventSetConfig, eventName);
     }
 
-    setupEventSet(&set);
+    initEventSet(&eventSetConfig);
+    perfmon_setupCounters();
+}
+
+
+void
+perfmon_setupCounters()
+{
+  int i;
+  int j;
+  uint32_t eventId;
+  uint32_t umask;
+  PerCounterIndex  index;
+
+    for (j=0; j<perfmon_set.numberOfEvents; j++)
+    {
+        eventId = perfmon_set.events[j].event.eventId;
+        umask   = perfmon_set.events[j].event.umask;
+        index   = perfmon_set.events[j].index;
+ //       printf("%s\n",perfmon_set.events[i].name);
+
+        for (i=0; i<perfmon_numThreads; i++)
+        {
+            perfmon_setupCounterThread(i, eventId, umask, index);
+        }
+    }
 }
 
 void
-perfmon_startAllCounters(void)
+perfmon_startCounters(void)
 {
     int i;
 
@@ -609,7 +633,7 @@ perfmon_startAllCounters(void)
 }
 
 void
-perfmon_stopAllCounters(void)
+perfmon_stopCounters(void)
 {
     int i;
 
@@ -622,19 +646,6 @@ perfmon_stopAllCounters(void)
     perfmon_setCycles(timer_printCycles(&timeData));
 }
 
-void
-perfmon_startCounters(int thread_id)
-{
-    perfmon_startCountersThread(thread_id);
-
-}
-
-void
-perfmon_stopCounters(int thread_id)
-{
-    perfmon_stopCountersThread(thread_id);
-
-}
 
 void
 perfmon_initEventset(PerfmonEventSet* set)
