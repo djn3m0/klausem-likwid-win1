@@ -102,6 +102,7 @@ typedef struct {
 
 typedef struct {
     char*    name;
+    char*    limit;
     uint32_t eventId;
     uint32_t umask;
 } PerfmonEvent;

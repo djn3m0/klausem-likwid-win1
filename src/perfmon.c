@@ -54,7 +54,7 @@
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
-int num_arch_events;
+int perfmon_numArchEvents;
 int perfmon_verbose=0;
 PerfmonThread* threadData;
 int perfmon_numThreads;
@@ -64,7 +64,7 @@ LikwidResults* perfmon_results;
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static PerfmonGroup groupSet = NOGROUP;
-static const PerfmonHashEntry* eventHash;
+static const PerfmonEvent* eventHash;
 static PerfmonThread summary;
 static CyclesData timeData;
 static PerfmonEventSet perfmon_set;
@@ -72,13 +72,12 @@ static PerfmonEventSet perfmon_set;
 /* #####   PROTOTYPES  -  LOCAL TO THIS SOURCE FILE   ##################### */
 
 static void initThread(int , int );
-static int setupCounterThread(int , PerfmonCounterIndex , bstring );
 
-#include <perfmon_pm.h>
+//#include <perfmon_pm.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
-#include <perfmon_k8.h>
-#include <perfmon_k10.h>
+//#include <perfmon_k8.h>
+//#include <perfmon_k10.h>
 
 /* #####  EXPORTED  FUNCTION POINTERS   ################################### */
 void (*perfmon_printAvailableGroups) (void);
@@ -286,82 +285,6 @@ readMarkerFile(char* filename)
 	}
 }
 
-#if 0
-static void
-printResultTable()
-{
-    int thread_id;
-    int i,j;
-    TableContainer* table;
-    bstrList* labelStrings;
-    bstring label;
-    int numRows = 2; /* Default Rows instruction, cycles */
-
-    for (j=0;j<NUM_PMC;j++) 
-    {
-        if (threadData[0].counters[j].init == TRUE) 
-        {
-            numRows++;
-        }
-    }
-    labelStrings = bstrListCreate();
-    bstrListAlloc(labelStrings, perfmon_numThreads+1);
-    label = bfromcstr("Event");
-    labelStrings->entry[0] = bstrcpy(label);
-    labelStrings->qty++;
-
-    for (i=0; i<perfmon_numThreads;i++)
-    {
-        label = bformat("core %d",threadData[i].cpu_id);
-        labelStrings->entry[1+i] = bstrcpy(label);
-        labelStrings->qty++;
-    }
-
-    table = asciiTable_allocate(numRows, perfmon_numThreads+1,labelStrings);
-
-    for(int regionId=0; regionId < perfmon_numRegions; regionId++)
-    {
-        asciiTable_setCurrentRow(table,0);
-        printf ("Region  %s \n",bdata(perfmon_results[regionId].tag));
-        label = bfromcstr("Instructions");
-        labelStrings->entry[0] = bstrcpy(label);
-        for (i=0; i<perfmon_numThreads;i++)
-        {
-            label = bformat("%e", perfmon_results[regionId].instructions[i]);
-            labelStrings->entry[1+i] = bstrcpy(label);
-        }
-        asciiTable_appendRow(table,labelStrings);
-
-        label = bfromcstr("Cycles");
-        labelStrings->entry[0] = bstrcpy(label);
-        for (i=0; i<perfmon_numThreads;i++)
-        {
-            label = bformat("%e", perfmon_results[regionId].cycles[i]);
-            labelStrings->entry[1+i] = bstrcpy(label);
-        }
-        asciiTable_appendRow(table,labelStrings);
-
-        for (j=0;j<NUM_PMC;j++) 
-        {
-            if (threadData[0].counters[j].init == TRUE) 
-            {
-                labelStrings->entry[0] = bstrcpy(threadData[0].counters[j].label);
-
-                for (i=0;i<perfmon_numThreads;i++) 
-                {
-                    label = bformat("%e", perfmon_results[regionId].counters[i][j]);
-                    labelStrings->entry[1+i] = bstrcpy(label);
-                }
-
-                asciiTable_appendRow(table,labelStrings);
-            }
-        }
-
-        asciiTable_print(table);
-    }
-}
-#endif
-
 
 static void
 printResultTable(PerfmonResultTable* tableData)
@@ -408,6 +331,14 @@ perfmon_getGroupId(bstring groupStr,PerfmonGroup* group)
     return -1;
 }
 
+int
+perfmon_checkRegister(bstring counterName, char* limit)
+{
+
+
+    return TRUE;
+}
+
 
 void
 initEventSet(StrUtilEventSet* eventSetConfig)
@@ -435,6 +366,16 @@ initEventSet(StrUtilEventSet* eventSetConfig)
                     bdata(eventSetConfig.events[i].eventName));
             exit (EXIT_FAILURE);
         }
+        
+        /* is counter allowed for event */
+        if (!perfmon_checkRegister(eventSetConfig.events[i].counterName,
+                    perfmon_set.events[i].event.limit))
+        {
+            fprintf (stderr,"ERROR: Register %s not allowed  for event %s\n",
+                    bdata(eventSetConfig.events[i].counterName),
+                    bdata(eventSetConfig.events[i].eventName));
+            exit (EXIT_FAILURE);
+        }
     }
 }
 
@@ -447,12 +388,11 @@ perfmon_getEvent(bstring event_str, PerfmonEvent* event)
 {
     int i;
 
-    for (i=0; i< num_arch_events; i++)
+    for (i=0; i< perfmon_numArchEvents; i++)
     {
         if (biseqcstr(event_str, eventHash[i].key))
         {
-            event->eventId = eventHash[i].event.eventId;
-            event->umask   = eventHash[i].event.umask;
+            *event = eventHash[i].event;
 
             if (perfmon_verbose)
             {
@@ -479,7 +419,7 @@ perfmon_printMarkerResults()
     PerfmonResultTable tableData;
     bstrList* header;
     bstring label;
-    int numRows = 2; /* Default Rows instruction, cycles */
+    int numRows = 0;
     int numColumns = (perfmon_numThreads+1);
 
     readMarkerFile("/tmp/likwid_results.txt");
@@ -510,7 +450,7 @@ perfmon_printMarkerResults()
 
     for (i=0; i<numRows; i++)
     {
-        tableData.rows[i].label = bfromcstr("Instructions");
+        tableData.rows[i].label = bfromcstr(threadData[i].);
 
 
 
@@ -574,12 +514,11 @@ perfmon_setupEventSet(bstring eventString)
 {
     int groupId;
     bstring eventName;
-    PerfmonGroup group;
     StrUtilEventSet eventSetConfig;
 
-    groupId = perfmon_getGroupId(eventString, &group);
+    groupId = perfmon_getGroupId(eventString, &groupSet);
 
-    if (group == NOGROUP)
+    if (groupSet == NOGROUP)
     {
         /* eventString is a custom eventSet */
         bstr_to_eventset(&eventSetConfig, eventString);
@@ -692,12 +631,13 @@ perfmon_init(int numThreads_local, int threads[])
 
             switch ( cpuid_info.model ) 
             {
+#if 0
                 case PENTIUM_M_BANIAS:
 
                 case PENTIUM_M_DOTHAN:
 
                     eventHash = pm_arch_events;
-                    num_arch_events = NUM_ARCH_EVENTS_PM;
+                    perfmon_numArchEvents = perfmon_numArchEvents_PM;
 
                     initThreadArch = perfmon_init_pm;
                     getGroupId = perfmon_getGroupId_pm;
@@ -711,6 +651,7 @@ perfmon_init(int numThreads_local, int threads[])
                 case CORE_DUO:
                     fprintf(stderr, "Unsupported Processor!\n");
                     exit(EXIT_FAILURE);
+#endif
                     break;
 
                 case XEON_MP:
@@ -720,7 +661,7 @@ perfmon_init(int numThreads_local, int threads[])
                 case CORE2_45:
 
                     eventHash = core2_arch_events;
-                    num_arch_events = NUM_ARCH_EVENTS_CORE2;
+                    perfmon_numArchEvents = perfmon_numArchEvents_CORE2;
 
                     initThreadArch = perfmon_init_core2;
                     getGroupId = perfmon_getGroupId_core2;
@@ -740,7 +681,7 @@ perfmon_init(int numThreads_local, int threads[])
                 case NEHALEM_LYNNFIELD:
 
                     eventHash = nehalem_arch_events;
-                    num_arch_events = NUM_ARCH_EVENTS_NEHALEM;
+                    perfmon_numArchEvents = perfmon_numArchEvents_NEHALEM;
 
                     initThreadArch = perfmon_init_nehalem;
                     getGroupId = perfmon_getGroupId_nehalem;
@@ -758,9 +699,10 @@ perfmon_init(int numThreads_local, int threads[])
             }
             break;
 
+#if 0
         case K8_FAMILY:
             eventHash = k8_arch_events;
-            num_arch_events = NUM_ARCH_EVENTS_K8;
+            perfmon_numArchEvents = perfmon_numArchEvents_K8;
 
             initThreadArch = perfmon_init_k10;
             getGroupId = perfmon_getGroupId_k8;
@@ -774,7 +716,7 @@ perfmon_init(int numThreads_local, int threads[])
 
         case K10_FAMILY:
             eventHash = k10_arch_events;
-            num_arch_events = NUM_ARCH_EVENTS_K10;
+            perfmon_numArchEvents = perfmon_numArchEvents_K10;
 
             initThreadArch = perfmon_init_k10;
             getGroupId = perfmon_getGroupId_k10;
@@ -784,6 +726,7 @@ perfmon_init(int numThreads_local, int threads[])
             perfmon_startCountersThread = perfmon_startCountersThread_k10;
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
             break;
+#endif
 
         default:
             fprintf(stderr, "Unsupported Processor!\n");
