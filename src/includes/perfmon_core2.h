@@ -58,15 +58,15 @@ static PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
 };
 
 static char** core2_group_config[NUM_GROUPS_CORE2] = {
-    "SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1",
-    "SIMD_COMP_INST_RETIRED_PACKED_SINGLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_SINGLE:PMC1",
-    "L1D_REPL:PMC0,L1D_M_EVICT:PMC1",
-    "BUS_TRANS_MEM_THIS_CORE_THIS_A:PMC0",
-    "INST_RETIRED_LOADS:PMC0,INST_RETIRED_STORES:PMC1",
-    "BR_INST_RETIRED_ANY:PMC0,BR_INST_RETIRED_MISPRED:PMC1",
-    "UOPS_RETIRED_ANY:PMC0",
-    "DTLB_MISSES_ANY:PMC0,DTLB_MISSES_MISS_LD:PMC1",
-    "UOPS_RETIRED_ANY:PMC0,DTLB_MISSES_MISS_LD:PMC1"};
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_SINGLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_SINGLE:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,BUS_TRANS_MEM_THIS_CORE_THIS_A:PMC0",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,INST_RETIRED_LOADS:PMC0,INST_RETIRED_STORES:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,BR_INST_RETIRED_ANY:PMC0,BR_INST_RETIRED_MISPRED:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UOPS_RETIRED_ANY:PMC0",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,DTLB_MISSES_ANY:PMC0,DTLB_MISSES_MISS_LD:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UOPS_RETIRED_ANY:PMC0,DTLB_MISSES_MISS_LD:PMC1"};
 
 
 void 
@@ -76,19 +76,19 @@ perfmon_init_core2(PerfmonThread *thread)
     int cpu_id = thread->cpu_id;
 
     /* Fixed Counters: instructions retired, cycles ubhalted core */
-    thread->counters[PMC0].config_reg = MSR_PERF_FIXED_CTR_CTRL;
-    thread->counters[PMC0].counter_reg = MSR_PERF_FIXED_CTR0;
+    thread->counters[PMC0].configRegister = MSR_PERF_FIXED_CTR_CTRL;
+    thread->counters[PMC0].counterRegister = MSR_PERF_FIXED_CTR0;
     thread->counters[PMC0].type = FIXED;
-    thread->counters[PMC1].config_reg = MSR_PERF_FIXED_CTR_CTRL;
-    thread->counters[PMC1].counter_reg = MSR_PERF_FIXED_CTR1;
+    thread->counters[PMC1].configRegister = MSR_PERF_FIXED_CTR_CTRL;
+    thread->counters[PMC1].counterRegister = MSR_PERF_FIXED_CTR1;
     thread->counters[PMC1].type = FIXED;
 
     /* PMC Counters: 2 40bit wide */
-    thread->counters[PMC2].config_reg = MSR_PERFEVTSEL0;
-    thread->counters[PMC2].counter_reg = MSR_PMC0;
+    thread->counters[PMC2].configRegister = MSR_PERFEVTSEL0;
+    thread->counters[PMC2].counterRegister = MSR_PMC0;
     thread->counters[PMC2].type = PMC;
-    thread->counters[PMC3].config_reg = MSR_PERFEVTSEL1;
-    thread->counters[PMC3].counter_reg = MSR_PMC1;
+    thread->counters[PMC3].configRegister = MSR_PERFEVTSEL1;
+    thread->counters[PMC3].counterRegister = MSR_PMC1;
     thread->counters[PMC3].type = PMC;
 
     /* Initialize registers */
@@ -121,7 +121,7 @@ perfmon_setupCounterThread_core2(int thread_id,
         PerfmonCounterIndex index)
 {
     uint64_t flags;
-    uint64_t reg = threadData[thread_id].counters[index].config_reg;
+    uint64_t reg = threadData[thread_id].counters[index].configRegister;
     int cpu_id = threadData[thread_id].cpu_id;
 
     /* only the PMC counters need to be set up on Core 2 */
@@ -161,16 +161,17 @@ perfmon_startCountersThread_core2(int thread_id)
     /* Enable fixed counters */
     flags  = 0x300000000ULL;
 
-    for (i=0;i<NUM_PMC;i++) {
+    for (i=0;i<NUM_COUNTERS_CORE2;i++) {
         if (threadData[thread_id].counters[i].init == TRUE) {
-            msr_write(cpu_id, threadData[thread_id].counters[i].counter_reg , 0x0ULL);
+            msr_write(cpu_id, threadData[thread_id].counters[i].counterRegister , 0x0ULL);
             flags |= (1<<i);  /* enable counter */
         }
     }
 
     if (perfmon_verbose)
     {
-        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
+        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",
+                MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
     }
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
@@ -184,24 +185,25 @@ perfmon_stopCountersThread_core2(int thread_id)
     int i;
     int cpu_id = threadData[thread_id].cpu_id;
 
+    /* stop counters */
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
 
-    for (i=0;i<NUM_PMC;i++) 
+    /* read out counter results */
+    for (i=0;i<NUM_COUNTERS_CORE2;i++) 
     {
         if (threadData[thread_id].counters[i].init == TRUE) 
         {
-            threadData[thread_id].pc[i] = msr_read(cpu_id, threadData[thread_id].counters[i].counter_reg);
+            threadData[thread_id].counters[i].counterData =
+                msr_read(cpu_id, threadData[thread_id].counters[i].counterRegister);
         }
     }
 
-    threadData[thread_id].cycles = msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
-    threadData[thread_id].instructionsRetired = msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
-
+    /* check overflow status */
     flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
- /*   printf ("Status: 0x%llX \n", LLU_CAST flags);*/
     if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
     {
         printf ("Overflow occured \n");
+        printf ("Status: 0x%llX \n", LLU_CAST flags);
     }
 }
 
@@ -313,6 +315,7 @@ perfmon_printResults_core2(PerfmonGroup group)
 void
 perfmon_setupReport_core2(MultiplexCollections* collections)
 {
+#if 0
     collections->numberOfCollections = 6;
     collections->collections =
 		(PerfmonEventSet*) malloc(collections->numberOfCollections
@@ -420,11 +423,13 @@ perfmon_setupReport_core2(MultiplexCollections* collections)
 
     collections->collections[5].events[1].reg =
 		bfromcstr("PMC1");
+#endif
 }
 
 void
 perfmon_printReport_core2(MultiplexCollections* collections)
 {
+#if 0
     printf(HLINE);
     printf("PERFORMANCE REPORT\n");
     printf(HLINE);
@@ -472,6 +477,7 @@ perfmon_printReport_core2(MultiplexCollections* collections)
 			1.0E-06*((collections->collections[4].events[0].results[0])*64.0)/
 			(double) (collections->time*0.16666666));
     printf(HLINE);
+#endif
 }
 
 

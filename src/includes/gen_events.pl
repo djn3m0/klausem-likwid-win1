@@ -4,27 +4,40 @@ use strict;
 use warnings;
 
 my $key;
-my $event_id;
+my $eventId;
+my $limit;
 my $umask;
 my $num_events=0;
+my @events = ();
 
 while (<>) {
 
-    if (/(EVENT_[A-Z0-9_]*)[ ]*(0x[A-F0-9]+)/) {
-        $event_id = $2;
+    if (/(EVENT_[A-Z0-9_]*)[ ]+(0x[A-F0-9]+)[ ]+([A-Z0-9]+)/) {
+        $eventId = $2;
+        $limit = $3;
     } elsif (/UMASK_([A-Z0-9_]*)[ ]*(0x[A-F0-9]+)/) {
         $key = $1;
         $umask = $2;
+        push(@events,{name=>$key, limit=>$limit, eventId=>$eventId, mask=>$umask});
         $num_events++;
-
-        print <<END;
-,{\"$key\",
-\t{$event_id,$umask}}
-END
     }
 }
-print "};\n";
 
-print "perfmon_hash_entry_t  arch_events[$num_events] = {\n";
+open RESULTFILE,">out.h";
+print RESULTFILE "#define NUM_ARCH_EVENTS_CORE2 $num_events\n\n";
+print RESULTFILE "static PerfmonEvent  arch_events[NUM_ARCH_EVENTS_CORE2] = {\n";
+
+foreach my $event (@events) {
+
+        print RESULTFILE <<END;
+,{\"$event->{name}\",
+  \"$event->{limit}\", 
+   $event->{eventId},$event->{mask}}
+END
+}
+
+print  RESULTFILE "};\n";
+
+close RESULTFILE;
 
 
