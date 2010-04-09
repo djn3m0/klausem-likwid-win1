@@ -265,7 +265,7 @@ int main (int argc, char** argv)
 		if (!optUseMarker)
 		{
 			perfmon_stopAllCounters();
-			perfmon_printResults();
+			perfmon_printCounterResults();
 		}
 		else
 		{

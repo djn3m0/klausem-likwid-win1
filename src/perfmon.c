@@ -101,7 +101,6 @@ static void (*printResults) (
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-
 static void
 initThread(int thread_id, int cpu_id)
 {
@@ -124,7 +123,7 @@ setupCounter( PerfmonCounterIndex index, bstring event_str)
     uint32_t umask = 0, event = 0;
     uint64_t reg = threadData[thread_id].counters[index].config_reg;
 
-    if (!perfmon_getEvent(event_str, &event, &umask))
+    if (!getEvent(event_str, &event, &umask))
     {
         fprintf (stderr,"ERROR: Event %s not found for current architecture\n",event_str->data );
         exit (EXIT_FAILURE);
@@ -238,6 +237,10 @@ static int lineCb (void* parm, int ofs, int len)
     return 1;
 }
 
+ /* :TODO:04/09/10 09:15:38:jt: 
+ *  the current provisorical solution is to read the file in as LikwidResults
+ * and then fill the results into a PerfmonEventSet. Later this should be directly 
+ * put into a {erfmonEventSet from the beginning */
 static void
 readMarkerFile(char* filename)
 {
@@ -331,8 +334,8 @@ perfmon_getGroupId(bstring groupStr,PerfmonGroup* group)
     return -1;
 }
 
-int
-perfmon_checkRegister(bstring counterName, char* limit)
+static int
+checkCounter(bstring counterName, char* limit)
 {
 
 
@@ -340,7 +343,7 @@ perfmon_checkRegister(bstring counterName, char* limit)
 }
 
 
-void
+static void
 initEventSet(StrUtilEventSet* eventSetConfig)
 {
     perfmon_set.numberOfEvents = eventSetConfig->numberOfEvents;
@@ -359,7 +362,7 @@ initEventSet(StrUtilEventSet* eventSetConfig)
         }
 
         /* setup event */
-        if (!perfmon_getEvent(eventSetConfig.events[i].eventName,
+        if (!getEvent(eventSetConfig.events[i].eventName,
                     &perfmon_set.events[i].event))
         {
             fprintf (stderr,"ERROR: Event %s not found for current architecture\n",
@@ -368,7 +371,7 @@ initEventSet(StrUtilEventSet* eventSetConfig)
         }
         
         /* is counter allowed for event */
-        if (!perfmon_checkRegister(eventSetConfig.events[i].counterName,
+        if (!perfmon_checkCounter(eventSetConfig.events[i].counterName,
                     perfmon_set.events[i].event.limit))
         {
             fprintf (stderr,"ERROR: Register %s not allowed  for event %s\n",
@@ -379,12 +382,8 @@ initEventSet(StrUtilEventSet* eventSetConfig)
     }
 }
 
-
-
-/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-
-int
-perfmon_getEvent(bstring event_str, PerfmonEvent* event)
+static int
+getEvent(bstring event_str, PerfmonEvent* event)
 {
     int i;
 
@@ -411,33 +410,21 @@ perfmon_getEvent(bstring event_str, PerfmonEvent* event)
     header->entry[id] = bstrcpy(label);  \
     header->qty++;
 
-
-void 
-perfmon_printMarkerResults()
+static void 
+initResultTable(PerfmonResultTable* table,
+        int numRows,
+        int numColumns)
 {
     int i;
-    PerfmonResultTable tableData;
     bstrList* header;
     bstring label;
-    int numRows = 0;
-    int numColumns = (perfmon_numThreads+1);
 
-    readMarkerFile("/tmp/likwid_results.txt");
-
-    for (j=0;j<NUM_PMC;j++) 
-    {
-        if (threadData[0].counters[j].init == TRUE) 
-        {
-            numRows++;
-        }
-    }
     header = bstrListCreate();
     bstrListAlloc(header, numColumns);
     bstrListAdd(0,Event);
 
     for (i=0; i<perfmon_numThreads;i++)
     {
-        bstrListAdd(0,Event);
         label = bformat("core %d",threadData[i].cpu_id);
         header->entry[1+i] = bstrcpy(label);
         header->qty++;
@@ -446,68 +433,71 @@ perfmon_printMarkerResults()
     tableData.numRows = numRows;
     tableData.numColumns = numColumns;
     tableData.header = header;
-    tableData.rows = (PerfmonResult*) malloc(numRows*sizeof(PerfmonResult));
+    tableData.rows = (PerfmonResult*) malloc(numRows*sizeof(Result));
 
     for (i=0; i<numRows; i++)
     {
-        tableData.rows[i].label = bfromcstr(threadData[i].);
+        tableData.rows[i].label =
+            bfromcstr(perfmon_set.events[i].event.name);
 
-
-
+        tableData.rows[i].value =
+            (double*) malloc((numColumns)*sizeof(double));
     }
-
-
-    printResultTable(&tableData);
-
-
-
- //   printResults(groupSet);
 }
 
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void 
-perfmon_printResults()
+perfmon_printMarkerResults()
 {
-#if 0
-    /* Fill LikwidREsults */
+    int i;
+    int j;
+    int region;
+    PerfmonResultTable tableData;
+    int numRows = perfmon_set.numberOfEvents;
+    int numColumns = (perfmon_numThreads+1);
 
-    for (thread_id=0;thread_id<perfmon_numThreads;thread_id++) 
+    readMarkerFile("/tmp/likwid_results.txt");
+
+    perfmon_initResultTable(&tableData,
+            numColumns, numRows);
+
+    for (region=0; region<perfmon_numRegions; region++)
     {
-
-        printf(HLINE);
-        printf ("[%d] Instruction retired any: %llu \n",
-                threadData[thread_id].cpu_id,
-                LLU_CAST threadData[thread_id].instructionsRetired);
-        printf ("[%d] Cycles unhalted core: %llu \n",
-                threadData[thread_id].cpu_id,
-                LLU_CAST threadData[thread_id].cycles);
-        summary.instructionsRetired += threadData[thread_id].instructionsRetired;
-
-        for (i=0;i<NUM_PMC;i++) 
+        for (i=0; i<numRows; i++)
         {
-            if (threadData[thread_id].counters[i].init == TRUE) 
+            for (j=0; j<numColumns; j++)
             {
-                summary.pc[i] += threadData[thread_id].pc[i];
-                printf ("[%d] %s: %llu \n",
-                        threadData[thread_id].cpu_id,
-                        threadData[thread_id].counters[i].label->data,
-                        LLU_CAST threadData[thread_id].pc[i]);
+                tableData.rows[i].value[j] =
+                    perfmon_results[region].counters[j][perfmon_set.events[i].index];
             }
         }
-        printf(HLINE);
-        printf("[%d] ==== Derived Metrics ====\n",
-                threadData[thread_id].cpu_id);
-        printf(HLINE);
-        time = (float)threadData[thread_id].cycles/(float)cpuid_info.clock;
-        printf ("[%d] Execution time: %e sec \n",
-                threadData[thread_id].cpu_id,time);
-
-        printResults(&threadData[thread_id], groupSet, time);
-        printf(HLINE);
+        printResultTable(&tableData);
     }
-#endif
 }
 
+void 
+perfmon_printCounterResults()
+{
+    int i;
+    int j;
+    PerfmonResultTable tableData;
+    int numRows = perfmon_set.numberOfEvents;
+    int numColumns = (perfmon_numThreads+1);
+
+    perfmon_initResultTable(&tableData,
+            numColumns, numRows);
+
+    for (i=0; i<numRows; i++)
+    {
+        for (j=0; j<numColumns; j++)
+        {
+            tableData.rows[i].value[j] =
+                (double) perfmon_threads[j].counters[perfmon_set.events[i].index];
+        }
+    }
+    printResultTable(&tableData);
+}
 
 void
 perfmon_setupEventSet(bstring eventString)
@@ -593,7 +583,7 @@ perfmon_initEventset(PerfmonEventSet* set)
 
     for (i=0;i<set->numberOfEvents; i++)
     {
-        if (!perfmon_getEvent(set->events[i].eventName,
+        if (!getEvent(set->events[i].eventName,
                     &set->events[i].event.event_id,
                     &set->events[i].event.umask))
         {
@@ -740,3 +730,4 @@ perfmon_init(int numThreads_local, int threads[])
         initThread(i,threads[i]);
     }
 }
+

@@ -11,6 +11,4 @@ typedef struct {
     double** counters;
 } LikwidResults;
 
-
-
 #endif /*LIBPERFCTR_H*/
