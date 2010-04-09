@@ -58,15 +58,11 @@ extern void (*perfmon_printReport) (MultiplexCollections* collections);
 
 extern void perfmon_init (int numThreads, int threads[]);
 extern void perfmon_initEventset(PerfmonEventSet* set);
-extern int  perfmon_setupCounter (PerfmonCounterIndex index, bstring event);
-extern int  perfmon_setupGroup(bstring group);
-extern int  perfmon_getEvent(bstring event_str, PerfmonEvent* event);
-extern void perfmon_startAllCounters (void);
-extern void perfmon_stopAllCounters (void);
-extern void perfmon_startCounters (int thread_id);
-extern void perfmon_stopCounters (int thread_id);
-extern void perfmon_printResults(void);
-extern void perfmon_getCycles(void);
-extern void perfmon_setCycles(uint64_t);
+extern void perfmon_setupEventSet(bstring eventString);
+extern void perfmon_setupCounters();
+extern void perfmon_startCounters ();
+extern void perfmon_stopCounters ();
+extern void perfmon_printMarkerResults();
+extern void perfmon_printCounterResults();
 
 #endif /*PERFMON_H*/

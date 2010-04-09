@@ -12,7 +12,7 @@ my @events = ();
 
 while (<>) {
 
-    if (/(EVENT_[A-Z0-9_]*)[ ]+(0x[A-F0-9]+)[ ]+([A-Z0-9]+)/) {
+    if (/(EVENT_[A-Z0-9_]*)[ ]+(0x[A-F0-9]+)[ ]+([A-Z0-9|]+)/) {
         $eventId = $2;
         $limit = $3;
     } elsif (/UMASK_([A-Z0-9_]*)[ ]*(0x[A-F0-9]+)/) {
@@ -37,7 +37,5 @@ END
 }
 
 print  RESULTFILE "};\n";
-
 close RESULTFILE;
-
 
