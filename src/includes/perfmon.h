@@ -47,7 +47,6 @@ extern int perfmon_verbose;
 extern PerfmonThread* threadData;
 extern int perfmon_numThreads;
 
-extern void (*perfmon_printAvailableGroups)(void);
 extern void (*perfmon_startCountersThread) (int thread_id);
 extern void (*perfmon_stopCountersThread) (int thread_id);
 extern int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
@@ -56,6 +55,8 @@ extern void (*perfmon_setupCounterThread) (int thread_id,
 extern void (*perfmon_setupReport) (MultiplexCollections* collections);
 extern void (*perfmon_printReport) (MultiplexCollections* collections);
 
+void perfmon_initEventSet(StrUtilEventSet* eventSetConfig);
+extern void perfmon_printAvailableGroups(void);
 extern void perfmon_init (int numThreads, int threads[]);
 extern void perfmon_setupEventSet(bstring eventString);
 extern void perfmon_setupCounters();

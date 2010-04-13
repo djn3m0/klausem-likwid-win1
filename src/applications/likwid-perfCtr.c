@@ -59,9 +59,9 @@ printf("-V\t verbose output\n"); \
 printf("-i\t print cpu info\n"); \
 printf("-r\t Generate performance report\n"); \
 printf("-m\t use markers inside code \n"); \
-printf("-g\t performance group  or event tag\n"); \
+printf("-g\t performance group  or event set string\n"); \
 printf("-a\t list available performance groups\n"); \
-printf("-c\t comma separated core ids to measure\n\n")
+printf("-c\t comma separated processor ids to measure\n\n")
 
 
 #define VERSION_MSG \

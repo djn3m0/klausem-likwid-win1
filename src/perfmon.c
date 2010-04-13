@@ -88,7 +88,6 @@ static void initThread(int , int );
 //#include <perfmon_k10.h>
 
 /* #####  EXPORTED  FUNCTION POINTERS   ################################### */
-void (*perfmon_printAvailableGroups) (void);
 void (*perfmon_startCountersThread) (int thread_id);
 void (*perfmon_stopCountersThread) (int thread_id);
 int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
@@ -380,47 +379,6 @@ checkCounter(bstring counterName, char* limit)
     return TRUE;
 }
 
-static void
-initEventSet(StrUtilEventSet* eventSetConfig)
-{
-    int i;
-
-    perfmon_set.numberOfEvents = eventSetConfig->numberOfEvents;
-    perfmon_set.events = (PerfmonEventSetEntry*)
-        malloc(perfmon_set.numberOfEvents * sizeof(PerfmonEventSetEntry));
-
-    for (i=0; i<perfmon_set.numberOfEvents; i++)
-    {
-        /* get register index */
-        if (!perfmon_getIndex(eventSetConfig->events[i].counterName,
-                    &perfmon_set.events[i].index))
-        {
-            fprintf (stderr,"ERROR: Counter register %s not supported!\n",
-                    bdata(eventSetConfig->events[i].counterName));
-            exit (EXIT_FAILURE);
-        }
-
-        /* setup event */
-        if (!getEvent(eventSetConfig->events[i].eventName,
-                    &perfmon_set.events[i].event))
-        {
-            fprintf (stderr,"ERROR: Event %s not found for current architecture\n",
-                    bdata(eventSetConfig->events[i].eventName));
-            exit (EXIT_FAILURE);
-        }
-        
-        /* is counter allowed for event */
-        if (!checkCounter(eventSetConfig->events[i].counterName,
-                    perfmon_set.events[i].event.limit))
-        {
-            fprintf (stderr,"ERROR: Register %s not allowed  for event %s\n",
-                    bdata(eventSetConfig->events[i].counterName),
-                    bdata(eventSetConfig->events[i].eventName));
-            exit (EXIT_FAILURE);
-        }
-    }
-}
-
 #define bstrListAdd(id,name) \
     label = bfromcstr(#name);  \
     header->entry[id] = bstrcpy(label);  \
@@ -462,6 +420,47 @@ initResultTable(PerfmonResultTable* tableData,
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+void
+perfmon_initEventSet(StrUtilEventSet* eventSetConfig)
+{
+    int i;
+
+    perfmon_set.numberOfEvents = eventSetConfig->numberOfEvents;
+    perfmon_set.events = (PerfmonEventSetEntry*)
+        malloc(perfmon_set.numberOfEvents * sizeof(PerfmonEventSetEntry));
+
+    for (i=0; i<perfmon_set.numberOfEvents; i++)
+    {
+        /* get register index */
+        if (!perfmon_getIndex(eventSetConfig->events[i].counterName,
+                    &perfmon_set.events[i].index))
+        {
+            fprintf (stderr,"ERROR: Counter register %s not supported!\n",
+                    bdata(eventSetConfig->events[i].counterName));
+            exit (EXIT_FAILURE);
+        }
+
+        /* setup event */
+        if (!getEvent(eventSetConfig->events[i].eventName,
+                    &perfmon_set.events[i].event))
+        {
+            fprintf (stderr,"ERROR: Event %s not found for current architecture\n",
+                    bdata(eventSetConfig->events[i].eventName));
+            exit (EXIT_FAILURE);
+        }
+        
+        /* is counter allowed for event */
+        if (!checkCounter(eventSetConfig->events[i].counterName,
+                    perfmon_set.events[i].event.limit))
+        {
+            fprintf (stderr,"ERROR: Register %s not allowed  for event %s\n",
+                    bdata(eventSetConfig->events[i].counterName),
+                    bdata(eventSetConfig->events[i].eventName));
+            exit (EXIT_FAILURE);
+        }
+    }
+}
+
 
 void 
 perfmon_printMarkerResults()
@@ -535,7 +534,7 @@ perfmon_setupEventSet(bstring eventString)
         bstr_to_eventset(&eventSetConfig, eventName);
     }
 
-    initEventSet(&eventSetConfig);
+    perfmon_initEventSet(&eventSetConfig);
     perfmon_setupCounters();
 }
 
@@ -589,6 +588,19 @@ perfmon_stopCounters(void)
     }
 }
 
+void
+perfmon_printAvailableGroups()
+{
+    int i;
+
+    printf("Available groups on %s:\n",cpuid_info.name);
+
+    for(i=0; i<perfmon_numGroups; i++)
+    {
+        printf("%s: %s\n",group_map[i].key,
+                group_map[i].info);
+    }
+}
 
 void
 perfmon_initEventset(PerfmonEventSet* set)
