@@ -5,6 +5,7 @@
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdint.h>
 
+#include <strUtil_types.h>
 #include <libperfctr_types.h>
 #include <timer_types.h>
 #include <tree_types.h>
