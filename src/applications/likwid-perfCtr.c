@@ -61,7 +61,7 @@ printf("-r\t Generate performance report\n"); \
 printf("-m\t use markers inside code \n"); \
 printf("-g\t performance group  or event set string\n"); \
 printf("-a\t list available performance groups\n"); \
-printf("-c\t comma separated processor ids to measure\n\n")
+printf("-c\t comma separated processor ids to measure (required)\n\n")
 
 
 #define VERSION_MSG \
@@ -157,6 +157,12 @@ int main (int argc, char** argv)
                 HELP_MSG;
                 exit (EXIT_SUCCESS);    
         }
+    }
+
+    if (!numThreads)
+    {
+        fprintf (stderr, "ERROR: Required -c. You must specify at least one processor with.\n");
+        exit(EXIT_FAILURE);
     }
 
     for (i = 0; i< numThreads;i++)

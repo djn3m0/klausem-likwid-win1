@@ -149,6 +149,10 @@ perfmon_setupCounterThread_core2(int thread_id,
                     LLU_CAST flags);
         }
     }
+    else if (threadData[thread_id].counters[index].type == FIXED)
+    {
+        threadData[thread_id].counters[index].init = TRUE;
+    }
 }
 
 void
@@ -175,7 +179,7 @@ perfmon_startCountersThread_core2(int thread_id)
             }
             else if (threadData[thread_id].counters[i].type == FIXED)
             {
-                flags |= (1<<(i+32));  /* enable fixed counter */
+                flags |= (1ULL<<(i+32));  /* enable fixed counter */
             }
         }
     }
