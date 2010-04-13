@@ -10,10 +10,10 @@
 #include <tree_types.h>
 #include <cpuid_types.h>
 #include <cpuFeatures_types.h>
-#include <perfmon_types.h>
-#include <multiplex_types.h>
 #include <asciiBoxes_types.h>
 #include <asciiTable_types.h>
+#include <perfmon_types.h>
+#include <multiplex_types.h>
 
 
 /* #####   EXPORTED MACROS   ############################################## */
