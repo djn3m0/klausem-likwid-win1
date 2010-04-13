@@ -62,8 +62,8 @@ multiplex_swapEventSet ()
         /* Accumulate counters */
         for (int i=0; i<collection->numberOfEvents; i++)
         {
-            collection->events[i].results[threadId] += 
-                (double) threadData[threadId].pc[collection->events[i].index];
+            collection->events[i].result[threadId] += 
+                (double) threadData[threadId].counters[collection->events[i].index].counterData;
         }
     }
 
@@ -84,7 +84,7 @@ multiplex_swapEventSet ()
         for (int i=0; i<collection->numberOfEvents; i++)
         {
             perfmon_setupCounterThread(threadId,
-                    collection->events[i].event.event_id,
+                    collection->events[i].event.eventId,
                     collection->events[i].event.umask,
                     collection->events[i].index);
         }

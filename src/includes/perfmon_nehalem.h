@@ -38,64 +38,83 @@
 #include <types.h>
 #include <registers.h>
 
-int
-perfmon_getIndex_nehalem (bstring str, PerfmonCounterIndex* index)
-{
-   if (biseqcstr(str,"PMC0"))
-   {
-       *index = PMC0;
-   }
-   else if (biseqcstr(str,"PMC1"))
-   {
-       *index = PMC1;
-   }
-   else if (biseqcstr(str,"PMC2"))
-   {
-       *index = PMC2;
-   }
-   else if (biseqcstr(str,"PMC3"))
-   {
-       *index = PMC3;
-   }
-   else
-   {
-       return FALSE;
-   }
+#define NUM_COUNTERS_NEHALEM 14
+#define NUM_GROUPS_NEHALEM 8
 
-   return TRUE;
-}
+static int perfmon_numCountersNehalem = NUM_COUNTERS_NEHALEM;
+static int perfmon_numGroupsNehalem = NUM_GROUPS_NEHALEM;
+static int perfmon_numArchEventsNehalem = NUM_ARCH_EVENTS_NEHALEM;
+
+static PerfmonCounterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
+    {"PMC0",PMC2},
+    {"PMC1",PMC3},
+    {"PMC2",PMC4},
+    {"PMC3",PMC5},
+    {"UPMC0",PMC6},
+    {"UPMC1",PMC7},
+    {"UPMC2",PMC8},
+    {"UPMC3",PMC9},
+    {"UPMC4",PMC10},
+    {"UPMC5",PMC11},
+    {"UPMC6",PMC12},
+    {"UPMC7",PMC13},
+    {"FIXC0",PMC0},
+    {"FIXC1",PMC1}
+};
+
+static PerfmonGroupMap nehalem_group_map[NUM_GROUPS_NEHALEM] = {
+    {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s"},
+    {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s"},
+    {"L2",L2,"L2: L2 cache bandwidth in MBytes/s"},
+    {"L3",L3,"L3: L3 cache bandwidth in MBytes/s"},
+    {"MEM",MEM,"Main memory bandwidth in MBytes/s"},
+    {"DATA",DATA,"Load to store ratio"},
+    {"BRANCH",BRANCH,"Branch prediction miss rate"},
+    {"TLB",TLB,"Translation lookaside buffer miss rate"}
+};
+
+static char* nehalem_group_config[NUM_GROUPS_NEHALEM] = {
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC3,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC4",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC3,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC4",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L2_LINES_IN_ANY:PMC0,L2_LINES_OUT_ANY:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_LINES_IN_ANY:UPMC0,UNC_L3_LINES_OUT_ANY:UPMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,MEM_INST_RETIRED_LOADS:PMC0,MEM_INST_RETIRED_STORES:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,BR_INST_RETIRED_ALL_BRANCHES:PMC0,BR_MISP_RETIRED_ALL_BRANCHES:PMC1",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,DTLB_MISSES_ANY:PMC0,DTLB_MISSES_MISS_LD:PMC1"
+};
 
 
-
-void perfmon_init_nehalem(PerfmonThread *thread)
+void
+perfmon_init_nehalem(PerfmonThread *thread)
 {
     uint64_t flags = 0x0ULL;
-    int cpu_id = thread->cpu_id;
+    int cpu_id = thread->processorId;
 
-    thread->counters[PMC0].config_reg = MSR_PERFEVTSEL0;
-    thread->counters[PMC0].counter_reg = MSR_PMC0;
-    thread->counters[PMC1].config_reg = MSR_PERFEVTSEL1;
-    thread->counters[PMC1].counter_reg = MSR_PMC1;
-    thread->counters[PMC2].config_reg = MSR_PERFEVTSEL2;
-    thread->counters[PMC2].counter_reg = MSR_PMC2;
-    thread->counters[PMC3].config_reg = MSR_PERFEVTSEL3;
-    thread->counters[PMC3].counter_reg = MSR_PMC3;
-    thread->counters[PMCU0].config_reg = MSR_UNCORE_PERFEVTSEL0;
-    thread->counters[PMCU0].counter_reg = MSR_UNCORE_PMC0;
-    thread->counters[PMCU1].config_reg = MSR_UNCORE_PERFEVTSEL1;
-    thread->counters[PMCU1].counter_reg = MSR_UNCORE_PMC1;
-    thread->counters[PMCU2].config_reg = MSR_UNCORE_PERFEVTSEL2;
-    thread->counters[PMCU2].counter_reg = MSR_UNCORE_PMC2;
-    thread->counters[PMCU3].config_reg = MSR_UNCORE_PERFEVTSEL3;
-    thread->counters[PMCU3].counter_reg = MSR_UNCORE_PMC3;
-    thread->counters[PMCU4].config_reg = MSR_UNCORE_PERFEVTSEL4;
-    thread->counters[PMCU4].counter_reg = MSR_UNCORE_PMC4;
-    thread->counters[PMCU5].config_reg = MSR_UNCORE_PERFEVTSEL5;
-    thread->counters[PMCU5].counter_reg = MSR_UNCORE_PMC5;
-    thread->counters[PMCU6].config_reg = MSR_UNCORE_PERFEVTSEL6;
-    thread->counters[PMCU6].counter_reg = MSR_UNCORE_PMC6;
-    thread->counters[PMCU7].config_reg = MSR_UNCORE_PERFEVTSEL7;
-    thread->counters[PMCU7].counter_reg = MSR_UNCORE_PMC7;
+    thread->counters[PMC2].configRegister = MSR_PERFEVTSEL0;
+    thread->counters[PMC2].counterRegister = MSR_PMC0;
+    thread->counters[PMC3].configRegister = MSR_PERFEVTSEL1;
+    thread->counters[PMC3].counterRegister = MSR_PMC1;
+    thread->counters[PMC4].configRegister = MSR_PERFEVTSEL2;
+    thread->counters[PMC4].counterRegister = MSR_PMC2;
+    thread->counters[PMC5].configRegister = MSR_PERFEVTSEL3;
+    thread->counters[PMC5].counterRegister = MSR_PMC3;
+    thread->counters[PMC6].configRegister = MSR_UNCORE_PERFEVTSEL0;
+    thread->counters[PMC6].counterRegister = MSR_UNCORE_PMC0;
+    thread->counters[PMC7].configRegister = MSR_UNCORE_PERFEVTSEL1;
+    thread->counters[PMC7].counterRegister = MSR_UNCORE_PMC1;
+    thread->counters[PMC8].configRegister = MSR_UNCORE_PERFEVTSEL2;
+    thread->counters[PMC8].counterRegister = MSR_UNCORE_PMC2;
+    thread->counters[PMC9].configRegister = MSR_UNCORE_PERFEVTSEL3;
+    thread->counters[PMC9].counterRegister = MSR_UNCORE_PMC3;
+    thread->counters[PMC10].configRegister = MSR_UNCORE_PERFEVTSEL4;
+    thread->counters[PMC10].counterRegister = MSR_UNCORE_PMC4;
+    thread->counters[PMC11].configRegister = MSR_UNCORE_PERFEVTSEL5;
+    thread->counters[PMC11].counterRegister = MSR_UNCORE_PMC5;
+    thread->counters[PMC12].configRegister = MSR_UNCORE_PERFEVTSEL6;
+    thread->counters[PMC12].counterRegister = MSR_UNCORE_PMC6;
+    thread->counters[PMC13].configRegister = MSR_UNCORE_PERFEVTSEL7;
+    thread->counters[PMC13].counterRegister = MSR_UNCORE_PMC7;
 
     msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
@@ -162,28 +181,52 @@ void perfmon_init_nehalem(PerfmonThread *thread)
     msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
 }
 
+
 void
-perfmon_printGroups_nehalem (void)
+perfmon_setupCounterThread_nehalem(int thread_id,
+        uint32_t event, uint32_t umask,
+        PerfmonCounterIndex index)
 {
-    printf("Performance Groups: Nehalem\n\n");
-    printf("FLOPS_DP: Double Precision MFlops/s\n");
-    printf("FLOPS_SP: Single Precision MFlops/s\n");
-    printf("L2: L2 cache bandwidth in MBytes/s\n");
-    printf("MEM: Main memory bandwidth in MBytes/s\n");
-    printf("DATA: Load to store ratio\n");
-    printf("BRANCH: Branch prediction miss rate\n");
-    printf("TLB: Translation lookaside buffer miss rate\n");
-    printf("CPI: cycles per instruction\n");
-    printf("CLUSTER: Cluster monitoring \n");
-    printf("CLUSTER_FLOPS: Cluster monitoring flops \n\n");
+    uint64_t flags;
+    uint64_t reg = threadData[thread_id].counters[index].configRegister;
+    int cpu_id = threadData[thread_id].processorId;
+
+    /* only the PMC counters need to be set up on Core 2 */
+    if (threadData[thread_id].counters[index].type == PMC)
+    {
+
+        threadData[thread_id].counters[index].init = TRUE;
+        flags = msr_read(cpu_id,reg);
+        flags &= ~(0xFFFFU); 
+
+        /* Intel with standard 8 bit event mask: [7:0] */
+        flags |= (umask<<8) + event;
+
+        msr_write(cpu_id, reg , flags);
+
+        if (perfmon_verbose)
+        {
+            printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
+                    cpu_id,
+                    LLU_CAST reg,
+                    LLU_CAST flags);
+        }
+    }
+    else if (threadData[thread_id].counters[index].type == UNCORE)
+    {
+
+
+    }
+
 }
+
 
 void
 perfmon_startCountersThread_nehalem(int thread_id)
 {
     int i;
     uint64_t flags, uflags;
-    int cpu_id = threadData[thread_id].cpu_id;
+    int cpu_id = threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
@@ -196,11 +239,20 @@ perfmon_startCountersThread_nehalem(int thread_id)
 
     for (i=0;i<NUM_PMC;i++) {
         if (threadData[thread_id].counters[i].init == TRUE) {
-            msr_write(cpu_id, threadData[thread_id].counters[i].counter_reg , 0x0ULL);
-            if (i < PMCU0) {
-                flags |= (1<<i);  /* enable counter */
-            } else {
-                uflags |= (1<<(i-PMCU0));  /* enable uncore counter */
+            msr_write(cpu_id, threadData[thread_id].counters[i].counterRegister , 0x0ULL);
+
+
+            if (threadData[thread_id].counters[i].type == PMC)
+            {
+                flags |= (1<<(i-2));  /* enable counter */
+            }
+            else if (threadData[thread_id].counters[i].type == FIXED)
+            {
+                flags |= (1<<(i+32));  /* enable fixed counter */
+            }
+            else if (threadData[thread_id].counters[i].type == UNCORE)
+            {
+                uflags |= (1<<(i-6));  /* enable uncore counter */
             }
         }
     }
@@ -216,12 +268,13 @@ perfmon_startCountersThread_nehalem(int thread_id)
     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
 
 }
+
 void 
 perfmon_stopCountersThread_nehalem(int thread_id)
 {
     uint64_t flags;
     int i;
-    int cpu_id = threadData[thread_id].cpu_id;
+    int cpu_id = threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
     if (cpuid_info.model == NEHALEM)
@@ -229,16 +282,13 @@ perfmon_stopCountersThread_nehalem(int thread_id)
         msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
     }
 
-    for (i=0;i<NUM_PMC;i++) 
+    for (i=0; i<NUM_COUNTERS_NEHALEM; i++) 
     {
         if (threadData[thread_id].counters[i].init == TRUE) 
         {
-            threadData[thread_id].pc[i] = msr_read(cpu_id, threadData[thread_id].counters[i].counter_reg);
+            threadData[thread_id].counters[i].counterData = msr_read(cpu_id, threadData[thread_id].counters[i].counterRegister);
         }
     }
-
-    threadData[thread_id].cycles = msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
-    threadData[thread_id].instructionsRetired = msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
 
     flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
     printf ("Status: 0x%llX \n", LLU_CAST flags);
@@ -249,179 +299,9 @@ perfmon_stopCountersThread_nehalem(int thread_id)
 
 }
 
-
-
-
-PerfmonGroup
-perfmon_getGroupId_nehalem (bstring groupStr)
-{
-	PerfmonGroup group;
-
-	if (biseqcstr(groupStr,"FLOPS_DP")) 
-	{
-		group = FLOPS_DP;
-	}
-	else if (biseqcstr(groupStr,"FLOPS_SP")) 
-	{
-		group = FLOPS_SP;
-	}
-	else if (biseqcstr(groupStr,"L2")) 
-	{
-		group = L2;
-	}
-	else if (biseqcstr(groupStr,"MEM")) 
-	{
-		group = MEM;
-	}
-	else if (biseqcstr(groupStr,"DATA")) 
-	{
-		group = DATA;
-	}
-	else if (biseqcstr(groupStr,"BRANCH")) 
-	{
-		group = BRANCH;
-	}
-	else if (biseqcstr(groupStr,"TLB")) 
-	{
-		group = TLB;
-	}
-	else if (biseqcstr(groupStr,"CPI")) 
-	{
-		group = CPI;
-	}
-	else if (biseqcstr(groupStr,"CLUSTER")) 
-	{
-		group = CLUSTER;
-	}
-	else if (biseqcstr(groupStr,"CLUSTER_FLOPS")) 
-	{
-		group = CLUSTER_FLOPS;
-	}
-	else
-	{
-		return NOGROUP;
-	}
-
-	return group;
-}
-
-
-
-
-void perfmon_setupGroupThread_nehalem(int thread_id,PerfmonGroup group)
-{
-    bstring event_0 = bformat("NOINIT");
-    bstring event_1 = bformat("NOINIT");
-    bstring event_2 = bformat("NOINIT");
-    bstring event_3 = bformat("NOINIT");
-
-    switch ( group ) {
-        case FLOPS_DP:
-            bassigncstr(event_0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
-            bassigncstr(event_1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
-            bassigncstr(event_2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
-            bassigncstr(event_3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
-            setupCounterThread(thread_id, PMC3, event_3);
-            break;
-
-        case FLOPS_SP:
-            bassigncstr(event_0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
-            bassigncstr(event_1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
-            bassigncstr(event_2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
-            bassigncstr(event_3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
-            setupCounterThread(thread_id, PMC3, event_3);
-            break;
-
-        case L2:
-            bassigncstr(event_0, "L1D_REPL");
-            bassigncstr(event_1, "L1D_M_EVICT");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            break;
-
-        case L3:
-            bassigncstr(event_0, "L2_LINES_IN_ANY");
-            bassigncstr(event_1, "L2_LINES_OUT_ANY");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            break;
-
-        case MEM:
-            bassigncstr(event_0, "UNC_L3_LINES_IN_ANY");
-            bassigncstr(event_1, "UNC_L3_LINES_OUT_ANY");
-            bassigncstr(event_2, "UNC_L3_MISS_READ");
-            bassigncstr(event_3, "UNC_GQ_DATA_FROM_L3");
-            setupCounterThread(thread_id, PMCU0, event_0);
-            setupCounterThread(thread_id, PMCU1, event_1);
-            setupCounterThread(thread_id, PMCU2, event_2);
-            setupCounterThread(thread_id, PMCU3, event_3);
-            break;
-
-        case DATA:
-            bassigncstr(event_0, "MEM_INST_RETIRED_LOADS");
-            bassigncstr(event_1, "MEM_INST_RETIRED_STORES");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            break;
-
-        case BRANCH:
-            bassigncstr(event_0, "BR_INST_RETIRED_ALL_BRANCHES");
-            bassigncstr(event_1, "BR_MISP_RETIRED_ALL_BRANCHES");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            break;
-
-        case CPI:
-            bassigncstr(event_0, "UOPS_RETIRED_ANY");
-            setupCounterThread(thread_id, PMC0, event_0);
-            break;
-
-        case TLB:
-            bassigncstr(event_0, "DTLB_MISSES_ANY");
-            bassigncstr(event_1, "DTLB_MISSES_MISS_LD");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            break;
-
-        case CLUSTER:
-            bassigncstr(event_0, "FP_COMP_OPS_EXE_X87");
-            bassigncstr(event_1, "FP_COMP_OPS_EXE_SSE_FP");
-            bassigncstr(event_2, "L2_RQSTS_MISS");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
-            break;
-
-        case CLUSTER_FLOPS:
-            bassigncstr(event_0, "FP_COMP_OPS_EXE_SSE_FP_PACKED");
-            bassigncstr(event_1, "FP_COMP_OPS_EXE_SSE_FP_SCALAR");
-            bassigncstr(event_2, "FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION");
-            bassigncstr(event_3, "FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
-            setupCounterThread(thread_id, PMC3, event_3);
-            break;
-
-        default:
-            break;
-    }
-
-    bdestroy(event_0);
-    bdestroy(event_1);
-    bdestroy(event_2);
-    bdestroy(event_3);
-}
-
-
 void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, float time)
 {
+#if 0
     int cpu_id = thread->cpu_id;
 
     if (thread->instructionsRetired < 1.0E-06)
@@ -557,6 +437,7 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
         default:
             break;
     }
+#endif
 
 }
 

@@ -12,7 +12,7 @@
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
  *        Project:  none
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include <bstrlib.h>
+#include <strUtil.h>
 #include <types.h>
 #include <timer.h>
 #include <msr.h>
@@ -45,29 +46,36 @@
 #include <perfmon.h>
 #include <asciiTable.h>
 #include <registers.h>
-#include <perfmon_pm_events.h>
+//#include <perfmon_pm_events.h>
 #include <perfmon_core2_events.h>
 #include <perfmon_nehalem_events.h>
-#include <perfmon_k8_events.h>
-#include <perfmon_k10_events.h>
+//#include <perfmon_k8_events.h>
+//#include <perfmon_k10_events.h>
 
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 int perfmon_numArchEvents;
-int perfmon_verbose=0;
-PerfmonThread* threadData;
 int perfmon_numThreads;
 int perfmon_numRegions;
+
+int perfmon_verbose=0;
+PerfmonThread* threadData;
 LikwidResults* perfmon_results;
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static PerfmonGroup groupSet = NOGROUP;
 static const PerfmonEvent* eventHash;
+static const PerfmonCounterMap* counter_map;
+static const PerfmonGroupMap* group_map;
+static const char** group_config;
+
 static PerfmonThread summary;
 static CyclesData timeData;
 static PerfmonEventSet perfmon_set;
+static int perfmon_numGroups;
+static int perfmon_numCounters;
 
 /* #####   PROTOTYPES  -  LOCAL TO THIS SOURCE FILE   ##################### */
 
@@ -101,6 +109,30 @@ static void (*printResults) (
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
+static int
+getEvent(bstring event_str, PerfmonEvent* event)
+{
+    int i;
+
+    for (i=0; i< perfmon_numArchEvents; i++)
+    {
+        if (biseqcstr(event_str, eventHash[i].name))
+        {
+            *event = eventHash[i];
+
+            if (perfmon_verbose)
+            {
+                printf ("Found event %s : Event_id 0x%02X Umask 0x%02X \n",
+                        bdata(event_str), event->eventId, event->umask);
+            }
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+
 static void
 initThread(int thread_id, int cpu_id)
 {
@@ -111,7 +143,7 @@ initThread(int thread_id, int cpu_id)
         threadData[thread_id].counters[i].init = FALSE;
     }
 
-    threadData[thread_id].cpu_id = cpu_id;
+    threadData[thread_id].processorId = cpu_id;
     initThreadArch(&threadData[thread_id]);
 
 }
@@ -119,20 +151,25 @@ initThread(int thread_id, int cpu_id)
 static void
 setupCounter( PerfmonCounterIndex index, bstring event_str)
 {
+#if 0
     uint64_t flags;
-    uint32_t umask = 0, event = 0;
-    uint64_t reg = threadData[thread_id].counters[index].config_reg;
+    uint32_t umask = 0, eventId = 0;
+    uint64_t reg = threadData[0].counters[index].configRegister;
+    PerfmonEvent event;
 
-    if (!getEvent(event_str, &event, &umask))
+    if (!getEvent(event_str, &event))
     {
         fprintf (stderr,"ERROR: Event %s not found for current architecture\n",event_str->data );
         exit (EXIT_FAILURE);
     }
 
-    threadData[thread_id].counters[index].label = bstrcpy(event_str);
-    threadData[thread_id].counters[index].init = TRUE;
+    eventId = event.eventId;
+    umask = event.umask;
 
-    flags = msr_read(threadData[0].cpu_id,reg);
+    threadData[0].counters[index].label = bstrcpy(event_str);
+    threadData[0].counters[index].init = TRUE;
+
+    flags = msr_read(threadData[0].processorId,reg);
     flags &= ~(0xFFFFU); 
 
     if (cpuid_info.family == P6_FAMILY)
@@ -141,29 +178,30 @@ setupCounter( PerfmonCounterIndex index, bstring event_str)
         if (cpuid_info.model > 0x0FU)
         {
              for (int i=0;i<perfmon_numThreads;i++)
-                 msr_write(threadData[i].cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+                 msr_write(threadData[i].processorId, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
         }
         /* Intel with standard 8 bit event mask: [7:0] */
-        flags |= (umask<<8) + event;
+        flags |= (umask<<8) + eventId;
     }
     else 
     {
         /* AMD uses a 12 bit Event mask: [35:32][7:0] */
-        flags |= ((uint64_t)(event>>8)<<32) + (umask<<8) + (event & ~(0xF00U));
+        flags |= ((uint64_t)(eventId>>8)<<32) + (umask<<8) + (eventId & ~(0xF00U));
     }
 
     if (perfmon_verbose)
     {
-        printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
-               cpu_id,
+        printf(" perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
                LLU_CAST reg,
                LLU_CAST flags);
     }
     
     for (int i=0;i<perfmon_numThreads;i++)
-        msr_write(threadData[i].cpu_id, reg , flags);
+    {
+        msr_write(threadData[i].processorId, reg , flags);
+    }
+#endif
 
-    return TRUE;
 }
 
 struct cbsScan{
@@ -322,7 +360,7 @@ perfmon_getGroupId(bstring groupStr,PerfmonGroup* group)
 {
     *group = NOGROUP;
 
-    for (int i=0; i<numGroups; i++)
+    for (int i=0; i<perfmon_numGroups; i++)
     {
         if (biseqcstr(groupStr,group_map[i].key)) 
         {
@@ -342,67 +380,45 @@ checkCounter(bstring counterName, char* limit)
     return TRUE;
 }
 
-
 static void
 initEventSet(StrUtilEventSet* eventSetConfig)
 {
+    int i;
+
     perfmon_set.numberOfEvents = eventSetConfig->numberOfEvents;
-    perfmon_set->events = (PerfmonEventSetEntry*)
-        malloc(perfmon_set->numberOfEvents * sizeof(PerfmonEventSetEntry));
+    perfmon_set.events = (PerfmonEventSetEntry*)
+        malloc(perfmon_set.numberOfEvents * sizeof(PerfmonEventSetEntry));
 
     for (i=0; i<perfmon_set.numberOfEvents; i++)
     {
         /* get register index */
-        if (!perfmon_getIndex(eventSetConfig.events[i].counterName,
+        if (!perfmon_getIndex(eventSetConfig->events[i].counterName,
                     &perfmon_set.events[i].index))
         {
             fprintf (stderr,"ERROR: Counter register %s not supported!\n",
-                    bdata(eventSetConfig.events[i].configName));
+                    bdata(eventSetConfig->events[i].counterName));
             exit (EXIT_FAILURE);
         }
 
         /* setup event */
-        if (!getEvent(eventSetConfig.events[i].eventName,
+        if (!getEvent(eventSetConfig->events[i].eventName,
                     &perfmon_set.events[i].event))
         {
             fprintf (stderr,"ERROR: Event %s not found for current architecture\n",
-                    bdata(eventSetConfig.events[i].eventName));
+                    bdata(eventSetConfig->events[i].eventName));
             exit (EXIT_FAILURE);
         }
         
         /* is counter allowed for event */
-        if (!perfmon_checkCounter(eventSetConfig.events[i].counterName,
+        if (!checkCounter(eventSetConfig->events[i].counterName,
                     perfmon_set.events[i].event.limit))
         {
             fprintf (stderr,"ERROR: Register %s not allowed  for event %s\n",
-                    bdata(eventSetConfig.events[i].counterName),
-                    bdata(eventSetConfig.events[i].eventName));
+                    bdata(eventSetConfig->events[i].counterName),
+                    bdata(eventSetConfig->events[i].eventName));
             exit (EXIT_FAILURE);
         }
     }
-}
-
-static int
-getEvent(bstring event_str, PerfmonEvent* event)
-{
-    int i;
-
-    for (i=0; i< perfmon_numArchEvents; i++)
-    {
-        if (biseqcstr(event_str, eventHash[i].key))
-        {
-            *event = eventHash[i].event;
-
-            if (perfmon_verbose)
-            {
-                printf ("Found event %s : Event_id 0x%02X Umask 0x%02X \n",
-                        bdata(event_str), event->eventId, event->umask);
-            }
-            return TRUE;
-        }
-    }
-
-    return FALSE;
 }
 
 #define bstrListAdd(id,name) \
@@ -411,7 +427,7 @@ getEvent(bstring event_str, PerfmonEvent* event)
     header->qty++;
 
 static void 
-initResultTable(PerfmonResultTable* table,
+initResultTable(PerfmonResultTable* tableData,
         int numRows,
         int numColumns)
 {
@@ -425,22 +441,22 @@ initResultTable(PerfmonResultTable* table,
 
     for (i=0; i<perfmon_numThreads;i++)
     {
-        label = bformat("core %d",threadData[i].cpu_id);
+        label = bformat("core %d",threadData[i].processorId);
         header->entry[1+i] = bstrcpy(label);
         header->qty++;
     }
 
-    tableData.numRows = numRows;
-    tableData.numColumns = numColumns;
-    tableData.header = header;
-    tableData.rows = (PerfmonResult*) malloc(numRows*sizeof(Result));
+    tableData->numRows = numRows;
+    tableData->numColumns = numColumns;
+    tableData->header = header;
+    tableData->rows = (PerfmonResult*) malloc(numRows*sizeof(PerfmonResult));
 
     for (i=0; i<numRows; i++)
     {
-        tableData.rows[i].label =
+        tableData->rows[i].label =
             bfromcstr(perfmon_set.events[i].event.name);
 
-        tableData.rows[i].value =
+        tableData->rows[i].value =
             (double*) malloc((numColumns)*sizeof(double));
     }
 }
@@ -459,7 +475,7 @@ perfmon_printMarkerResults()
 
     readMarkerFile("/tmp/likwid_results.txt");
 
-    perfmon_initResultTable(&tableData,
+    initResultTable(&tableData,
             numColumns, numRows);
 
     for (region=0; region<perfmon_numRegions; region++)
@@ -485,15 +501,14 @@ perfmon_printCounterResults()
     int numRows = perfmon_set.numberOfEvents;
     int numColumns = (perfmon_numThreads+1);
 
-    perfmon_initResultTable(&tableData,
-            numColumns, numRows);
+    initResultTable(&tableData, numColumns, numRows);
 
     for (i=0; i<numRows; i++)
     {
         for (j=0; j<numColumns; j++)
         {
             tableData.rows[i].value[j] =
-                (double) perfmon_threads[j].counters[perfmon_set.events[i].index];
+                (double) threadData[j].counters[perfmon_set.events[i].index].counterData;
         }
     }
     printResultTable(&tableData);
@@ -516,7 +531,7 @@ perfmon_setupEventSet(bstring eventString)
     else
     {
         /* eventString is a group */
-        bassigncstr(eventName, perfmon_group_config[groupId]);
+        bassigncstr(eventName, group_config[groupId]);
         bstr_to_eventset(&eventSetConfig, eventName);
     }
 
@@ -532,7 +547,7 @@ perfmon_setupCounters()
   int j;
   uint32_t eventId;
   uint32_t umask;
-  PerCounterIndex  index;
+  PerfmonCounterIndex  index;
 
     for (j=0; j<perfmon_set.numberOfEvents; j++)
     {
@@ -567,28 +582,27 @@ perfmon_stopCounters(void)
     int i;
 
     timer_stopCycles(&timeData);
+
     for (i=0;i<perfmon_numThreads;i++)
     {
         perfmon_stopCountersThread(i);
     }
-
-    perfmon_setCycles(timer_printCycles(&timeData));
 }
 
 
 void
 perfmon_initEventset(PerfmonEventSet* set)
 {
+#if 0
     int i;
 
     for (i=0;i<set->numberOfEvents; i++)
     {
-        if (!getEvent(set->events[i].eventName,
-                    &set->events[i].event.event_id,
-                    &set->events[i].event.umask))
+        if (!getEvent(set->events[i].name,
+                    &set->events[i].event))
         {
             printf("ERROR: Event %s not found for current architecture\n",
-                    set->events[i].eventName->data);
+                    bdata(set->events[i].name));
             exit(EXIT_FAILURE);
         }
         if (!perfmon_getIndex(set->events[i].reg,
@@ -603,6 +617,7 @@ perfmon_initEventset(PerfmonEventSet* set)
         set->events[i].time = (double*) malloc(perfmon_numThreads* sizeof(double));
         set->events[i].results[0] = 0.0;
     }
+#endif
 }
 
 
@@ -651,19 +666,20 @@ perfmon_init(int numThreads_local, int threads[])
                 case CORE2_45:
 
                     eventHash = core2_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEvents_CORE2;
+                    perfmon_numArchEvents = perfmon_numArchEventsCore2;
+
+                    group_map = core2_group_map;
+                    group_config = core2_group_config;
+                    perfmon_numGroups = perfmon_numGroupsCore2;
+
+                    counter_map = core2_counter_map;
+                    perfmon_numCounters = perfmon_numCountersCore2;
 
                     initThreadArch = perfmon_init_core2;
-                    getGroupId = perfmon_getGroupId_core2;
-                    setupGroupThread = perfmon_setupGroupThread_core2;
                     printResults = perfmon_printResults_core2;
-                    perfmon_printAvailableGroups = perfmon_printGroups_core2;
                     perfmon_startCountersThread = perfmon_startCountersThread_core2;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
-                    perfmon_getIndex = perfmon_getIndex_core2;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
-                    perfmon_setupReport = perfmon_setupReport_core2;
-                    perfmon_printReport = perfmon_printReport_core2;
                     break;
 
                 case NEHALEM_BLOOMFIELD:
@@ -671,13 +687,17 @@ perfmon_init(int numThreads_local, int threads[])
                 case NEHALEM_LYNNFIELD:
 
                     eventHash = nehalem_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEvents_NEHALEM;
+                    perfmon_numArchEvents = perfmon_numArchEventsNehalem;
+
+                    group_map = nehalem_group_map;
+                    group_config = nehalem_group_config;
+                    perfmon_numGroups = perfmon_numGroupsNehalem;
+
+                    counter_map = core2_counter_map;
+                    perfmon_numCounters = perfmon_numCountersCore2;
 
                     initThreadArch = perfmon_init_nehalem;
-                    getGroupId = perfmon_getGroupId_nehalem;
-                    setupGroupThread = perfmon_setupGroupThread_nehalem;
                     printResults = perfmon_printResults_nehalem;
-                    perfmon_printAvailableGroups = perfmon_printGroups_nehalem;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     break;

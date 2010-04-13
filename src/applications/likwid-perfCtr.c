@@ -246,7 +246,7 @@ int main (int argc, char** argv)
     }
     else if (!optUseMarker)
     {
-        perfmon_startAllCounters();
+        perfmon_startCounters();
     }
 
     if (system(argv[0]) == EOF)
@@ -264,7 +264,7 @@ int main (int argc, char** argv)
 	{
 		if (!optUseMarker)
 		{
-			perfmon_stopAllCounters();
+			perfmon_stopCounters();
 			perfmon_printCounterResults();
 		}
 		else

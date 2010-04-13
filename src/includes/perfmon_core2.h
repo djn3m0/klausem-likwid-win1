@@ -38,16 +38,20 @@
 #include <registers.h>
 
 #define NUM_COUNTERS_CORE2 4
-#define NUM_GROUPS_CORE2 7
+#define NUM_GROUPS_CORE2 9
 
-static PerfmonCounterMap core2_counter_map[NUM_COUNTERS_CORE2] = {
+static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
+static int perfmon_numGroupsCore2 = NUM_GROUPS_CORE2;
+static int perfmon_numArchEventsCore2 = NUM_ARCH_EVENTS_CORE2;
+
+static const PerfmonCounterMap core2_counter_map[NUM_COUNTERS_CORE2] = {
     {"PMC0",PMC2},
     {"PMC1",PMC3},
     {"FIXC0",PMC0},
     {"FIXC1",PMC1}
 };
 
-static PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
+static const PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
     {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s"},
     {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s"},
     {"L2",L2,"L2: L2 cache bandwidth in MBytes/s"},
@@ -57,7 +61,7 @@ static PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
     {"TLB",TLB,"Translation lookaside buffer miss rate"}
 };
 
-static char** core2_group_config[NUM_GROUPS_CORE2] = {
+static const char* core2_group_config[NUM_GROUPS_CORE2] = {
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_SINGLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_SINGLE:PMC1",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1",
@@ -73,7 +77,7 @@ void
 perfmon_init_core2(PerfmonThread *thread)
 {
     uint64_t flags = 0x0ULL;
-    int cpu_id = thread->cpu_id;
+    int cpu_id = thread->processorId;
 
     /* Fixed Counters: instructions retired, cycles ubhalted core */
     thread->counters[PMC0].configRegister = MSR_PERF_FIXED_CTR_CTRL;
@@ -105,7 +109,7 @@ perfmon_init_core2(PerfmonThread *thread)
      * FIXED 1: Clocks unhalted */
     msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x22ULL);
 
-    /* Preinit of two PMC counters */
+    /* Preinit of PMC counters */
     flags |= (1<<16);  /* user mode flag */
     flags |= (1<<19);  /* pin control flag */
     flags |= (1<<22);  /* enable flag */
@@ -122,7 +126,7 @@ perfmon_setupCounterThread_core2(int thread_id,
 {
     uint64_t flags;
     uint64_t reg = threadData[thread_id].counters[index].configRegister;
-    int cpu_id = threadData[thread_id].cpu_id;
+    int cpu_id = threadData[thread_id].processorId;
 
     /* only the PMC counters need to be set up on Core 2 */
     if (threadData[thread_id].counters[index].type == PMC)
@@ -152,19 +156,27 @@ perfmon_startCountersThread_core2(int thread_id)
 {
     int i;
     uint64_t flags;
-    int cpu_id = threadData[thread_id].cpu_id;
+    int cpu_id = threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
+ //   msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
+//    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
 
     /* Enable fixed counters */
-    flags  = 0x300000000ULL;
+//    flags  = 0x300000000ULL;
 
     for (i=0;i<NUM_COUNTERS_CORE2;i++) {
         if (threadData[thread_id].counters[i].init == TRUE) {
             msr_write(cpu_id, threadData[thread_id].counters[i].counterRegister , 0x0ULL);
-            flags |= (1<<i);  /* enable counter */
+
+            if (threadData[thread_id].counters[i].type == PMC)
+            {
+                flags |= (1<<(i-2));  /* enable counter */
+            }
+            else if (threadData[thread_id].counters[i].type == FIXED)
+            {
+                flags |= (1<<(i+32));  /* enable fixed counter */
+            }
         }
     }
 
@@ -183,7 +195,7 @@ perfmon_stopCountersThread_core2(int thread_id)
 {
     uint64_t flags;
     int i;
-    int cpu_id = threadData[thread_id].cpu_id;
+    int cpu_id = threadData[thread_id].processorId;
 
     /* stop counters */
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
@@ -210,8 +222,11 @@ perfmon_stopCountersThread_core2(int thread_id)
 void
 perfmon_printResults_core2(PerfmonGroup group)
 {
+#if 0
+    int i;
     TableContainer* table;
     bstrList* labelStrings;
+    bstring label;
     int numRows = 1; /* Default Row CPI */
     int numColumns = perfmon_numThreads+1; /* Default Row CPI */
 
@@ -224,12 +239,10 @@ perfmon_printResults_core2(PerfmonGroup group)
 
     for (i=0; i<perfmon_numThreads;i++)
     {
-        label = bformat("core %d",threadData[i].cpu_id);
+        label = bformat("core %d",threadData[i].processorId);
         labelStrings->entry[1+i] = bstrcpy(label);
         labelStrings->qty++;
     }
-
-    printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->instructionsRetired);
 
     switch ( group ) 
     {
@@ -308,6 +321,7 @@ perfmon_printResults_core2(PerfmonGroup group)
     }
 
     table = asciiTable_allocate(numRows, numColumns,labelStrings);
+#endif
 
 }
 

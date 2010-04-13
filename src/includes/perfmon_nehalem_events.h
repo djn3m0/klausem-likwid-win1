@@ -1,7 +1,7 @@
-#define NUM_ARCH_EVENTS_CORE2 478
+#define NUM_ARCH_EVENTS_NEHALEM 478
 
-static PerfmonEvent  arch_events[NUM_ARCH_EVENTS_CORE2] = {
-,{"SB_FORWARD_ANY",
+static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
+{"SB_FORWARD_ANY",
   "PMC", 
    0x02,0x01}
 ,{"LOAD_BLOCK_STD",

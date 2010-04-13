@@ -57,7 +57,6 @@ extern void (*perfmon_setupReport) (MultiplexCollections* collections);
 extern void (*perfmon_printReport) (MultiplexCollections* collections);
 
 extern void perfmon_init (int numThreads, int threads[]);
-extern void perfmon_initEventset(PerfmonEventSet* set);
 extern void perfmon_setupEventSet(bstring eventString);
 extern void perfmon_setupCounters();
 extern void perfmon_startCounters ();
