@@ -90,7 +90,6 @@ static void initThread(int , int );
 /* #####  EXPORTED  FUNCTION POINTERS   ################################### */
 void (*perfmon_startCountersThread) (int thread_id);
 void (*perfmon_stopCountersThread) (int thread_id);
-int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
 void (*perfmon_setupCounterThread) (int thread_id,
         uint32_t umask, uint32_t event, PerfmonCounterIndex index);
 void (*perfmon_setupReport) (MultiplexCollections* collections);
@@ -99,14 +98,24 @@ void (*perfmon_printReport) (MultiplexCollections* collections);
 /* #####   FUNCTION POINTERS  -  LOCAL TO THIS SOURCE FILE ################ */
 
 static void (*initThreadArch) (PerfmonThread *thread);
-static PerfmonGroup (*getGroupId) (bstring);
-static void (*setupGroupThread) (int thread_id, PerfmonGroup group);
-static void (*printResults) (
-        PerfmonThread *thread,
-        PerfmonGroup group_set,
-        float time);
+void (*printDerivedMetrics) (PerfmonGroup group);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+static int  getIndex (bstring reg, PerfmonCounterIndex* index)
+{
+    int i;
+
+    for (i=0; i< perfmon_numCounters; i++)
+    {
+        if (biseqcstr(reg, counter_map[i].key))
+        {
+            *index = counter_map[i].index;
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
 
 static int
 getEvent(bstring event_str, PerfmonEvent* event)
@@ -335,16 +344,22 @@ printResultTable(PerfmonResultTable* tableData)
     bstring label;
 
     table = asciiTable_allocate(tableData->numRows,
-            tableData->numColumns,
+            tableData->numColumns+1,
             tableData->header);
+
+    bstrListAlloc(labelStrings, tableData->numColumns+1);
 
     for (i=0; i<tableData->numRows; i++)
     {
+        labelStrings->qty = 0;
         labelStrings->entry[0] = bstrcpy(tableData->rows[i].label);
-        for (j=0; j<(tableData->numColumns-1);j++)
+        labelStrings->qty++;
+
+        for (j=0; j<(tableData->numColumns);j++)
         {
             label = bformat("%e", tableData->rows[i].value[j]);
             labelStrings->entry[1+j] = bstrcpy(label);
+            labelStrings->qty++;
         }
         asciiTable_appendRow(table,labelStrings);
     }
@@ -400,8 +415,7 @@ initResultTable(PerfmonResultTable* tableData,
     for (i=0; i<perfmon_numThreads;i++)
     {
         label = bformat("core %d",threadData[i].processorId);
-        header->entry[1+i] = bstrcpy(label);
-        header->qty++;
+        header->entry[1+i] = bstrcpy(label); header->qty++;
     }
 
     tableData->numRows = numRows;
@@ -432,7 +446,7 @@ perfmon_initEventSet(StrUtilEventSet* eventSetConfig)
     for (i=0; i<perfmon_set.numberOfEvents; i++)
     {
         /* get register index */
-        if (!perfmon_getIndex(eventSetConfig->events[i].counterName,
+        if (!getIndex(eventSetConfig->events[i].counterName,
                     &perfmon_set.events[i].index))
         {
             fprintf (stderr,"ERROR: Counter register %s not supported!\n",
@@ -470,12 +484,11 @@ perfmon_printMarkerResults()
     int region;
     PerfmonResultTable tableData;
     int numRows = perfmon_set.numberOfEvents;
-    int numColumns = (perfmon_numThreads+1);
+    int numColumns = perfmon_numThreads;
 
     readMarkerFile("/tmp/likwid_results.txt");
 
-    initResultTable(&tableData,
-            numColumns, numRows);
+    initResultTable(&tableData, numRows, numColumns);
 
     for (region=0; region<perfmon_numRegions; region++)
     {
@@ -498,9 +511,9 @@ perfmon_printCounterResults()
     int j;
     PerfmonResultTable tableData;
     int numRows = perfmon_set.numberOfEvents;
-    int numColumns = (perfmon_numThreads+1);
+    int numColumns = perfmon_numThreads;
 
-    initResultTable(&tableData, numColumns, numRows);
+    initResultTable(&tableData, numRows, numColumns);
 
     for (i=0; i<numRows; i++)
     {
@@ -511,13 +524,13 @@ perfmon_printCounterResults()
         }
     }
     printResultTable(&tableData);
+    printDerivedMetrics(groupSet);
 }
 
 void
 perfmon_setupEventSet(bstring eventString)
 {
     int groupId;
-    bstring eventName;
     StrUtilEventSet eventSetConfig;
 
     groupId = perfmon_getGroupId(eventString, &groupSet);
@@ -530,8 +543,8 @@ perfmon_setupEventSet(bstring eventString)
     else
     {
         /* eventString is a group */
-        bassigncstr(eventName, group_config[groupId]);
-        bstr_to_eventset(&eventSetConfig, eventName);
+        bassigncstr(eventString, group_config[groupId]);
+        bstr_to_eventset(&eventSetConfig, eventString);
     }
 
     perfmon_initEventSet(&eventSetConfig);
@@ -557,7 +570,10 @@ perfmon_setupCounters()
 
         for (i=0; i<perfmon_numThreads; i++)
         {
-            perfmon_setupCounterThread(i, eventId, umask, index);
+            perfmon_setupCounterThread(i,
+                    eventId,
+                    umask,
+                    index);
         }
     }
 }
