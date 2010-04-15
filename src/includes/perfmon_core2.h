@@ -40,6 +40,7 @@
 
 #define NUM_COUNTERS_CORE2 4
 #define NUM_GROUPS_CORE2 9
+#define NUM_SETS_CORE2 8
 
 static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
 static int perfmon_numGroupsCore2 = NUM_GROUPS_CORE2;
@@ -62,6 +63,16 @@ static const PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
     {"TLB",TLB,"Translation lookaside buffer miss rate"}
 };
 
+static const char* core2_report_config[NUM_SETS_CORE2] = {
+    "INST_RETIRED_LOADS:PMC0,INST_RETIRED_STORES:PMC1",
+    "BR_INST_RETIRED_ANY:PMC0,BR_INST_RETIRED_MISPRED:PMC1",
+    "SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1",
+    "SIMD_COMP_INST_RETIRED_PACKED_SINGLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_SINGLE:PMC1",
+    "INST_RETIRED_LOADS:PMC0,INST_RETIRED_STORES:PMC1",
+    "MEM_LOAD_RETIRED_L1D_LINE_MISS:PMC0,L1D_ALL_REF:PMC1",
+    "BUS_TRANS_MEM_THIS_CORE_THIS_A:PMC0,DTLB_MISSES_ANY:PMC1",
+    "L1D_REPL:PMC0,L1D_M_EVICT:PMC1"};
+
 static const char* core2_group_config[NUM_GROUPS_CORE2] = {
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_SINGLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_SINGLE:PMC1",
@@ -72,7 +83,6 @@ static const char* core2_group_config[NUM_GROUPS_CORE2] = {
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UOPS_RETIRED_ANY:PMC0",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,DTLB_MISSES_ANY:PMC0,DTLB_MISSES_MISS_LD:PMC1",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UOPS_RETIRED_ANY:PMC0,DTLB_MISSES_MISS_LD:PMC1"};
-
 
 void 
 perfmon_init_core2(PerfmonThread *thread)
@@ -342,6 +352,7 @@ perfmon_DerivedMetricsCore2(PerfmonGroup group)
 void
 perfmon_setupReport_core2(MultiplexCollections* collections)
 {
+#if 0
     collections->numberOfCollections = 6;
     collections->collections =
 		(PerfmonEventSet*) malloc(collections->numberOfCollections
@@ -449,6 +460,7 @@ perfmon_setupReport_core2(MultiplexCollections* collections)
 
     collections->collections[5].events[1].reg =
 		bfromcstr("PMC1");
+#endif
 }
 
 void

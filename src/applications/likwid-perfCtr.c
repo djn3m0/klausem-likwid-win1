@@ -46,7 +46,6 @@
 #include <perfmon.h>
 #include <bstrlib.h>
 #include <strUtil.h>
-#include <multiplex.h>
 
 
 #define HELP_MSG \
@@ -67,8 +66,6 @@ printf("-c\t comma separated processor ids to measure (required)\n\n")
 #define VERSION_MSG \
 printf("likwid-perfCtr  %d.%d \n\n",VERSION,RELEASE);
 
-
-
 int main (int argc, char** argv)
 { 
     int optInfo = 0;
@@ -80,7 +77,6 @@ int main (int argc, char** argv)
     bstring  argString;
     int numThreads=0;
     int threads[MAX_NUM_THREADS];
-    MultiplexCollections set;
     int i,j;
 
     if (argc ==  1) 
@@ -135,6 +131,7 @@ int main (int argc, char** argv)
                 optUseMarker = 1;
                 break;
             case 'r':
+                eventString = bfromcstr("REPORT");
                 optReport = 1;
                 break;
             case 'i':
@@ -231,16 +228,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);
     }
 
-    if(optReport)
-    {
-        perfmon_setupReport(&set);
-        multiplex_init(&set);
-    }
-    else
-    {
-        perfmon_setupEventSet(eventString);
-    }
-
+    perfmon_setupEventSet(eventString);
     printf(HLINE);
 
 	argv +=  optind;
