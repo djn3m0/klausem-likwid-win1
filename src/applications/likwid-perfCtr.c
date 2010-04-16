@@ -236,7 +236,7 @@ int main (int argc, char** argv)
 
     if (optReport)
     {
-//        multiplex_start(optUseMarker);
+        multiplex_start(optUseMarker);
     }
     else if (!optUseMarker)
     {
@@ -251,8 +251,8 @@ int main (int argc, char** argv)
 
     if (optReport)
     {
- //       multiplex_stop();
-//        perfmon_printReport(&set);
+        multiplex_stop();
+        perfmon_printReport(&set);
     }
     else
 	{
