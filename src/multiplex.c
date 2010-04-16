@@ -103,7 +103,7 @@ multiplex_init(MultiplexCollections* set)
 
     for (i=0;i<multiplex_set->numberOfCollections; i++)
     {
-//        perfmon_initEventset(multiplex_set->collections+i);
+        perfmon_initEventset(multiplex_set->collections+i);
     }
 }
 
