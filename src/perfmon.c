@@ -78,6 +78,12 @@ static int perfmon_numCounters;
 
 /* #####   PROTOTYPES  -  LOCAL TO THIS SOURCE FILE   ##################### */
 
+static void initResultTable(PerfmonResultTable* tableData,
+        bstrList* firstColumn,
+        int numRows,
+        int numColumns);
+
+static void printResultTable(PerfmonResultTable* tableData);
 static void initThread(int , int );
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -105,8 +111,6 @@ static void initThread(int , int );
            bfromcstr(perfmon_set.events[i].event.name); } 
 
 #define INIT_BASIC  \
-    bstrList* fc; \
-    bstring label; \
     fc = bstrListCreate(); \
     bstrListAlloc(fc, numRows+1); \
     bstrListAdd(0,Metric);
@@ -694,7 +698,7 @@ perfmon_init(int numThreads_local, int threads[])
                     perfmon_numCounters = perfmon_numCountersCore2;
 
                     initThreadArch = perfmon_init_core2;
-                    printResults = perfmon_printResults_core2;
+                    printDerivedMetrics = perfmon_printDerivedMetricsCore2;
                     perfmon_startCountersThread = perfmon_startCountersThread_core2;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
@@ -715,7 +719,6 @@ perfmon_init(int numThreads_local, int threads[])
                     perfmon_numCounters = perfmon_numCountersCore2;
 
                     initThreadArch = perfmon_init_nehalem;
-                    printResults = perfmon_printResults_nehalem;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     break;
