@@ -235,7 +235,7 @@ perfmon_stopCountersThread_core2(int thread_id)
 }
 
 void
-perfmon_DerivedMetricsCore2(PerfmonGroup group)
+perfmon_printDerivedMetricsCore2(PerfmonGroup group)
 {
     int i;
     int j;
@@ -246,6 +246,8 @@ perfmon_DerivedMetricsCore2(PerfmonGroup group)
     PerfmonResultTable tableData;
     int numRows;
     int numColumns = perfmon_numThreads;
+    bstrList* fc;
+    bstring label;
 
     switch ( group ) 
     {
