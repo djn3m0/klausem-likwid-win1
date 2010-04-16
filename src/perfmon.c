@@ -80,37 +80,6 @@ static int perfmon_numCounters;
 
 static void initThread(int , int );
 
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-#define CHECKERROR \
-        if (ret == EOF) \
-        { \
-            fprintf (stderr, "sscanf: Failed to read marker file!\n" ); \
-            exit (EXIT_FAILURE);}
-
-#define bstrListAdd(id,name) \
-    label = bfromcstr(#name);  \
-    fc->entry[id] = bstrcpy(label);  \
-    fc->qty++;
-
-#define INIT_EVENTS   \
-    bstrList* fc; \
-    bstring label; \
-    fc = bstrListCreate(); \
-    bstrListAlloc(fc, numRows+1); \
-    bstrListAdd(0,Event); \
-    for (i=0; i<numRows; i++) \
-    { \
-        fc->entry[1+i] = \
-           bfromcstr(perfmon_set.events[i].event.name); } 
-
-#define INIT_BASIC  \
-    bstrList* fc; \
-    bstring label; \
-    fc = bstrListCreate(); \
-    bstrListAlloc(fc, numRows+1); \
-    bstrListAdd(0,Metric);
-
 //#include <perfmon_pm.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
@@ -120,6 +89,7 @@ static void initThread(int , int );
 /* #####  EXPORTED  FUNCTION POINTERS   ################################### */
 void (*perfmon_startCountersThread) (int thread_id);
 void (*perfmon_stopCountersThread) (int thread_id);
+int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
 void (*perfmon_setupCounterThread) (int thread_id,
         uint32_t umask, uint32_t event, PerfmonCounterIndex index);
 void (*perfmon_setupReport) (MultiplexCollections* collections);
@@ -128,24 +98,14 @@ void (*perfmon_printReport) (MultiplexCollections* collections);
 /* #####   FUNCTION POINTERS  -  LOCAL TO THIS SOURCE FILE ################ */
 
 static void (*initThreadArch) (PerfmonThread *thread);
-void (*printDerivedMetrics) (PerfmonGroup group);
+static PerfmonGroup (*getGroupId) (bstring);
+static void (*setupGroupThread) (int thread_id, PerfmonGroup group);
+static void (*printResults) (
+        PerfmonThread *thread,
+        PerfmonGroup group_set,
+        float time);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static int  getIndex (bstring reg, PerfmonCounterIndex* index)
-{
-    int i;
-
-    for (i=0; i< perfmon_numCounters; i++)
-    {
-        if (biseqcstr(reg, counter_map[i].key))
-        {
-            *index = counter_map[i].index;
-            return TRUE;
-        }
-    }
-
-    return FALSE;
-}
 
 static int
 getEvent(bstring event_str, PerfmonEvent* event)
@@ -169,6 +129,7 @@ getEvent(bstring event_str, PerfmonEvent* event)
 
     return FALSE;
 }
+
 
 static void
 initThread(int thread_id, int cpu_id)
@@ -246,6 +207,14 @@ struct cbsScan{
 	bstring src;
 	int line;
 };
+
+#define CHECKERROR \
+        if (ret == EOF) \
+        { \
+            fprintf (stderr, "sscanf: Failed to read marker file!\n" ); \
+            exit (EXIT_FAILURE); \
+        }
+
 
 static int lineCb (void* parm, int ofs, int len)
 {
@@ -365,22 +334,16 @@ printResultTable(PerfmonResultTable* tableData)
     bstring label;
 
     table = asciiTable_allocate(tableData->numRows,
-            tableData->numColumns+1,
+            tableData->numColumns,
             tableData->header);
-
-    bstrListAlloc(labelStrings, tableData->numColumns+1);
 
     for (i=0; i<tableData->numRows; i++)
     {
-        labelStrings->qty = 0;
         labelStrings->entry[0] = bstrcpy(tableData->rows[i].label);
-        labelStrings->qty++;
-
-        for (j=0; j<(tableData->numColumns);j++)
+        for (j=0; j<(tableData->numColumns-1);j++)
         {
             label = bformat("%e", tableData->rows[i].value[j]);
             labelStrings->entry[1+j] = bstrcpy(label);
-            labelStrings->qty++;
         }
         asciiTable_appendRow(table,labelStrings);
     }
@@ -391,7 +354,7 @@ printResultTable(PerfmonResultTable* tableData)
 
 
 static int
-getGroupId(bstring groupStr,PerfmonGroup* group)
+perfmon_getGroupId(bstring groupStr,PerfmonGroup* group)
 {
     *group = NOGROUP;
 
@@ -415,9 +378,13 @@ checkCounter(bstring counterName, char* limit)
     return TRUE;
 }
 
+#define bstrListAdd(id,name) \
+    label = bfromcstr(#name);  \
+    header->entry[id] = bstrcpy(label);  \
+    header->qty++;
+
 static void 
 initResultTable(PerfmonResultTable* tableData,
-        bstrList* firstColumn,
         int numRows,
         int numColumns)
 {
@@ -427,12 +394,13 @@ initResultTable(PerfmonResultTable* tableData,
 
     header = bstrListCreate();
     bstrListAlloc(header, numColumns);
-    header->entry[0] = bstrcpy(firstColumn->entry[0]);
+    bstrListAdd(0,Event);
 
     for (i=0; i<perfmon_numThreads;i++)
     {
         label = bformat("core %d",threadData[i].processorId);
-        header->entry[1+i] = bstrcpy(label); header->qty++;
+        header->entry[1+i] = bstrcpy(label);
+        header->qty++;
     }
 
     tableData->numRows = numRows;
@@ -442,10 +410,8 @@ initResultTable(PerfmonResultTable* tableData,
 
     for (i=0; i<numRows; i++)
     {
-//        tableData->rows[i].label =
-//           bfromcstr(perfmon_set.events[i].event.name);
-
-        tableData->rows[i].label = firstColumn->entry[1+i];
+        tableData->rows[i].label =
+            bfromcstr(perfmon_set.events[i].event.name);
 
         tableData->rows[i].value =
             (double*) malloc((numColumns)*sizeof(double));
@@ -453,21 +419,20 @@ initResultTable(PerfmonResultTable* tableData,
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-
 void
-perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
+perfmon_initEventSet(StrUtilEventSet* eventSetConfig)
 {
     int i;
 
-    set->numberOfEvents = eventSetConfig->numberOfEvents;
-    set->events = (PerfmonEventSetEntry*)
-        malloc(set->numberOfEvents * sizeof(PerfmonEventSetEntry));
+    perfmon_set.numberOfEvents = eventSetConfig->numberOfEvents;
+    perfmon_set.events = (PerfmonEventSetEntry*)
+        malloc(perfmon_set.numberOfEvents * sizeof(PerfmonEventSetEntry));
 
-    for (i=0; i<set->numberOfEvents; i++)
+    for (i=0; i<perfmon_set.numberOfEvents; i++)
     {
         /* get register index */
-        if (!getIndex(eventSetConfig->events[i].counterName,
-                    &set->events[i].index))
+        if (!perfmon_getIndex(eventSetConfig->events[i].counterName,
+                    &perfmon_set.events[i].index))
         {
             fprintf (stderr,"ERROR: Counter register %s not supported!\n",
                     bdata(eventSetConfig->events[i].counterName));
@@ -476,7 +441,7 @@ perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
 
         /* setup event */
         if (!getEvent(eventSetConfig->events[i].eventName,
-                    &set->events[i].event))
+                    &perfmon_set.events[i].event))
         {
             fprintf (stderr,"ERROR: Event %s not found for current architecture\n",
                     bdata(eventSetConfig->events[i].eventName));
@@ -485,7 +450,7 @@ perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
         
         /* is counter allowed for event */
         if (!checkCounter(eventSetConfig->events[i].counterName,
-                    set->events[i].event.limit))
+                    perfmon_set.events[i].event.limit))
         {
             fprintf (stderr,"ERROR: Register %s not allowed  for event %s\n",
                     bdata(eventSetConfig->events[i].counterName),
@@ -495,6 +460,7 @@ perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
     }
 }
 
+
 void 
 perfmon_printMarkerResults()
 {
@@ -503,12 +469,12 @@ perfmon_printMarkerResults()
     int region;
     PerfmonResultTable tableData;
     int numRows = perfmon_set.numberOfEvents;
-    int numColumns = perfmon_numThreads;
-    INIT_EVENTS;
+    int numColumns = (perfmon_numThreads+1);
 
     readMarkerFile("/tmp/likwid_results.txt");
 
-    initResultTable(&tableData, fc, numRows, numColumns);
+    initResultTable(&tableData,
+            numColumns, numRows);
 
     for (region=0; region<perfmon_numRegions; region++)
     {
@@ -531,10 +497,9 @@ perfmon_printCounterResults()
     int j;
     PerfmonResultTable tableData;
     int numRows = perfmon_set.numberOfEvents;
-    int numColumns = perfmon_numThreads;
-    INIT_EVENTS;
+    int numColumns = (perfmon_numThreads+1);
 
-    initResultTable(&tableData, fc, numRows, numColumns);
+    initResultTable(&tableData, numColumns, numRows);
 
     for (i=0; i<numRows; i++)
     {
@@ -545,16 +510,16 @@ perfmon_printCounterResults()
         }
     }
     printResultTable(&tableData);
-    printDerivedMetrics(groupSet);
 }
 
 void
 perfmon_setupEventSet(bstring eventString)
 {
     int groupId;
+    bstring eventName;
     StrUtilEventSet eventSetConfig;
 
-    groupId = getGroupId(eventString, &groupSet);
+    groupId = perfmon_getGroupId(eventString, &groupSet);
 
     if (groupSet == NOGROUP)
     {
@@ -564,11 +529,11 @@ perfmon_setupEventSet(bstring eventString)
     else
     {
         /* eventString is a group */
-        bassigncstr(eventString, group_config[groupId]);
-        bstr_to_eventset(&eventSetConfig, eventString);
+        bassigncstr(eventName, group_config[groupId]);
+        bstr_to_eventset(&eventSetConfig, eventName);
     }
 
-    perfmon_initEventSet(&eventSetConfig, &perfmon_set);
+    perfmon_initEventSet(&eventSetConfig);
     perfmon_setupCounters();
 }
 
@@ -591,10 +556,7 @@ perfmon_setupCounters()
 
         for (i=0; i<perfmon_numThreads; i++)
         {
-            perfmon_setupCounterThread(i,
-                    eventId,
-                    umask,
-                    index);
+            perfmon_setupCounterThread(i, eventId, umask, index);
         }
     }
 }
@@ -638,6 +600,37 @@ perfmon_printAvailableGroups()
                 group_map[i].info);
     }
 }
+
+#if 0
+void
+perfmon_initEventset(PerfmonEventSet* set)
+{
+    int i;
+
+    for (i=0;i<set->numberOfEvents; i++)
+    {
+        if (!getEvent(set->events[i].name,
+                    &set->events[i].event))
+        {
+            printf("ERROR: Event %s not found for current architecture\n",
+                    bdata(set->events[i].name));
+            exit(EXIT_FAILURE);
+        }
+        if (!perfmon_getIndex(set->events[i].reg,
+                    &set->events[i].index))
+        {
+            printf("ERROR: Register %s not found for current architecture\n",
+                    set->events[i].reg->data);
+            exit(EXIT_FAILURE);
+        }
+
+        set->events[i].results = (double*) malloc(perfmon_numThreads* sizeof(double));
+        set->events[i].time = (double*) malloc(perfmon_numThreads* sizeof(double));
+        set->events[i].results[0] = 0.0;
+    }
+}
+#endif
+
 
 
 void
