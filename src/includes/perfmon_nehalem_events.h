@@ -1,7 +1,13 @@
 #define NUM_ARCH_EVENTS_NEHALEM 478
 
 static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
-{"SB_FORWARD_ANY",
+{"INSTR_RETIRED_ANY",
+  "FIXC0", 
+   0x00,0x00}
+,{"CPU_CLK_UNHALTED_CORE",
+  "FIXC1", 
+   0x00,0x00}
+,{"SB_FORWARD_ANY",
   "PMC", 
    0x02,0x01}
 ,{"LOAD_BLOCK_STD",

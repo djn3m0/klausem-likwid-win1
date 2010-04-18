@@ -46,14 +46,14 @@ static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
 static int perfmon_numGroupsCore2 = NUM_GROUPS_CORE2;
 static int perfmon_numArchEventsCore2 = NUM_ARCH_EVENTS_CORE2;
 
-static const PerfmonCounterMap core2_counter_map[NUM_COUNTERS_CORE2] = {
+static PerfmonCounterMap core2_counter_map[NUM_COUNTERS_CORE2] = {
     {"PMC0",PMC2},
     {"PMC1",PMC3},
     {"FIXC0",PMC0},
     {"FIXC1",PMC1}
 };
 
-static const PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
+static PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
     {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s"},
     {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s"},
     {"L2",L2,"L2: L2 cache bandwidth in MBytes/s"},
@@ -63,7 +63,7 @@ static const PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
     {"TLB",TLB,"Translation lookaside buffer miss rate"}
 };
 
-static const char* core2_report_config[NUM_SETS_CORE2] = {
+static char* core2_report_config[NUM_SETS_CORE2] = {
     "INST_RETIRED_LOADS:PMC0,INST_RETIRED_STORES:PMC1",
     "BR_INST_RETIRED_ANY:PMC0,BR_INST_RETIRED_MISPRED:PMC1",
     "SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1",
@@ -73,7 +73,7 @@ static const char* core2_report_config[NUM_SETS_CORE2] = {
     "BUS_TRANS_MEM_THIS_CORE_THIS_A:PMC0,DTLB_MISSES_ANY:PMC1",
     "L1D_REPL:PMC0,L1D_M_EVICT:PMC1"};
 
-static const char* core2_group_config[NUM_GROUPS_CORE2] = {
+static char* core2_group_config[NUM_GROUPS_CORE2] = {
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_SINGLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_SINGLE:PMC1",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1",
@@ -90,7 +90,7 @@ perfmon_init_core2(PerfmonThread *thread)
     uint64_t flags = 0x0ULL;
     int cpu_id = thread->processorId;
 
-    /* Fixed Counters: instructions retired, cycles ubhalted core */
+    /* Fixed Counters: instructions retired, cycles unhalted core */
     thread->counters[PMC0].configRegister = MSR_PERF_FIXED_CTR_CTRL;
     thread->counters[PMC0].counterRegister = MSR_PERF_FIXED_CTR0;
     thread->counters[PMC0].type = FIXED;
@@ -139,7 +139,6 @@ perfmon_setupCounterThread_core2(int thread_id,
     uint64_t reg = threadData[thread_id].counters[index].configRegister;
     int cpu_id = threadData[thread_id].processorId;
 
-    /* only the PMC counters need to be set up on Core 2 */
     if (threadData[thread_id].counters[index].type == PMC)
     {
 
@@ -255,9 +254,9 @@ perfmon_printDerivedMetricsCore2(PerfmonGroup group)
 
             numRows = 3;
             INIT_BASIC;
-            bstrListAdd(1,Runtime);
+            bstrListAdd(1,Runtime [s]);
             bstrListAdd(2,CPI);
-            bstrListAdd(3,DP/MFlops/s);
+            bstrListAdd(3,DP MFlops/s);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)

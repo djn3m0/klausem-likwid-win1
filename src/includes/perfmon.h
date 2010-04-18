@@ -59,6 +59,7 @@ void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
 extern void perfmon_printAvailableGroups(void);
 extern void perfmon_init (int numThreads, int threads[]);
 extern void perfmon_setupEventSet(bstring eventString);
+extern void perfmon_setupEventSetC(char* eventString);
 extern void perfmon_setupCounters();
 extern void perfmon_startCounters ();
 extern void perfmon_stopCounters ();

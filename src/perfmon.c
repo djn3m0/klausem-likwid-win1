@@ -47,7 +47,6 @@
 #include <asciiTable.h>
 #include <registers.h>
 //#include <perfmon_pm_events.h>
-#include <perfmon_nehalem_events.h>
 //#include <perfmon_k8_events.h>
 //#include <perfmon_k10_events.h>
 
@@ -65,10 +64,10 @@ LikwidResults* perfmon_results;
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static PerfmonGroup groupSet = NOGROUP;
-static const PerfmonEvent* eventHash;
-static const PerfmonCounterMap* counter_map;
-static const PerfmonGroupMap* group_map;
-static const char** group_config;
+static PerfmonEvent* eventHash;
+static PerfmonCounterMap* counter_map;
+static PerfmonGroupMap* group_map;
+static char** group_config;
 
 static PerfmonThread summary;
 static CyclesData timeData;
@@ -189,62 +188,6 @@ initThread(int thread_id, int cpu_id)
 
 }
 
-static void
-setupCounter( PerfmonCounterIndex index, bstring event_str)
-{
-#if 0
-    uint64_t flags;
-    uint32_t umask = 0, eventId = 0;
-    uint64_t reg = threadData[0].counters[index].configRegister;
-    PerfmonEvent event;
-
-    if (!getEvent(event_str, &event))
-    {
-        fprintf (stderr,"ERROR: Event %s not found for current architecture\n",event_str->data );
-        exit (EXIT_FAILURE);
-    }
-
-    eventId = event.eventId;
-    umask = event.umask;
-
-    threadData[0].counters[index].label = bstrcpy(event_str);
-    threadData[0].counters[index].init = TRUE;
-
-    flags = msr_read(threadData[0].processorId,reg);
-    flags &= ~(0xFFFFU); 
-
-    if (cpuid_info.family == P6_FAMILY)
-    {
-
-        if (cpuid_info.model > 0x0FU)
-        {
-             for (int i=0;i<perfmon_numThreads;i++)
-                 msr_write(threadData[i].processorId, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-        }
-        /* Intel with standard 8 bit event mask: [7:0] */
-        flags |= (umask<<8) + eventId;
-    }
-    else 
-    {
-        /* AMD uses a 12 bit Event mask: [35:32][7:0] */
-        flags |= ((uint64_t)(eventId>>8)<<32) + (umask<<8) + (eventId & ~(0xF00U));
-    }
-
-    if (perfmon_verbose)
-    {
-        printf(" perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
-               LLU_CAST reg,
-               LLU_CAST flags);
-    }
-    
-    for (int i=0;i<perfmon_numThreads;i++)
-    {
-        msr_write(threadData[i].processorId, reg , flags);
-    }
-#endif
-
-}
-
 struct cbsScan{
 	/* Parse state */
 	bstring src;
@@ -311,7 +254,7 @@ static int lineCb (void* parm, int ofs, int len)
  /* :TODO:04/09/10 09:15:38:jt: 
  *  the current provisorical solution is to read the file in as LikwidResults
  * and then fill the results into a PerfmonEventSet. Later this should be directly 
- * put into a {erfmonEventSet from the beginning */
+ * put into a perfmonEventSet from the beginning */
 static void
 readMarkerFile(char* filename)
 {
@@ -430,8 +373,8 @@ initResultTable(PerfmonResultTable* tableData,
     bstring label;
 
     header = bstrListCreate();
-    bstrListAlloc(header, numColumns);
-    header->entry[0] = bstrcpy(firstColumn->entry[0]);
+    bstrListAlloc(header, numColumns+1);
+    header->entry[0] = bstrcpy(firstColumn->entry[0]); header->qty++;
 
     for (i=0; i<perfmon_numThreads;i++)
     {
@@ -550,6 +493,20 @@ perfmon_printCounterResults()
     }
     printResultTable(&tableData);
     printDerivedMetrics(groupSet);
+}
+
+
+void
+perfmon_setupEventSetC(char* eventCString)
+{
+    bstring eventString;
+    StrUtilEventSet eventSetConfig;
+
+    groupSet = NOGROUP;
+    bassigncstr(eventString, eventCString);
+    bstr_to_eventset(&eventSetConfig, eventString);
+    perfmon_initEventSet(&eventSetConfig, &perfmon_set);
+    perfmon_setupCounters();
 }
 
 void
@@ -715,12 +672,14 @@ perfmon_init(int numThreads_local, int threads[])
                     group_config = nehalem_group_config;
                     perfmon_numGroups = perfmon_numGroupsNehalem;
 
-                    counter_map = core2_counter_map;
-                    perfmon_numCounters = perfmon_numCountersCore2;
+                    counter_map = nehalem_counter_map;
+                    perfmon_numCounters = perfmon_numCountersNehalem;
 
                     initThreadArch = perfmon_init_nehalem;
+                    printDerivedMetrics = perfmon_printDerivedMetricsNehalem;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_nehalem;
                     break;
 
                 default:
