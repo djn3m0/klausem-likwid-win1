@@ -176,7 +176,7 @@ int main (int argc, char** argv)
 
     msr_check();
     timer_init();
-    cpuid_init();
+//    cpuid_init();
 
     if( cpuid_info.family == P6_FAMILY ) 
         cpuFeatures_init(0);

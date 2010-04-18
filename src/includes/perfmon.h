@@ -63,6 +63,7 @@ extern void perfmon_setupEventSetC(char* eventString);
 extern void perfmon_setupCounters();
 extern void perfmon_startCounters ();
 extern void perfmon_stopCounters ();
+extern double perfmon_getResult (int threadId, char* counterString);
 extern void perfmon_printMarkerResults();
 extern void perfmon_printCounterResults();
 

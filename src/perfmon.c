@@ -134,6 +134,7 @@ static void (*initThreadArch) (PerfmonThread *thread);
 void (*printDerivedMetrics) (PerfmonGroup group);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
 static int  getIndex (bstring reg, PerfmonCounterIndex* index)
 {
     int i;
@@ -401,6 +402,22 @@ initResultTable(PerfmonResultTable* tableData,
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
+double
+perfmon_getResult(int threadId, char* counterString)
+{
+    bstring counter = bfromcstr(counterString);
+    PerfmonCounterIndex  index;
+
+   if (getIndex(counter,&index))
+   {
+       return threadData[threadId].counters[index].counterData;
+   }
+
+   fprintf (stderr, "perfmon_getResult: Failed to get counter Index!\n" );
+   return 0.0;
+}
+
+
 void
 perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
 {
@@ -499,11 +516,11 @@ perfmon_printCounterResults()
 void
 perfmon_setupEventSetC(char* eventCString)
 {
-    bstring eventString;
+    bstring eventString = bfromcstralloc(400,eventCString);
     StrUtilEventSet eventSetConfig;
 
     groupSet = NOGROUP;
-    bassigncstr(eventString, eventCString);
+  //  bassigncstr(eventString, eventCString);
     bstr_to_eventset(&eventSetConfig, eventString);
     perfmon_initEventSet(&eventSetConfig, &perfmon_set);
     perfmon_setupCounters();
@@ -608,6 +625,7 @@ perfmon_init(int numThreads_local, int threads[])
 
     perfmon_numThreads = numThreads_local;
     threadData = (PerfmonThread*) malloc(perfmon_numThreads * sizeof(PerfmonThread));
+    cpuid_init();
 
     switch ( cpuid_info.family ) 
     {
