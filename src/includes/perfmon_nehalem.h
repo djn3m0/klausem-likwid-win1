@@ -37,9 +37,11 @@
 #include <bstrlib.h>
 #include <types.h>
 #include <registers.h>
+#include <perfmon_nehalem_events.h>
 
 #define NUM_COUNTERS_NEHALEM 14
 #define NUM_GROUPS_NEHALEM 8
+#define NUM_SETS_NEHALEM 8
 
 static int perfmon_numCountersNehalem = NUM_COUNTERS_NEHALEM;
 static int perfmon_numGroupsNehalem = NUM_GROUPS_NEHALEM;
@@ -74,8 +76,8 @@ static PerfmonGroupMap nehalem_group_map[NUM_GROUPS_NEHALEM] = {
 };
 
 static char* nehalem_group_config[NUM_GROUPS_NEHALEM] = {
-    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC3,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC4",
-    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC3,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC4",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC2,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC3",
+    "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC2,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC3",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L2_LINES_IN_ANY:PMC0,L2_LINES_OUT_ANY:PMC1",
     "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_LINES_IN_ANY:UPMC0,UNC_L3_LINES_OUT_ANY:UPMC1",
@@ -91,30 +93,53 @@ perfmon_init_nehalem(PerfmonThread *thread)
     uint64_t flags = 0x0ULL;
     int cpu_id = thread->processorId;
 
+    /* Fixed Counters: instructions retired, cycles unhalted core */
+    thread->counters[PMC0].configRegister = MSR_PERF_FIXED_CTR_CTRL;
+    thread->counters[PMC0].counterRegister = MSR_PERF_FIXED_CTR0;
+    thread->counters[PMC0].type = FIXED;
+    thread->counters[PMC1].configRegister = MSR_PERF_FIXED_CTR_CTRL;
+    thread->counters[PMC1].counterRegister = MSR_PERF_FIXED_CTR1;
+    thread->counters[PMC1].type = FIXED;
+
+    /* PMC Counters: 4 48bit wide */
     thread->counters[PMC2].configRegister = MSR_PERFEVTSEL0;
     thread->counters[PMC2].counterRegister = MSR_PMC0;
+    thread->counters[PMC2].type = PMC;
     thread->counters[PMC3].configRegister = MSR_PERFEVTSEL1;
     thread->counters[PMC3].counterRegister = MSR_PMC1;
+    thread->counters[PMC3].type = PMC;
     thread->counters[PMC4].configRegister = MSR_PERFEVTSEL2;
     thread->counters[PMC4].counterRegister = MSR_PMC2;
+    thread->counters[PMC4].type = PMC;
     thread->counters[PMC5].configRegister = MSR_PERFEVTSEL3;
     thread->counters[PMC5].counterRegister = MSR_PMC3;
+    thread->counters[PMC5].type = PMC;
+
+    /* Uncore PMC Counters: 8 48bit wide */
     thread->counters[PMC6].configRegister = MSR_UNCORE_PERFEVTSEL0;
     thread->counters[PMC6].counterRegister = MSR_UNCORE_PMC0;
+    thread->counters[PMC6].type = UNCORE;
     thread->counters[PMC7].configRegister = MSR_UNCORE_PERFEVTSEL1;
     thread->counters[PMC7].counterRegister = MSR_UNCORE_PMC1;
+    thread->counters[PMC7].type = UNCORE;
     thread->counters[PMC8].configRegister = MSR_UNCORE_PERFEVTSEL2;
     thread->counters[PMC8].counterRegister = MSR_UNCORE_PMC2;
+    thread->counters[PMC8].type = UNCORE;
     thread->counters[PMC9].configRegister = MSR_UNCORE_PERFEVTSEL3;
     thread->counters[PMC9].counterRegister = MSR_UNCORE_PMC3;
+    thread->counters[PMC9].type = UNCORE;
     thread->counters[PMC10].configRegister = MSR_UNCORE_PERFEVTSEL4;
     thread->counters[PMC10].counterRegister = MSR_UNCORE_PMC4;
+    thread->counters[PMC10].type = UNCORE;
     thread->counters[PMC11].configRegister = MSR_UNCORE_PERFEVTSEL5;
     thread->counters[PMC11].counterRegister = MSR_UNCORE_PMC5;
+    thread->counters[PMC11].type = UNCORE;
     thread->counters[PMC12].configRegister = MSR_UNCORE_PERFEVTSEL6;
     thread->counters[PMC12].counterRegister = MSR_UNCORE_PMC6;
+    thread->counters[PMC12].type = UNCORE;
     thread->counters[PMC13].configRegister = MSR_UNCORE_PERFEVTSEL7;
     thread->counters[PMC13].counterRegister = MSR_UNCORE_PMC7;
+    thread->counters[PMC13].type = UNCORE;
 
     msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
@@ -191,8 +216,7 @@ perfmon_setupCounterThread_nehalem(int thread_id,
     uint64_t reg = threadData[thread_id].counters[index].configRegister;
     int cpu_id = threadData[thread_id].processorId;
 
-    /* only the PMC counters need to be set up on Core 2 */
-    if (threadData[thread_id].counters[index].type == PMC)
+    if ((threadData[thread_id].counters[index].type == PMC) || threadData[thread_id].counters[index].type == UNCORE)
     {
 
         threadData[thread_id].counters[index].init = TRUE;
@@ -212,12 +236,10 @@ perfmon_setupCounterThread_nehalem(int thread_id,
                     LLU_CAST flags);
         }
     }
-    else if (threadData[thread_id].counters[index].type == UNCORE)
+    else if (threadData[thread_id].counters[index].type == FIXED)
     {
-
-
+        threadData[thread_id].counters[index].init = TRUE;
     }
-
 }
 
 
@@ -225,16 +247,17 @@ void
 perfmon_startCountersThread_nehalem(int thread_id)
 {
     int i;
-    uint64_t flags, uflags;
+    uint64_t flags = 0x0ULL;
+    uint64_t uflags = 0x0ULL;
     int cpu_id = threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
+//    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
+//    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
     msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
 
     /* Enable fixed counters */
-    flags  = 0x300000000ULL;
+//    flags  = 0x300000000ULL;
     uflags = 0x100000000ULL;
 
     for (i=0;i<NUM_PMC;i++) {
@@ -248,7 +271,7 @@ perfmon_startCountersThread_nehalem(int thread_id)
             }
             else if (threadData[thread_id].counters[i].type == FIXED)
             {
-                flags |= (1<<(i+32));  /* enable fixed counter */
+                flags |= (1ULL<<(i+32));  /* enable fixed counter */
             }
             else if (threadData[thread_id].counters[i].type == UNCORE)
             {
@@ -299,19 +322,150 @@ perfmon_stopCountersThread_nehalem(int thread_id)
 
 }
 
-void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, float time)
+void
+perfmon_printDerivedMetricsNehalem(PerfmonGroup group)
 {
-#if 0
-    int cpu_id = thread->cpu_id;
+    int i;
+    int j;
+    int threadId;
+    double time = 0.0;
+    double cpi = 0.0;
+    double inverseClock = 1.0 /(double) timer_getCpuClock();
+    PerfmonResultTable tableData;
+    int numRows;
+    int numColumns = perfmon_numThreads;
+    bstrList* fc;
+    bstring label;
 
-    if (thread->instructionsRetired < 1.0E-06)
+    switch ( group ) 
     {
-        printf ("[%d] Cycles per uop/s: %f \n",cpu_id,0.0);
+        case FLOPS_DP:
+
+            numRows = 5;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,CPI);
+            bstrListAdd(3,DP MFlops/s (DP assumed));
+            bstrListAdd(4,Packed MUOPS/s);
+            bstrListAdd(5,Scalar MUOPS/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = (double) threadData[threadId].counters[PMC1].counterData * inverseClock;
+                cpi = (double) threadData[threadId].counters[PMC1].counterData/
+                    (double) threadData[threadId].counters[PMC0].counterData;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+                tableData.rows[2].value[threadId] =
+                    (double) 1.0E-06*(threadData[threadId].counters[PMC2].counterData*2+
+                            threadData[threadId].counters[PMC3].counterData) / time;
+                tableData.rows[3].value[threadId] =
+                    (double) 1.0E-06*(threadData[threadId].counters[PMC2].counterData) / time;
+                tableData.rows[4].value[threadId] =
+                    (double) 1.0E-06*(threadData[threadId].counters[PMC3].counterData) / time;
+            }
+            break;
+
+        case FLOPS_SP:
+
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime);
+            bstrListAdd(2,CPI);
+            bstrListAdd(3,SP/MFlops/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = (double) threadData[threadId].counters[PMC1].counterData * inverseClock;
+                cpi = (double) threadData[threadId].counters[PMC1].counterData/
+                    (double) threadData[threadId].counters[PMC0].counterData;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+                tableData.rows[2].value[threadId] =
+                    (double) 1.0E-06*(threadData[threadId].counters[PMC2].counterData*4+
+                            threadData[threadId].counters[PMC3].counterData) / time;
+            }
+            break;
+
+        case L2:
+
+            numRows = 5;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime);
+            bstrListAdd(2,CPI);
+            bstrListAdd(3,L2_Load_MBytes/s);
+            bstrListAdd(4,L2_Evict_MBytes/s);
+            bstrListAdd(5,L2_bandwidth_MBytes/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = (double) threadData[threadId].counters[PMC1].counterData * inverseClock;
+                cpi = (double) threadData[threadId].counters[PMC1].counterData/
+                    (double) threadData[threadId].counters[PMC0].counterData;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+                tableData.rows[2].value[threadId] =
+                    1.0E-06*((double) threadData[threadId].counters[PMC2].counterData*64)/time;
+                tableData.rows[2].value[threadId] =
+                1.0E-06*((double) threadData[threadId].counters[PMC3].counterData*64)/time;
+                tableData.rows[4].value[threadId] =
+                1.0E-06*((double) (threadData[threadId].counters[PMC2].counterData+
+                            threadData[threadId].counters[PMC3].counterData)*64)/time;
+            }
+            break;
+
+        case MEM:
+
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,CPI);
+            bstrListAdd(3,Memory bandwidth [MBytes/s]);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = (double) threadData[threadId].counters[PMC1].counterData * inverseClock;
+                cpi = (double) threadData[threadId].counters[PMC1].counterData/
+                    (double) threadData[threadId].counters[PMC0].counterData;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+                tableData.rows[2].value[threadId] =
+                    (double) 1.0E-06*(threadData[threadId].counters[PMC6].counterData+
+                            threadData[threadId].counters[PMC7].counterData) * 64 / time;
+            }
+
+            //    printf ("[%d] Memory bandwidth MBytes/s: %f \n",
+            //    cpu_id,1.0E-06*(float)(thread->pc[0]*64)/time);
+            break;
+
+        case DATA:
+         //   printf ("[%d] Store to Load ratio: 1:%f \n",cpu_id,(float)thread->pc[0]/(float)thread->pc[1]);
+            break;
+
+        case BRANCH:
+          //  printf ("[%d] Mispredicted Branches: %f \n",cpu_id,(float) (thread->pc[1]/(float)thread->pc[0]) * 100);
+            break;
+
+        case CPI:
+           // printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->pc[0]);
+            break;
+
+        case FRONTEND:
+           // printf ("[%d] Instruction starvation: %f \n",cpu_id,(float)thread->cycles/(float)thread->pc[0]);
+            break;
+
+        default:
+            break;
     }
-    else
-    {
-        printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->instructionsRetired);
-    }
+
+    printResultTable(&tableData);
+}
+
+#if 0
 
     switch ( group) {
         case FLOPS_DP:
@@ -437,9 +591,9 @@ void perfmon_printResults_nehalem(PerfmonThread *thread, PerfmonGroup group, flo
         default:
             break;
     }
-#endif
 
 }
+#endif
 
 
 
