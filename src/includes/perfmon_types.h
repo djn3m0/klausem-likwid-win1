@@ -85,6 +85,7 @@ typedef struct {
     char* key;
     PerfmonGroup index;
     char* info;
+    char* config;
 } PerfmonGroupMap;
 
 typedef struct {
