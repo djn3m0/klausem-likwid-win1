@@ -56,11 +56,10 @@ printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-V\t verbose output\n"); \
 printf("-i\t print cpu info\n"); \
-printf("-r\t Generate performance report\n"); \
 printf("-m\t use markers inside code \n"); \
 printf("-g\t performance group  or event set string\n"); \
 printf("-a\t list available performance groups\n"); \
-printf("-c\t comma separated processor ids to measure (required)\n\n")
+printf("-c\t processor ids to measure (required), e.g. 1,2-4,8\n\n")
 
 
 #define VERSION_MSG \
@@ -125,6 +124,8 @@ int main (int argc, char** argv)
                 perfmon_verbose = 1;
                 break;
             case 'a':
+                numThreads=1; /*to get over the error message */
+                threads[0]=0;
                 optPrintGroups = 1;
                 break;
             case 'm':
@@ -135,6 +136,8 @@ int main (int argc, char** argv)
                 optReport = 1;
                 break;
             case 'i':
+                numThreads=1; /*to get over the error message */
+                threads[0]=0;
                 optInfo = 1;
                 perfmon_verbose = 1;
                 break;
@@ -158,7 +161,7 @@ int main (int argc, char** argv)
 
     if (!numThreads)
     {
-        fprintf (stderr, "ERROR: Required -c. You must specify at least one processor with.\n");
+        fprintf (stderr, "ERROR: Required -c. You must specify at least one processor.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -168,7 +171,7 @@ int main (int argc, char** argv)
         {
             if(i != j && threads[i] == threads[j])
             {
-                fprintf (stderr, "ERROR: Cpu list is not unique.\n");
+                fprintf (stderr, "ERROR: Processor list is not unique.\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -176,7 +179,7 @@ int main (int argc, char** argv)
 
     msr_check();
     timer_init();
-//    cpuid_init();
+    perfmon_init(numThreads, threads);
 
     if( cpuid_info.family == P6_FAMILY ) 
         cpuFeatures_init(0);
@@ -215,7 +218,6 @@ int main (int argc, char** argv)
     {
         exit (EXIT_SUCCESS);
     }
-    perfmon_init(numThreads, threads);
 
     if (optPrintGroups)
     {

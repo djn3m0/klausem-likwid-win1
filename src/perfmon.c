@@ -199,6 +199,7 @@ static int lineCb (void* parm, int ofs, int len)
     bstring line;
 
     if (!len) return 1;
+    strList = bstrListCreate();
 
     line = blk2bstr (st->src->data + ofs, len);
 
@@ -214,7 +215,6 @@ static int lineCb (void* parm, int ofs, int len)
         }
         ret = sscanf (bdata(strList->entry[0]), "%d", &id); CHECKERROR;
         perfmon_results[id].tag = bstrcpy(strList->entry[1]);
-        bstrListDestroy(strList);
     }
     else
     {
@@ -240,9 +240,9 @@ static int lineCb (void* parm, int ofs, int len)
             ret = sscanf (bdata(strList->entry[5+i]), "%lf", &perfmon_results[tagId].counters[threadId][i]); CHECKERROR;
         }
 
-        bstrListDestroy(strList);
     }
 
+    bstrListDestroy(strList);
     st->line++;
     bdestroy(line);
     return 1;
@@ -312,6 +312,7 @@ printResultTable(PerfmonResultTable* tableData)
             tableData->numColumns+1,
             tableData->header);
 
+    labelStrings = bstrListCreate();
     bstrListAlloc(labelStrings, tableData->numColumns+1);
 
     for (i=0; i<tableData->numRows; i++)
@@ -356,19 +357,29 @@ getGroupId(bstring groupStr,PerfmonGroup* group)
 static int
 checkCounter(bstring counterName, char* limit)
 {
+    int i;
+    struct bstrList* tokens;
     int value = FALSE;
     bstring limitString = bfromcstr(limit);
 
-    if(bstrncmp(counterName, limitString, blength(limitString)))
+    tokens = bstrListCreate();
+    tokens = bsplit(limitString,'|');
+
+    for(i=0; i<tokens->qty; i++)
     {
-        value = FALSE;
-    }
-    else
-    {
-        value = TRUE;
+        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])))
+        {
+            value = FALSE;
+        }
+        else
+        {
+            value = TRUE;
+            break;
+        }
     }
 
     bdestroy(limitString);
+    bstrListDestroy(tokens);
     return value;
 }
 
@@ -550,6 +561,7 @@ perfmon_setupEventSet(bstring eventString)
     }
     else
     {
+        printf("Measuring group %s\n", group_map[groupId].key);
         /* eventString is a group */
         eventString = bfromcstr(group_map[groupId].config);
         bstr_to_eventset(&eventSetConfig, eventString);
