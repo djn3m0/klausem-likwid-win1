@@ -275,16 +275,18 @@ intelCpuidFunc_4(CacheLevel** cachePool)
     return maxNumLevels;
 }
 
+ /* :TODO:04/19/2010 09:06:36 AM:jt: Add cache parameter from old cpuid leaf 0x2 */
+#if 0
 static int
 intelCpuidFunc_2(CacheLevel** cachePool)
 {
     eax = 0x02;
     CPUID;
 
-
     return 0;
 
 }
+#endif
 
 
 
@@ -825,7 +827,7 @@ cpuid_initCacheTopology()
 			}
 			else
 			{
-				intelCpuidFunc_2(&cachePool);
+//				intelCpuidFunc_2(&cachePool);
 			}
 
             break;

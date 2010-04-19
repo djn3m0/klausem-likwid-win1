@@ -1,4 +1,4 @@
-#define NUM_ARCH_EVENTS_NEHALEM 478
+#define NUM_ARCH_EVENTS_NEHALEM 480
 
 static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 {"INSTR_RETIRED_ANY",

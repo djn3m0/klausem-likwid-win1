@@ -67,9 +67,7 @@ static PerfmonGroup groupSet = NOGROUP;
 static PerfmonEvent* eventHash;
 static PerfmonCounterMap* counter_map;
 static PerfmonGroupMap* group_map;
-static char** group_config;
 
-static PerfmonThread summary;
 static CyclesData timeData;
 static PerfmonEventSet perfmon_set;
 static int perfmon_numGroups;
@@ -125,8 +123,6 @@ void (*perfmon_startCountersThread) (int thread_id);
 void (*perfmon_stopCountersThread) (int thread_id);
 void (*perfmon_setupCounterThread) (int thread_id,
         uint32_t umask, uint32_t event, PerfmonCounterIndex index);
-void (*perfmon_setupReport) (MultiplexCollections* collections);
-void (*perfmon_printReport) (MultiplexCollections* collections);
 
 /* #####   FUNCTION POINTERS  -  LOCAL TO THIS SOURCE FILE ################ */
 
@@ -309,7 +305,7 @@ printResultTable(PerfmonResultTable* tableData)
 {
     int i,j;
     TableContainer* table;
-    bstrList* labelStrings;
+    bstrList* labelStrings = NULL;
     bstring label;
 
     table = asciiTable_allocate(tableData->numRows,
@@ -334,6 +330,8 @@ printResultTable(PerfmonResultTable* tableData)
     }
 
     asciiTable_print(table);
+    bdestroy(label);
+    bstrListDestroy(labelStrings);
 //    asciiTable_free(table);
 }
 
@@ -358,9 +356,20 @@ getGroupId(bstring groupStr,PerfmonGroup* group)
 static int
 checkCounter(bstring counterName, char* limit)
 {
+    int value = FALSE;
+    bstring limitString = bfromcstr(limit);
 
+    if(bstrncmp(counterName, limitString, blength(limitString)))
+    {
+        value = FALSE;
+    }
+    else
+    {
+        value = TRUE;
+    }
 
-    return TRUE;
+    bdestroy(limitString);
+    return value;
 }
 
 static void 
@@ -516,14 +525,14 @@ perfmon_printCounterResults()
 void
 perfmon_setupEventSetC(char* eventCString)
 {
-    bstring eventString = bfromcstralloc(400,eventCString);
+    bstring eventString = bfromcstr(eventCString);
     StrUtilEventSet eventSetConfig;
 
     groupSet = NOGROUP;
-  //  bassigncstr(eventString, eventCString);
     bstr_to_eventset(&eventSetConfig, eventString);
     perfmon_initEventSet(&eventSetConfig, &perfmon_set);
     perfmon_setupCounters();
+    bdestroy(eventString);
 }
 
 void
@@ -542,7 +551,7 @@ perfmon_setupEventSet(bstring eventString)
     else
     {
         /* eventString is a group */
-        bassigncstr(eventString, group_config[groupId]);
+        eventString = bfromcstr(group_map[groupId].config);
         bstr_to_eventset(&eventSetConfig, eventString);
     }
 
@@ -622,7 +631,6 @@ void
 perfmon_init(int numThreads_local, int threads[])
 {
     int i;
-
     perfmon_numThreads = numThreads_local;
     threadData = (PerfmonThread*) malloc(perfmon_numThreads * sizeof(PerfmonThread));
     cpuid_init();
@@ -666,7 +674,6 @@ perfmon_init(int numThreads_local, int threads[])
                     perfmon_numArchEvents = perfmon_numArchEventsCore2;
 
                     group_map = core2_group_map;
-                    group_config = core2_group_config;
                     perfmon_numGroups = perfmon_numGroupsCore2;
 
                     counter_map = core2_counter_map;
@@ -687,7 +694,6 @@ perfmon_init(int numThreads_local, int threads[])
                     perfmon_numArchEvents = perfmon_numArchEventsNehalem;
 
                     group_map = nehalem_group_map;
-                    group_config = nehalem_group_config;
                     perfmon_numGroups = perfmon_numGroupsNehalem;
 
                     counter_map = nehalem_counter_map;
@@ -743,7 +749,7 @@ perfmon_init(int numThreads_local, int threads[])
     }
 
 
-    for (i=0;i<perfmon_numThreads;i++) 
+    for (i=0; i<perfmon_numThreads; i++) 
     {
         initThread(i,threads[i]);
     }
