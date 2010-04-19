@@ -38,7 +38,7 @@
 #include <perfmon_core2_events.h>
 
 #define NUM_COUNTERS_CORE2 4
-#define NUM_GROUPS_CORE2 9
+#define NUM_GROUPS_CORE2 7
 #define NUM_SETS_CORE2 8
 
 static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
@@ -365,7 +365,47 @@ perfmon_printDerivedMetricsCore2(PerfmonGroup group)
             break;
 
         case TLB:
-            /* there is no derived metric here */
+            numRows = 2;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,CPI);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"FIXC1") * inverseClock;
+                cpi  =  perfmon_getResult(threadId,"FIXC1")/
+                    perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+            }
+
+            break;
+
+        case NOGROUP:
+            numRows = 2;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,CPI);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"FIXC1") * inverseClock;
+                if (perfmon_getResult(threadId,"FIXC0") < 1.0E-12)
+                {
+                    cpi  =  0.0;
+                }
+                else
+                {
+                    cpi  =  perfmon_getResult(threadId,"FIXC1")/
+                        perfmon_getResult(threadId,"FIXC0");
+                }
+
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+            }
+
             break;
 
         default:
