@@ -46,10 +46,10 @@ static int perfmon_numGroupsCore2 = NUM_GROUPS_CORE2;
 static int perfmon_numArchEventsCore2 = NUM_ARCH_EVENTS_CORE2;
 
 static PerfmonCounterMap core2_counter_map[NUM_COUNTERS_CORE2] = {
-    {"PMC0",PMC2},
-    {"PMC1",PMC3},
     {"FIXC0",PMC0},
-    {"FIXC1",PMC1}
+    {"FIXC1",PMC1},
+    {"PMC0",PMC2},
+    {"PMC1",PMC3}
 };
 
 static PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
@@ -126,13 +126,13 @@ perfmon_setupCounterThread_core2(int thread_id,
         PerfmonCounterIndex index)
 {
     uint64_t flags;
-    uint64_t reg = threadData[thread_id].counters[index].configRegister;
-    int cpu_id = threadData[thread_id].processorId;
+    uint64_t reg = perfmon_threadData[thread_id].counters[index].configRegister;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
-    if (threadData[thread_id].counters[index].type == PMC)
+    if (perfmon_threadData[thread_id].counters[index].type == PMC)
     {
 
-        threadData[thread_id].counters[index].init = TRUE;
+        perfmon_threadData[thread_id].counters[index].init = TRUE;
         flags = msr_read(cpu_id,reg);
         flags &= ~(0xFFFFU); 
 
@@ -149,9 +149,9 @@ perfmon_setupCounterThread_core2(int thread_id,
                     LLU_CAST flags);
         }
     }
-    else if (threadData[thread_id].counters[index].type == FIXED)
+    else if (perfmon_threadData[thread_id].counters[index].type == FIXED)
     {
-        threadData[thread_id].counters[index].init = TRUE;
+        perfmon_threadData[thread_id].counters[index].init = TRUE;
     }
 }
 
@@ -160,19 +160,19 @@ perfmon_startCountersThread_core2(int thread_id)
 {
     int i;
     uint64_t flags;
-    int cpu_id = threadData[thread_id].processorId;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
 
     for (i=0;i<NUM_COUNTERS_CORE2;i++) {
-        if (threadData[thread_id].counters[i].init == TRUE) {
-            msr_write(cpu_id, threadData[thread_id].counters[i].counterRegister , 0x0ULL);
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) {
+            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
 
-            if (threadData[thread_id].counters[i].type == PMC)
+            if (perfmon_threadData[thread_id].counters[i].type == PMC)
             {
                 flags |= (1<<(i-2));  /* enable counter */
             }
-            else if (threadData[thread_id].counters[i].type == FIXED)
+            else if (perfmon_threadData[thread_id].counters[i].type == FIXED)
             {
                 flags |= (1ULL<<(i+32));  /* enable fixed counter */
             }
@@ -194,7 +194,7 @@ perfmon_stopCountersThread_core2(int thread_id)
 {
     uint64_t flags;
     int i;
-    int cpu_id = threadData[thread_id].processorId;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     /* stop counters */
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
@@ -202,10 +202,10 @@ perfmon_stopCountersThread_core2(int thread_id)
     /* read out counter results */
     for (i=0;i<NUM_COUNTERS_CORE2;i++) 
     {
-        if (threadData[thread_id].counters[i].init == TRUE) 
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            threadData[thread_id].counters[i].counterData =
-                msr_read(cpu_id, threadData[thread_id].counters[i].counterRegister);
+            perfmon_threadData[thread_id].counters[i].counterData =
+                msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister);
         }
     }
 

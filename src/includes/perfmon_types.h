@@ -112,7 +112,6 @@ typedef struct {
     PerfmonEvent event;
     PerfmonCounterIndex index;
     double* result;
-    double* time;
 } PerfmonEventSetEntry;
 
 typedef struct {

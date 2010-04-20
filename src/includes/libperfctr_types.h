@@ -5,8 +5,6 @@
 
 typedef struct {
     bstring  tag;
-    double*  cycles;
-    double*  instructions;
     double*  time;
     double** counters;
 } LikwidResults;

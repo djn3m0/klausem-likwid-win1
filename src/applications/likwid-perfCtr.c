@@ -269,6 +269,8 @@ int main (int argc, char** argv)
 		}
 	}
 
+    perfmon_finalize();
+
     return EXIT_SUCCESS;
 }
 

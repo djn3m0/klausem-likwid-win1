@@ -62,7 +62,7 @@ asciiTable_allocate(int numRows,int numColumns, bstrList* headerLabels)
         exit(EXIT_FAILURE);
     }
 
-    container->header = bstrListCreate ();
+    container->header = bstrListCreate();
     bstrListAlloc (container->header, numColumns);
 
     for(i=0; i<numColumns; i++)
@@ -74,11 +74,32 @@ asciiTable_allocate(int numRows,int numColumns, bstrList* headerLabels)
 
     for(i=0; i<numRows; i++)
     {
-        container->rows[i] = bstrListCreate ();
+        container->rows[i] = bstrListCreate();
         bstrListAlloc (container->rows[i], numColumns);
     }
 
     return container;
+}
+
+void 
+asciiTable_free(TableContainer* container)
+{
+    int i;
+
+    if(container == NULL)
+    {
+        fprintf(stderr, "asciiTable_free: Cannot free NULL reference!\n");
+        return;
+    }
+
+    bstrListDestroy(container->header);
+
+    for(i=0; i<container->numRows; i++)
+    {
+        bstrListDestroy(container->rows[i]);
+    }
+
+    free(container->rows);
 }
 
 void

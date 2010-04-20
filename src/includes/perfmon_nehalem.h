@@ -48,6 +48,8 @@ static int perfmon_numGroupsNehalem = NUM_GROUPS_NEHALEM;
 static int perfmon_numArchEventsNehalem = NUM_ARCH_EVENTS_NEHALEM;
 
 static PerfmonCounterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
+    {"FIXC0",PMC0},
+    {"FIXC1",PMC1},
     {"PMC0",PMC2},
     {"PMC1",PMC3},
     {"PMC2",PMC4},
@@ -59,9 +61,7 @@ static PerfmonCounterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
     {"UPMC4",PMC10},
     {"UPMC5",PMC11},
     {"UPMC6",PMC12},
-    {"UPMC7",PMC13},
-    {"FIXC0",PMC0},
-    {"FIXC1",PMC1}
+    {"UPMC7",PMC13}
 };
 
 static PerfmonGroupMap nehalem_group_map[NUM_GROUPS_NEHALEM] = {
@@ -201,13 +201,13 @@ perfmon_setupCounterThread_nehalem(int thread_id,
         PerfmonCounterIndex index)
 {
     uint64_t flags;
-    uint64_t reg = threadData[thread_id].counters[index].configRegister;
-    int cpu_id = threadData[thread_id].processorId;
+    uint64_t reg = perfmon_threadData[thread_id].counters[index].configRegister;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
-    if ((threadData[thread_id].counters[index].type == PMC) || threadData[thread_id].counters[index].type == UNCORE)
+    if ((perfmon_threadData[thread_id].counters[index].type == PMC) || perfmon_threadData[thread_id].counters[index].type == UNCORE)
     {
 
-        threadData[thread_id].counters[index].init = TRUE;
+        perfmon_threadData[thread_id].counters[index].init = TRUE;
         flags = msr_read(cpu_id,reg);
         flags &= ~(0xFFFFU); 
 
@@ -224,9 +224,9 @@ perfmon_setupCounterThread_nehalem(int thread_id,
                     LLU_CAST flags);
         }
     }
-    else if (threadData[thread_id].counters[index].type == FIXED)
+    else if (perfmon_threadData[thread_id].counters[index].type == FIXED)
     {
-        threadData[thread_id].counters[index].init = TRUE;
+        perfmon_threadData[thread_id].counters[index].init = TRUE;
     }
 }
 
@@ -237,7 +237,7 @@ perfmon_startCountersThread_nehalem(int thread_id)
     int i;
     uint64_t flags = 0x0ULL;
     uint64_t uflags = 0x0ULL;
-    int cpu_id = threadData[thread_id].processorId;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
@@ -246,19 +246,19 @@ perfmon_startCountersThread_nehalem(int thread_id)
     uflags = 0x100000000ULL;
 
     for (i=0;i<NUM_PMC;i++) {
-        if (threadData[thread_id].counters[i].init == TRUE) {
-            msr_write(cpu_id, threadData[thread_id].counters[i].counterRegister , 0x0ULL);
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) {
+            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
 
 
-            if (threadData[thread_id].counters[i].type == PMC)
+            if (perfmon_threadData[thread_id].counters[i].type == PMC)
             {
                 flags |= (1<<(i-2));  /* enable counter */
             }
-            else if (threadData[thread_id].counters[i].type == FIXED)
+            else if (perfmon_threadData[thread_id].counters[i].type == FIXED)
             {
                 flags |= (1ULL<<(i+32));  /* enable fixed counter */
             }
-            else if (threadData[thread_id].counters[i].type == UNCORE)
+            else if (perfmon_threadData[thread_id].counters[i].type == UNCORE)
             {
                 uflags |= (1<<(i-6));  /* enable uncore counter */
             }
@@ -282,7 +282,7 @@ perfmon_stopCountersThread_nehalem(int thread_id)
 {
     uint64_t flags;
     int i;
-    int cpu_id = threadData[thread_id].processorId;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
     if (cpuid_info.model == NEHALEM)
@@ -292,9 +292,9 @@ perfmon_stopCountersThread_nehalem(int thread_id)
 
     for (i=0; i<NUM_COUNTERS_NEHALEM; i++) 
     {
-        if (threadData[thread_id].counters[i].init == TRUE) 
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            threadData[thread_id].counters[i].counterData = msr_read(cpu_id, threadData[thread_id].counters[i].counterRegister);
+            perfmon_threadData[thread_id].counters[i].counterData = msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister);
         }
     }
 

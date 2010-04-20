@@ -58,8 +58,7 @@ int perfmon_numThreads;
 int perfmon_numRegions;
 
 int perfmon_verbose=0;
-PerfmonThread* threadData;
-LikwidResults* perfmon_results;
+PerfmonThread* perfmon_threadData;
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -177,11 +176,11 @@ initThread(int thread_id, int cpu_id)
 
     for (i=0; i<NUM_PMC; i++)
     {
-        threadData[thread_id].counters[i].init = FALSE;
+        perfmon_threadData[thread_id].counters[i].init = FALSE;
     }
 
-    threadData[thread_id].processorId = cpu_id;
-    initThreadArch(&threadData[thread_id]);
+    perfmon_threadData[thread_id].processorId = cpu_id;
+    initThreadArch(&perfmon_threadData[thread_id]);
 
 }
 
@@ -189,6 +188,7 @@ struct cbsScan{
 	/* Parse state */
 	bstring src;
 	int line;
+    LikwidResults* results;
 };
 
 static int lineCb (void* parm, int ofs, int len)
@@ -214,7 +214,7 @@ static int lineCb (void* parm, int ofs, int len)
             exit (EXIT_FAILURE);
         }
         ret = sscanf (bdata(strList->entry[0]), "%d", &id); CHECKERROR;
-        perfmon_results[id].tag = bstrcpy(strList->entry[1]);
+        st->results[id].tag = bstrcpy(strList->entry[1]);
     }
     else
     {
@@ -231,15 +231,12 @@ static int lineCb (void* parm, int ofs, int len)
 
         ret = sscanf (bdata(strList->entry[0]), "%d", &tagId); CHECKERROR;
         ret = sscanf (bdata(strList->entry[1]), "%d", &threadId); CHECKERROR;
-        ret = sscanf (bdata(strList->entry[2]), "%lf", &perfmon_results[tagId].time[threadId]); CHECKERROR;
-        ret = sscanf (bdata(strList->entry[3]), "%lf", &perfmon_results[tagId].cycles[threadId]); CHECKERROR;
-        ret = sscanf (bdata(strList->entry[4]), "%lf", &perfmon_results[tagId].instructions[threadId]); CHECKERROR;
+        ret = sscanf (bdata(strList->entry[2]), "%lf", &st->results[tagId].time[threadId]); CHECKERROR;
 
         for (int i=0;i<NUM_PMC; i++)
         {
-            ret = sscanf (bdata(strList->entry[5+i]), "%lf", &perfmon_results[tagId].counters[threadId][i]); CHECKERROR;
+            ret = sscanf (bdata(strList->entry[5+i]), "%lf", &st->results[tagId].counters[threadId][i]); CHECKERROR;
         }
-
     }
 
     bstrListDestroy(strList);
@@ -253,13 +250,14 @@ static int lineCb (void* parm, int ofs, int len)
  * and then fill the results into a PerfmonEventSet. Later this should be directly 
  * put into a perfmonEventSet from the beginning */
 static void
-readMarkerFile(char* filename)
+readMarkerFile(char* filename, LikwidResults** resultsRef)
 {
 	int numberOfThreads=0;
 	int ret;
 	int i,j,k;
     struct cbsScan sl;
 	FILE * fp;
+    LikwidResults* results = *resultsRef;
 
 	if (NULL != (fp = fopen (filename, "r"))) 
 	{
@@ -267,31 +265,33 @@ readMarkerFile(char* filename)
 
 		/* read header info */
 		ret = sscanf (bdata(src), "%d %d", &numberOfThreads, &perfmon_numRegions); CHECKERROR;
-		perfmon_results = (LikwidResults*) malloc(perfmon_numRegions * sizeof(LikwidResults));
+		results = (LikwidResults*) malloc(perfmon_numRegions * sizeof(LikwidResults));
+
+        if (numberOfThreads != perfmon_numThreads)
+        {
+            fprintf (stderr, "WARNING: Number of threads in marker file unequal to number of threads in likwid-perfCtr!\n" );
+        }
 
 		/* allocate  LikwidResults struct */
 		for (i=0;i<perfmon_numRegions; i++)
 		{
-			perfmon_results[i].time = (double*) malloc(numberOfThreads * sizeof(double));
-			perfmon_results[i].cycles = (double*) malloc(numberOfThreads * sizeof(double));
-			perfmon_results[i].instructions = (double*) malloc(numberOfThreads * sizeof(double));
-			perfmon_results[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
+			results[i].time = (double*) malloc(numberOfThreads * sizeof(double));
+			results[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
 
 			for (j=0;j<numberOfThreads; j++)
 			{
-				perfmon_results[i].time[j] = 0.0;
-				perfmon_results[i].cycles[j] = 0.0;
-				perfmon_results[i].instructions[j] = 0.0;
-				perfmon_results[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
+				results[i].time[j] = 0.0;
+				results[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
 				for (k=0;k<NUM_PMC; k++)
 				{
-					perfmon_results[i].counters[j][k] = 0.0;
+					results[i].counters[j][k] = 0.0;
 				}
 			}
 		}
 
         sl.src = src;
         sl.line = 0;
+        sl.results = results;
         bsplitcb (src, (char) '\n', bstrchr(src,10)+1, lineCb, &sl);
 
 		fclose (fp);
@@ -333,7 +333,7 @@ printResultTable(PerfmonResultTable* tableData)
     asciiTable_print(table);
     bdestroy(label);
     bstrListDestroy(labelStrings);
-//    asciiTable_free(table);
+    asciiTable_free(table);
 }
 
 
@@ -383,6 +383,21 @@ checkCounter(bstring counterName, char* limit)
     return value;
 }
 
+static void
+freeResultTable(PerfmonResultTable* tableData)
+{
+    int i;
+
+    bstrListDestroy(tableData->header);
+
+    for (i=0; i<tableData->numRows; i++)
+    {
+        free(tableData->rows[i].value);
+    }
+
+    free(tableData->rows);
+}
+
 static void 
 initResultTable(PerfmonResultTable* tableData,
         bstrList* firstColumn,
@@ -399,7 +414,7 @@ initResultTable(PerfmonResultTable* tableData,
 
     for (i=0; i<perfmon_numThreads;i++)
     {
-        label = bformat("core %d",threadData[i].processorId);
+        label = bformat("core %d",perfmon_threadData[i].processorId);
         header->entry[1+i] = bstrcpy(label); header->qty++;
     }
 
@@ -430,7 +445,7 @@ perfmon_getResult(int threadId, char* counterString)
 
    if (getIndex(counter,&index))
    {
-       return threadData[threadId].counters[index].counterData;
+       return perfmon_threadData[threadId].counters[index].counterData;
    }
 
    fprintf (stderr, "perfmon_getResult: Failed to get counter Index!\n" );
@@ -485,13 +500,13 @@ perfmon_printMarkerResults()
     int i;
     int j;
     int region;
+    LikwidResults* results;
     PerfmonResultTable tableData;
     int numRows = perfmon_set.numberOfEvents;
     int numColumns = perfmon_numThreads;
     INIT_EVENTS;
 
-    readMarkerFile("/tmp/likwid_results.txt");
-
+    readMarkerFile("/tmp/likwid_results.txt", &results);
     initResultTable(&tableData, fc, numRows, numColumns);
 
     for (region=0; region<perfmon_numRegions; region++)
@@ -501,11 +516,24 @@ perfmon_printMarkerResults()
             for (j=0; j<numColumns; j++)
             {
                 tableData.rows[i].value[j] =
-                    perfmon_results[region].counters[j][perfmon_set.events[i].index];
+                    results[region].counters[j][perfmon_set.events[i].index];
             }
         }
         printResultTable(&tableData);
     }
+
+    for (i=0;i<perfmon_numRegions; i++)
+    {
+        for (j=0;j<perfmon_numThreads; j++)
+        {
+            free(results[i].counters[j]);
+        }
+
+        free(results[i].counters);
+        free(results[i].time);
+    }
+
+    freeResultTable(&tableData);
 }
 
 void 
@@ -525,11 +553,12 @@ perfmon_printCounterResults()
         for (j=0; j<numColumns; j++)
         {
             tableData.rows[i].value[j] =
-                (double) threadData[j].counters[perfmon_set.events[i].index].counterData;
+                (double) perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
         }
     }
     printResultTable(&tableData);
     printDerivedMetrics(groupSet);
+    freeResultTable(&tableData);
 }
 
 
@@ -644,7 +673,7 @@ perfmon_init(int numThreads_local, int threads[])
 {
     int i;
     perfmon_numThreads = numThreads_local;
-    threadData = (PerfmonThread*) malloc(perfmon_numThreads * sizeof(PerfmonThread));
+    perfmon_threadData = (PerfmonThread*) malloc(perfmon_numThreads * sizeof(PerfmonThread));
     cpuid_init();
 
     switch ( cpuid_info.family ) 
@@ -767,3 +796,8 @@ perfmon_init(int numThreads_local, int threads[])
     }
 }
 
+void
+perfmon_finalize()
+{
+    free(perfmon_threadData);
+}
