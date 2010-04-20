@@ -63,22 +63,18 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
 	likwid_numberOfThreads = numberOfThreads;
 	likwid_numberOfRegions = numberOfRegions;
 
+	// TODO: Pad data structures to prevent false shared cache lines between threads
     time = (CyclesData*) malloc(numberOfThreads * sizeof(CyclesData));
     results = (LikwidResults*) malloc(numberOfRegions * sizeof(LikwidResults));
 
-	// TODO: Pad data structures to prevent false shared cache lines
     for (i=0;i<numberOfRegions; i++)
     {
-        results[i].cycles = (double*) malloc(numberOfThreads * sizeof(double));
-        results[i].instructions = (double*) malloc(numberOfThreads * sizeof(double));
         results[i].time = (double*) malloc(numberOfThreads * sizeof(double));
         results[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
 
         for (j=0;j<numberOfThreads; j++)
         {
             results[i].time[j] = 0.0;
-            results[i].cycles[j] = 0.0;
-            results[i].instructions[j] = 0.0;
             results[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
             for (k=0;k<NUM_PMC; k++)
             {
@@ -99,7 +95,7 @@ void likwid_markerClose()
 
     for (i=0;i<likwid_numberOfRegions; i++)
     {
-		fprintf(file,"%d:%s\n",i,results[i].tag->data);
+		fprintf(file,"%d:%s\n",i,bdata(results[i].tag));
     }
 
     for (i=0;i<likwid_numberOfRegions; i++)
@@ -109,8 +105,6 @@ void likwid_markerClose()
             fprintf(file,"%d ",i);
             fprintf(file,"%d ",j);
             fprintf(file,"%e ",results[i].time[j]);
-            fprintf(file,"%e ",results[i].cycles[j]);
-            fprintf(file,"%e ",results[i].instructions[j]);
 
             for (k=0;k<NUM_PMC; k++)
             {
@@ -131,9 +125,6 @@ likwid_markerStartRegion(int cpu_id)
     {
         case P6_FAMILY:
 
-            msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-            msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
-            msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
 
             switch ( cpuid_info.model ) 
             {
@@ -152,6 +143,9 @@ likwid_markerStartRegion(int cpu_id)
 
                 case CORE2_45:
 
+                    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+                    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
+                    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
                     msr_write(cpu_id, MSR_PMC0 , 0x0ULL);
                     msr_write(cpu_id, MSR_PMC1 , 0x0ULL);
                     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x300000003ULL);
@@ -162,10 +156,21 @@ likwid_markerStartRegion(int cpu_id)
 
                 case NEHALEM_LYNNFIELD:
 
+                    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+                    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
+                    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
                     msr_write(cpu_id, MSR_PMC0 , 0x0ULL);
                     msr_write(cpu_id, MSR_PMC1 , 0x0ULL);
                     msr_write(cpu_id, MSR_PMC2 , 0x0ULL);
                     msr_write(cpu_id, MSR_PMC3 , 0x0ULL);
+                    msr_write(cpu_id, MSR_UNCORE_PMC0, 0x0ULL);
+                    msr_write(cpu_id, MSR_UNCORE_PMC1, 0x0ULL);
+                    msr_write(cpu_id, MSR_UNCORE_PMC2, 0x0ULL);
+                    msr_write(cpu_id, MSR_UNCORE_PMC3, 0x0ULL);
+                    msr_write(cpu_id, MSR_UNCORE_PMC4, 0x0ULL);
+                    msr_write(cpu_id, MSR_UNCORE_PMC5, 0x0ULL);
+                    msr_write(cpu_id, MSR_UNCORE_PMC6, 0x0ULL);
+                    msr_write(cpu_id, MSR_UNCORE_PMC7, 0x0ULL);
                     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x30000000FULL);
                     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
                     break;
@@ -265,12 +270,12 @@ likwid_markerStopRegion(int cpu_id, int regionId)
     uint64_t flags;
 
     timer_stopCycles(&time[cpu_id]);
+    results[regionId].time[cpu_id] += timer_printCyclesTime(&time[cpu_id]);
 
     switch ( cpuid_info.family ) 
     {
         case P6_FAMILY:
 
-            msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
 
             switch ( cpuid_info.model ) 
             {
@@ -289,22 +294,24 @@ likwid_markerStopRegion(int cpu_id, int regionId)
 
                 case CORE2_45:
 
-                    results[regionId].cycles[cpu_id] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
-                    results[regionId].instructions[cpu_id] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
-                    results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_PMC0);
-                    results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_PMC1);
+                    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+                    results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+                    results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
+                    results[regionId].counters[cpu_id][2] += (double) msr_read(cpu_id, MSR_PMC0);
+                    results[regionId].counters[cpu_id][3] += (double) msr_read(cpu_id, MSR_PMC1);
                     break;
 
                 case NEHALEM_BLOOMFIELD:
 
                 case NEHALEM_LYNNFIELD:
-                    results[regionId].cycles[cpu_id] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
-                    results[regionId].instructions[cpu_id] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
-                    results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_PMC0);
-                    results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_PMC1);
-                    results[regionId].counters[cpu_id][2] += (double) msr_read(cpu_id, MSR_PMC2);
-                    results[regionId].counters[cpu_id][3] += (double) msr_read(cpu_id, MSR_PMC3);
 
+                    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+                    results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+                    results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
+                    results[regionId].counters[cpu_id][2] += (double) msr_read(cpu_id, MSR_PMC0);
+                    results[regionId].counters[cpu_id][3] += (double) msr_read(cpu_id, MSR_PMC1);
+                    results[regionId].counters[cpu_id][4] += (double) msr_read(cpu_id, MSR_PMC2);
+                    results[regionId].counters[cpu_id][5] += (double) msr_read(cpu_id, MSR_PMC3);
                     break;
 
                 default:
@@ -315,7 +322,10 @@ likwid_markerStopRegion(int cpu_id, int regionId)
             break;
 
 
+ /* :TODO:04/20/2010 11:16:57 AM:jt: Add K8 */
         case NETBURST_FAMILY:
+            fprintf(stderr, "Unsupported Processor!\n");
+            exit(EXIT_FAILURE);
             break;
 
         case K10_FAMILY:
@@ -344,8 +354,6 @@ likwid_markerStopRegion(int cpu_id, int regionId)
             exit(EXIT_FAILURE);
             break;
     }
-
-    results[regionId].time[cpu_id] += timer_printCyclesTime(&time[cpu_id]);
 }
 
 
