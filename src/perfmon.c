@@ -56,7 +56,6 @@
 int perfmon_numArchEvents;
 int perfmon_numThreads;
 int perfmon_numRegions;
-
 int perfmon_verbose=0;
 PerfmonThread* perfmon_threadData;
 
@@ -223,19 +222,19 @@ static int lineCb (void* parm, int ofs, int len)
 
         strList = bsplit(line,32);
 
-        if( strList->qty < (5+NUM_PMC))
+        if( strList->qty < (3+NUM_PMC))
         {
             fprintf (stderr, "bsplit 1: Failed to read marker file!\n" );
             exit (EXIT_FAILURE);
         }
 
-        ret = sscanf (bdata(strList->entry[0]), "%d", &tagId); CHECKERROR;
-        ret = sscanf (bdata(strList->entry[1]), "%d", &threadId); CHECKERROR;
-        ret = sscanf (bdata(strList->entry[2]), "%lf", &st->results[tagId].time[threadId]); CHECKERROR;
+        ret = sscanf(bdata(strList->entry[0]), "%d", &tagId); CHECKERROR;
+        ret = sscanf(bdata(strList->entry[1]), "%d", &threadId); CHECKERROR;
+        ret = sscanf(bdata(strList->entry[2]), "%lf", &st->results[tagId].time[threadId]); CHECKERROR;
 
         for (int i=0;i<NUM_PMC; i++)
         {
-            ret = sscanf (bdata(strList->entry[5+i]), "%lf", &st->results[tagId].counters[threadId][i]); CHECKERROR;
+            ret = sscanf(bdata(strList->entry[3+i]), "%lf", &st->results[tagId].counters[threadId][i]); CHECKERROR;
         }
     }
 
@@ -297,8 +296,8 @@ readMarkerFile(char* filename, LikwidResults** resultsRef)
 		fclose (fp);
 		bdestroy (src);
 	}
+    *resultsRef = results;
 }
-
 
 static void
 printResultTable(PerfmonResultTable* tableData)
@@ -323,7 +322,7 @@ printResultTable(PerfmonResultTable* tableData)
 
         for (j=0; j<(tableData->numColumns);j++)
         {
-            label = bformat("%e", tableData->rows[i].value[j]);
+            label = bformat("%g", tableData->rows[i].value[j]);
             labelStrings->entry[1+j] = bstrcpy(label);
             labelStrings->qty++;
         }
@@ -335,7 +334,6 @@ printResultTable(PerfmonResultTable* tableData)
     bstrListDestroy(labelStrings);
     asciiTable_free(table);
 }
-
 
 static int
 getGroupId(bstring groupStr,PerfmonGroup* group)
@@ -445,7 +443,7 @@ perfmon_getResult(int threadId, char* counterString)
 
    if (getIndex(counter,&index))
    {
-       return perfmon_threadData[threadId].counters[index].counterData;
+           return perfmon_threadData[threadId].counters[index].counterData;
    }
 
    fprintf (stderr, "perfmon_getResult: Failed to get counter Index!\n" );
@@ -511,6 +509,8 @@ perfmon_printMarkerResults()
 
     for (region=0; region<perfmon_numRegions; region++)
     {
+        printf("Region: %s \n",bdata(results[region].tag));
+
         for (i=0; i<numRows; i++)
         {
             for (j=0; j<numColumns; j++)
@@ -520,6 +520,17 @@ perfmon_printMarkerResults()
             }
         }
         printResultTable(&tableData);
+
+
+        for (j=0; j<numColumns; j++)
+        {
+            for (i=0; i<numRows; i++)
+            {
+                perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData =
+                    results[region].counters[j][perfmon_set.events[i].index];
+            }
+        }
+        printDerivedMetrics(groupSet);
     }
 
     for (i=0;i<perfmon_numRegions; i++)

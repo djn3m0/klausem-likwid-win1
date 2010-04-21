@@ -39,6 +39,7 @@
 #include <types.h>
 #include <bstrlib.h>
 #include <cpuid.h>
+#include <tree.h>
 #include <msr.h>
 #include <timer.h>
 #include <registers.h>
@@ -49,6 +50,10 @@ static CyclesData*  time;
 static int likwid_numberOfRegions = 0;
 static int likwid_numberOfThreads = 0;
 
+static volatile int nehalem_socket_lock[MAX_NUM_SOCKETS];
+static int nehalem_processor_lookup[MAX_NUM_THREADS];
+
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 void
 likwid_markerInit(int numberOfThreads, int numberOfRegions)
@@ -56,10 +61,45 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
     int i;
     int j;
     int k;
+    TreeNode* socketNode;
+    TreeNode* coreNode;
+    TreeNode* threadNode;
+    int socketId;
 
     cpuid_init();
     timer_init();
 
+    switch ( cpuid_info.model ) 
+    {
+        case NEHALEM_BLOOMFIELD:
+        case NEHALEM_LYNNFIELD:
+            for(int i=0; i<MAX_NUM_SOCKETS; i++) nehalem_socket_lock[i] = 0;
+            /* determine thread to socket mapping */
+            cpuid_initTopology();
+
+            socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+            while (socketNode != NULL)
+            {
+                socketId = socketNode->id;
+                coreNode = tree_getChildNode(socketNode);
+
+                while (coreNode != NULL)
+                {
+                    threadNode = tree_getChildNode(coreNode);
+
+                    while (threadNode != NULL)
+                    {
+                        nehalem_processor_lookup[threadNode->id] = socketId;
+                        threadNode = tree_getNextNode(threadNode);
+                    }
+                    coreNode = tree_getNextNode(coreNode);
+                }
+                socketNode = tree_getNextNode(socketNode);
+            }
+            break;
+    }
+
+              
 	likwid_numberOfThreads = numberOfThreads;
 	likwid_numberOfRegions = numberOfRegions;
 
@@ -84,6 +124,13 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
     }
 }
 
+/* File format 
+ * 1 numberOfThreads numberOfRegions
+ * 2 regionID:regionTag0
+ * 3 regionID:regionTag1
+ * 4 regionID threadID countersvalues(space sparated)
+ * 5 regionID threadID countersvalues
+ */
 void likwid_markerClose()
 {
 	int i,j,k;
@@ -93,20 +140,20 @@ void likwid_markerClose()
 
 	fprintf(file,"%d %d\n",likwid_numberOfThreads,likwid_numberOfRegions);
 
-    for (i=0;i<likwid_numberOfRegions; i++)
+    for (i=0; i<likwid_numberOfRegions; i++)
     {
 		fprintf(file,"%d:%s\n",i,bdata(results[i].tag));
     }
 
-    for (i=0;i<likwid_numberOfRegions; i++)
+    for (i=0; i<likwid_numberOfRegions; i++)
     {
-        for (j=0;j<likwid_numberOfThreads; j++)
+        for (j=0; j<likwid_numberOfThreads; j++)
         {
             fprintf(file,"%d ",i);
             fprintf(file,"%d ",j);
             fprintf(file,"%e ",results[i].time[j]);
 
-            for (k=0;k<NUM_PMC; k++)
+            for (k=0; k<NUM_PMC; k++)
             {
                 fprintf(file,"%e ",results[i].counters[j][k]);
             }
@@ -117,7 +164,7 @@ void likwid_markerClose()
 }
 
 void
-likwid_markerStartRegion(int cpu_id)
+likwid_markerStartRegion(int thread_id, int cpu_id)
 {
     uint64_t flags = 0x0ULL;
 
@@ -163,16 +210,23 @@ likwid_markerStartRegion(int cpu_id)
                     msr_write(cpu_id, MSR_PMC1 , 0x0ULL);
                     msr_write(cpu_id, MSR_PMC2 , 0x0ULL);
                     msr_write(cpu_id, MSR_PMC3 , 0x0ULL);
-                    msr_write(cpu_id, MSR_UNCORE_PMC0, 0x0ULL);
-                    msr_write(cpu_id, MSR_UNCORE_PMC1, 0x0ULL);
-                    msr_write(cpu_id, MSR_UNCORE_PMC2, 0x0ULL);
-                    msr_write(cpu_id, MSR_UNCORE_PMC3, 0x0ULL);
-                    msr_write(cpu_id, MSR_UNCORE_PMC4, 0x0ULL);
-                    msr_write(cpu_id, MSR_UNCORE_PMC5, 0x0ULL);
-                    msr_write(cpu_id, MSR_UNCORE_PMC6, 0x0ULL);
-                    msr_write(cpu_id, MSR_UNCORE_PMC7, 0x0ULL);
                     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x30000000FULL);
                     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
+
+                    if (!nehalem_socket_lock[nehalem_processor_lookup[cpu_id]])
+                    {
+                        nehalem_socket_lock[nehalem_processor_lookup[cpu_id]] = 1;
+                        msr_write(cpu_id, MSR_UNCORE_PMC0, 0x0ULL);
+                        msr_write(cpu_id, MSR_UNCORE_PMC1, 0x0ULL);
+                        msr_write(cpu_id, MSR_UNCORE_PMC2, 0x0ULL);
+                        msr_write(cpu_id, MSR_UNCORE_PMC3, 0x0ULL);
+                        msr_write(cpu_id, MSR_UNCORE_PMC4, 0x0ULL);
+                        msr_write(cpu_id, MSR_UNCORE_PMC5, 0x0ULL);
+                        msr_write(cpu_id, MSR_UNCORE_PMC6, 0x0ULL);
+                        msr_write(cpu_id, MSR_UNCORE_PMC7, 0x0ULL);
+                        msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x1000000FFULL);
+                    }
+
                     break;
 
                 default:
@@ -225,7 +279,7 @@ likwid_markerStartRegion(int cpu_id)
             break;
     }
 
-    timer_startCycles(&time[cpu_id]);
+    timer_startCycles(&time[thread_id]);
 }
 
 int
@@ -265,12 +319,12 @@ likwid_markerGetRegionId(char* regionTag)
 
 
 void
-likwid_markerStopRegion(int cpu_id, int regionId)
+likwid_markerStopRegion(int thread_id, int cpu_id, int regionId)
 {
     uint64_t flags;
 
-    timer_stopCycles(&time[cpu_id]);
-    results[regionId].time[cpu_id] += timer_printCyclesTime(&time[cpu_id]);
+    timer_stopCycles(&time[thread_id]);
+    results[regionId].time[thread_id] += timer_printCyclesTime(&time[thread_id]);
 
     switch ( cpuid_info.family ) 
     {
@@ -295,10 +349,10 @@ likwid_markerStopRegion(int cpu_id, int regionId)
                 case CORE2_45:
 
                     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-                    results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
-                    results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
-                    results[regionId].counters[cpu_id][2] += (double) msr_read(cpu_id, MSR_PMC0);
-                    results[regionId].counters[cpu_id][3] += (double) msr_read(cpu_id, MSR_PMC1);
+                    results[regionId].counters[thread_id][0] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
+                    results[regionId].counters[thread_id][1] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+                    results[regionId].counters[thread_id][2] += (double) msr_read(cpu_id, MSR_PMC0);
+                    results[regionId].counters[thread_id][3] += (double) msr_read(cpu_id, MSR_PMC1);
                     break;
 
                 case NEHALEM_BLOOMFIELD:
@@ -306,12 +360,26 @@ likwid_markerStopRegion(int cpu_id, int regionId)
                 case NEHALEM_LYNNFIELD:
 
                     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-                    results[regionId].counters[cpu_id][0] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
-                    results[regionId].counters[cpu_id][1] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
-                    results[regionId].counters[cpu_id][2] += (double) msr_read(cpu_id, MSR_PMC0);
-                    results[regionId].counters[cpu_id][3] += (double) msr_read(cpu_id, MSR_PMC1);
-                    results[regionId].counters[cpu_id][4] += (double) msr_read(cpu_id, MSR_PMC2);
-                    results[regionId].counters[cpu_id][5] += (double) msr_read(cpu_id, MSR_PMC3);
+                    results[regionId].counters[thread_id][0] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR0);
+                    results[regionId].counters[thread_id][1] += (double) msr_read(cpu_id, MSR_PERF_FIXED_CTR1);
+                    results[regionId].counters[thread_id][2] += (double) msr_read(cpu_id, MSR_PMC0);
+                    results[regionId].counters[thread_id][3] += (double) msr_read(cpu_id, MSR_PMC1);
+                    results[regionId].counters[thread_id][4] += (double) msr_read(cpu_id, MSR_PMC2);
+                    results[regionId].counters[thread_id][5] += (double) msr_read(cpu_id, MSR_PMC3);
+
+                    if (nehalem_socket_lock[nehalem_processor_lookup[cpu_id]])
+                    {
+                        nehalem_socket_lock[nehalem_processor_lookup[cpu_id]] = 0;
+                        msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
+                        results[regionId].counters[thread_id][6] += (double) msr_read(cpu_id, MSR_UNCORE_PMC0);
+                        results[regionId].counters[thread_id][7] += (double) msr_read(cpu_id, MSR_UNCORE_PMC1);
+                        results[regionId].counters[thread_id][8] += (double) msr_read(cpu_id, MSR_UNCORE_PMC2);
+                        results[regionId].counters[thread_id][9] += (double) msr_read(cpu_id, MSR_UNCORE_PMC3);
+                        results[regionId].counters[thread_id][10] += (double) msr_read(cpu_id, MSR_UNCORE_PMC4);
+                        results[regionId].counters[thread_id][11] += (double) msr_read(cpu_id, MSR_UNCORE_PMC5);
+                        results[regionId].counters[thread_id][12] += (double) msr_read(cpu_id, MSR_UNCORE_PMC6);
+                        results[regionId].counters[thread_id][13] += (double) msr_read(cpu_id, MSR_UNCORE_PMC7);
+                    }
                     break;
 
                 default:

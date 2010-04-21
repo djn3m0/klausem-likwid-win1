@@ -34,6 +34,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <cpuid.h>
+#include <tree.h>
 #include <bstrlib.h>
 #include <types.h>
 #include <registers.h>
@@ -46,6 +48,9 @@
 static int perfmon_numCountersNehalem = NUM_COUNTERS_NEHALEM;
 static int perfmon_numGroupsNehalem = NUM_GROUPS_NEHALEM;
 static int perfmon_numArchEventsNehalem = NUM_ARCH_EVENTS_NEHALEM;
+
+static volatile int nehalem_socket_lock[MAX_NUM_SOCKETS];
+static int nehalem_processor_lookup[MAX_NUM_THREADS];
 
 static PerfmonCounterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
     {"FIXC0",PMC0},
@@ -80,6 +85,35 @@ perfmon_init_nehalem(PerfmonThread *thread)
 {
     uint64_t flags = 0x0ULL;
     int cpu_id = thread->processorId;
+    TreeNode* socketNode;
+    TreeNode* coreNode;
+    TreeNode* threadNode;
+    int socketId;
+
+    for(int i=0; i<MAX_NUM_SOCKETS; i++) nehalem_socket_lock[i] = 0;
+
+    /* determine thread to socket mapping */
+    cpuid_initTopology();
+
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+    while (socketNode != NULL)
+    {
+        socketId = socketNode->id;
+        coreNode = tree_getChildNode(socketNode);
+
+        while (coreNode != NULL)
+        {
+            threadNode = tree_getChildNode(coreNode);
+
+            while (threadNode != NULL)
+            {
+                nehalem_processor_lookup[threadNode->id] = socketId;
+                threadNode = tree_getNextNode(threadNode);
+            }
+            coreNode = tree_getNextNode(coreNode);
+        }
+        socketNode = tree_getNextNode(socketNode);
+    }
 
     /* Fixed Counters: instructions retired, cycles unhalted core */
     thread->counters[PMC0].configRegister = MSR_PERF_FIXED_CTR_CTRL;
@@ -235,32 +269,41 @@ void
 perfmon_startCountersThread_nehalem(int thread_id)
 {
     int i;
+    int haveLock = 0;
     uint64_t flags = 0x0ULL;
     uint64_t uflags = 0x0ULL;
     int cpu_id = perfmon_threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
 
-    /* Fixed Uncore counter */
-    uflags = 0x100000000ULL;
+    if (!nehalem_socket_lock[nehalem_processor_lookup[cpu_id]])
+    {
+        nehalem_socket_lock[nehalem_processor_lookup[cpu_id]] = 1;
+        haveLock = 1;
+        msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
+        /* Fixed Uncore counter */
+        uflags = 0x100000000ULL;
+    }
 
     for (i=0;i<NUM_PMC;i++) {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) {
-            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
-
-
             if (perfmon_threadData[thread_id].counters[i].type == PMC)
             {
+                msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
                 flags |= (1<<(i-2));  /* enable counter */
             }
             else if (perfmon_threadData[thread_id].counters[i].type == FIXED)
             {
+                msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
                 flags |= (1ULL<<(i+32));  /* enable fixed counter */
             }
             else if (perfmon_threadData[thread_id].counters[i].type == UNCORE)
             {
-                uflags |= (1<<(i-6));  /* enable uncore counter */
+                if(haveLock)
+                {
+                    msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
+                    uflags |= (1<<(i-6));  /* enable uncore counter */
+                }
             }
         }
     }
@@ -272,7 +315,7 @@ perfmon_startCountersThread_nehalem(int thread_id)
     }
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
-    msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, uflags);
+    if (haveLock) msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, uflags);
     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
 
 }
@@ -281,12 +324,16 @@ void
 perfmon_stopCountersThread_nehalem(int thread_id)
 {
     uint64_t flags;
+    int haveLock = 0;
     int i;
     int cpu_id = perfmon_threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    if (cpuid_info.model == NEHALEM)
+
+    if (nehalem_socket_lock[nehalem_processor_lookup[cpu_id]])
     {
+        nehalem_socket_lock[nehalem_processor_lookup[cpu_id]] = 0;
+        haveLock = 1;
         msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
     }
 
@@ -294,7 +341,17 @@ perfmon_stopCountersThread_nehalem(int thread_id)
     {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            perfmon_threadData[thread_id].counters[i].counterData = msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister);
+            if (perfmon_threadData[thread_id].counters[i].type == UNCORE)
+            {
+                if(haveLock)
+                {
+                    perfmon_threadData[thread_id].counters[i].counterData = msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister);
+                }
+            }
+            else
+            {
+                perfmon_threadData[thread_id].counters[i].counterData = msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister);
+            }
         }
     }
 
