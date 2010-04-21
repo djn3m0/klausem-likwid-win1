@@ -1,18 +1,18 @@
 /*
  * ===========================================================================
  *
- *       Filename:  perfCtrMain.c
+ *       Filename:  likwid-perfCtr.c
  *
  *    Description:  An application to read out performance counter registers
  *                  on x86 processors
  *
  *        Version:  <VERSION>
- *        Created:  08/13/2009
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  LIKWID
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *        Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
@@ -234,7 +234,14 @@ int main (int argc, char** argv)
     printf(HLINE);
 
 	argv +=  optind;
-    if (perfmon_verbose) printf("Executing: %s \n",argv[0]);
+    bstring exeString = bfromcstr(argv[0]);
+
+    for (i=1; i<(argc-optind); i++)
+    {
+        bconchar(exeString, ' ');
+        bcatcstr(exeString, argv[i]);
+    }
+    if (perfmon_verbose) printf("Executing: %s \n",bdata(exeString));
 
     if (optReport)
     {
@@ -245,9 +252,9 @@ int main (int argc, char** argv)
         perfmon_startCounters();
     }
 
-    if (system(argv[0]) == EOF)
+    if (system(bdata(exeString)) == EOF)
     {
-        fprintf(stderr, "Failed to execute %s!\n", argv[0]);
+        fprintf(stderr, "Failed to execute %s!\n", bdata(exeString));
         exit(EXIT_FAILURE);
     }
 
@@ -269,6 +276,7 @@ int main (int argc, char** argv)
 		}
 	}
 
+    bdestroy(exeString);
     perfmon_finalize();
 
     return EXIT_SUCCESS;
