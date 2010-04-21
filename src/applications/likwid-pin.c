@@ -1,7 +1,7 @@
 /*
  * ===========================================================================
  *
- *       Filename:  applicationPin.c
+ *       Filename:  likwid-pin.c
  *
  *    Description:  An application to pin a program including threads
  *
@@ -11,7 +11,7 @@
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
  *        Project:  likwid
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
