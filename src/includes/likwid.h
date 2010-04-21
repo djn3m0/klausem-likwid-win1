@@ -35,8 +35,8 @@
 
 extern void likwid_markerInit(int numberOfThreads, int numberOfRegions);
 extern void likwid_markerClose(void);
-extern void likwid_markerStartRegion(int core_id);
-extern void likwid_markerStopRegion(int core_id, int regionTag);
+extern void likwid_markerStartRegion(int thread_id, int core_id);
+extern void likwid_markerStopRegion(int thread_id, int core_id, int regionTag);
 extern int  likwid_markerRegisterRegion(char* regionTag);
 extern int  likwid_markerGetRegionId(char* regionTag);
 
