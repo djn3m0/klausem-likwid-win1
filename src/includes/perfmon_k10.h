@@ -3,7 +3,7 @@
  *
  *       Filename:  perfmon_k10.h
  *
- *    Description:  K10 specific subroutines
+ *    Description:  AMD K10 specific subroutines
  *
  *        Version:  1.0
  *        Created:  07/15/2009
@@ -12,7 +12,7 @@
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
  *        Project:  none
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
@@ -35,34 +35,34 @@
 #include <bstrlib.h>
 #include <types.h>
 #include <registers.h>
+#include <perfmon_k10_events.h>
 
+#define NUM_COUNTERS_K10 4
+#define NUM_GROUPS_K10 7
+#define NUM_SETS_K10 8
 
-int
-perfmon_getIndex_k10 (bstring str, PerfmonCounterIndex* index)
-{
-   if (biseqcstr(str,"PMC0"))
-   {
-       *index = PMC0;
-   }
-   else if (biseqcstr(str,"PMC1"))
-   {
-       *index = PMC1;
-   }
-   else if (biseqcstr(str,"PMC2"))
-   {
-       *index = PMC2;
-   }
-   else if (biseqcstr(str,"PMC3"))
-   {
-       *index = PMC3;
-   }
-   else
-   {
-       return FALSE;
-   }
+static int perfmon_numCountersK10 = NUM_COUNTERS_K10;
+static int perfmon_numGroupsK10 = NUM_GROUPS_K10;
+static int perfmon_numArchEventsK10 = NUM_ARCH_EVENTS_K10;
 
-   return TRUE;
-}
+static PerfmonCounterMap k10_counter_map[NUM_COUNTERS_K10] = {
+    {"PMC0",PMC0},
+    {"PMC1",PMC1},
+    {"PMC2",PMC2},
+    {"PMC3",PMC3}
+};
+
+static PerfmonGroupMap k10_group_map[NUM_GROUPS_K10] = {
+    {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s","SSE_RETIRED_ADD_DOUBLE_FLOPS:PMC0,SSE_RETIRED_MULT_DOUBLE_FLOPS:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","SSE_RETIRED_ADD_SINLGE_FLOPS:PMC0,SSE_RETIRED_MULT_SINLGE_FLOPS:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"L2",L2,"L2: L2 cache bandwidth in MBytes/s","DATA_CACHE_REFILLS_L2_ALL:PMC0,DATA_CACHE_EVICTED_ALL:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"L3",L3,"L3: L3 cache bandwidth in MBytes/s","L3_FILLS_ALL_ALL_CORES:PMC0,L3_READ_REQUEST_ALL_ALL_CORES:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"MEM",MEM,"Main memory bandwidth in MBytes/s",""},
+    {"DATA",DATA,"Load to store ratio","INST_RETIRED_LOADS:PMC0,INST_RETIRED_STORES:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"BRANCH",BRANCH,"Branch prediction miss rate","BRANCH_RETIRED:PMC0,BRANCH_MISPREDICT_RETIRED:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"CPI",CPI,"CPI: cycles per instruction","UOPS_RETIRED:PMC0,CPU_CLOCKS_UNHALTED:PMC1"},
+    {"TLB",TLB,"Translation lookaside buffer miss rate","DTLB_L2_MISS_4K:PMC0,CPU_CLOCKS_UNHALTED:PMC1"}
+};
 
 
 void perfmon_init_k10(PerfmonThread *thread)
@@ -70,14 +70,18 @@ void perfmon_init_k10(PerfmonThread *thread)
     uint64_t flags = 0x0ULL;
     int cpu_id = thread->cpu_id;
 
-    thread->counters[PMC0].config_reg = MSR_AMD_PERFEVTSEL0;
-    thread->counters[PMC0].counter_reg = MSR_AMD_PMC0;
-    thread->counters[PMC1].config_reg = MSR_AMD_PERFEVTSEL1;
-    thread->counters[PMC1].counter_reg = MSR_AMD_PMC1;
-    thread->counters[PMC2].config_reg = MSR_AMD_PERFEVTSEL2;
-    thread->counters[PMC2].counter_reg = MSR_AMD_PMC2;
-    thread->counters[PMC3].config_reg = MSR_AMD_PERFEVTSEL3;
-    thread->counters[PMC3].counter_reg = MSR_AMD_PMC3;
+    thread->counters[PMC0].configRegister = MSR_AMD_PERFEVTSEL0;
+    thread->counters[PMC0].counterRegister = MSR_AMD_PMC0;
+    thread->counters[PMC0].type = PMC;
+    thread->counters[PMC1].configRegister = MSR_AMD_PERFEVTSEL1;
+    thread->counters[PMC1].counterRegister = MSR_AMD_PMC1;
+    thread->counters[PMC0].type = PMC;
+    thread->counters[PMC2].configRegister = MSR_AMD_PERFEVTSEL2;
+    thread->counters[PMC2].counterRegister = MSR_AMD_PMC2;
+    thread->counters[PMC0].type = PMC;
+    thread->counters[PMC3].configRegister = MSR_AMD_PERFEVTSEL3;
+    thread->counters[PMC3].counterRegister = MSR_AMD_PMC3;
+    thread->counters[PMC0].type = PMC;
 
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL0, 0x0ULL);
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL1, 0x0ULL);
@@ -92,69 +96,6 @@ void perfmon_init_k10(PerfmonThread *thread)
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL3, flags);
 }
 
-void
-perfmon_setupReport_k11(MultiplexCollections* collections)
-{
-
-}
-
-void
-perfmon_printReport_k10(MultiplexCollections* collections)
-{
-
-}
-
-void
-perfmon_printGroups_k10 (void)
-{
-
-
-}
-
-PerfmonGroup
-perfmon_getGroupId_k10 (bstring groupStr)
-{
-	PerfmonGroup group;
-
-	if (biseqcstr(groupStr,"FLOPS_DP")) 
-	{
-		group = FLOPS_DP;
-	}
-	else if (biseqcstr(groupStr,"FLOPS_SP")) 
-	{
-		group = FLOPS_SP;
-	}
-	else if (biseqcstr(groupStr,"L2")) 
-	{
-		group = L2;
-	}
-	else if (biseqcstr(groupStr,"MEM")) 
-	{
-		group = MEM;
-	}
-	else if (biseqcstr(groupStr,"DATA")) 
-	{
-		group = DATA;
-	}
-	else if (biseqcstr(groupStr,"BRANCH")) 
-	{
-		group = BRANCH;
-	}
-	else if (biseqcstr(groupStr,"TLB")) 
-	{
-		group = TLB;
-	}
-	else if (biseqcstr(groupStr,"CPI")) 
-	{
-		group = CPI;
-	}
-	else
-	{
-		return NOGROUP;
-	}
-
-	return group;
-}
 
 void
 perfmon_setupCounterThread_k10(int thread_id,
@@ -162,9 +103,9 @@ perfmon_setupCounterThread_k10(int thread_id,
         PerfmonCounterIndex index)
 {
     uint64_t flags;
-    uint64_t reg = threadData[thread_id].counters[index].config_reg;
-    int cpu_id = threadData[thread_id].cpu_id;
-    threadData[thread_id].counters[index].init = TRUE;
+    uint64_t reg = perfmon_threadData[thread_id].counters[index].config_reg;
+    int cpu_id = perfmon_threadData[thread_id].cpu_id;
+    perfmon_threadData[thread_id].counters[index].init = TRUE;
 
     flags = msr_read(cpu_id,reg);
     flags &= ~(0xFFFFU); 
@@ -188,23 +129,23 @@ perfmon_startCountersThread_k10(int thread_id)
 {
     int i;
     uint64_t flags;
-    int cpu_id = threadData[thread_id].cpu_id;
+    int cpu_id = perfmon_threadData[thread_id].cpu_id;
 
-    for (i=0;i<NUM_PMC;i++) 
+    for (i=0;i<NUM_COUNTERS_K10;i++) 
     {
-        if (threadData[thread_id].counters[i].init == TRUE) 
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            msr_write(cpu_id, threadData[thread_id].counters[i].counter_reg , 0x0ULL);
-            flags = msr_read(cpu_id,threadData[thread_id].counters[i].config_reg);
+            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counter_reg , 0x0ULL);
+            flags = msr_read(cpu_id,perfmon_threadData[thread_id].counters[i].config_reg);
             flags |= (1<<22);  /* enable flag */
             if (perfmon_verbose) 
             {
                 printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                        LLU_CAST threadData[thread_id].counters[i].config_reg,
+                        LLU_CAST perfmon_threadData[thread_id].counters[i].config_reg,
                         LLU_CAST flags);
             }
 
-            msr_write(cpu_id, threadData[thread_id].counters[i].config_reg , flags);
+            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].config_reg , flags);
         }
     }
 }
@@ -214,188 +155,234 @@ perfmon_stopCountersThread_k10(int thread_id)
 {
     uint64_t flags;
     int i;
-    int cpu_id = threadData[thread_id].cpu_id;
+    int cpu_id = perfmon_threadData[thread_id].cpu_id;
 
-    for (i=0;i<NUM_PMC;i++) 
+    for (i=0;i<NUM_COUNTERS_K10;i++) 
     {
-        if (threadData[thread_id].counters[i].init == TRUE) 
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            flags = msr_read(cpu_id,threadData[thread_id].counters[i].config_reg);
+            flags = msr_read(cpu_id,perfmon_threadData[thread_id].counters[i].config_reg);
             flags &= ~(1<<22);  /* clear enable flag */
-            msr_write(cpu_id, threadData[thread_id].counters[i].config_reg , flags);
+            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].config_reg , flags);
             if (perfmon_verbose)
             {
                 printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                        LLU_CAST threadData[thread_id].counters[i].config_reg,
+                        LLU_CAST perfmon_threadData[thread_id].counters[i].config_reg,
                         LLU_CAST flags);
             }
-            threadData[thread_id].pc[i] = msr_read(cpu_id, threadData[thread_id].counters[i].counter_reg);
+            perfmon_threadData[thread_id].pc[i] = msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counter_reg);
         }
     }
-    threadData[thread_id].cycles = threadData[thread_id].pc[2];
+    perfmon_threadData[thread_id].cycles = perfmon_threadData[thread_id].pc[2];
 }
 
 
-void
-perfmon_setupGroupThread_k10(int thread_id,PerfmonGroup group)
-{
-    bstring event_0 = bformat("NOINIT");
-    bstring event_1 = bformat("NOINIT");
-    bstring event_2 = bformat("NOINIT");
-    bstring event_3 = bformat("NOINIT");
 
-    switch ( group ) {
+void perfmon_printDerivedMetrics_k10(PerfmonGroup group)
+{
+    int threadId;
+    double time = 0.0;
+    double inverseClock = 1.0 /(double) timer_getCpuClock();
+    PerfmonResultTable tableData;
+    int numRows;
+    int numColumns = perfmon_numThreads;
+    bstrList* fc;
+    bstring label;
+
+    switch ( group )
+    {
         case FLOPS_DP:
-            bassigncstr(event_0, "SSE_RETIRED_ADD_DOUBLE_FLOPS");
-            bassigncstr(event_1, "SSE_RETIRED_MULT_DOUBLE_FLOPS");
-            bassigncstr(event_2, "CPU_CLOCKS_UNHALTED");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
+            numRows = 4;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,DP MFlops/s);
+            bstrListAdd(3,DP Add MFlops/s);
+            bstrListAdd(4,DP Mult MFlops/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC2") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")+ perfmon_getResult(threadId,"PMC1")) / time;
+                tableData.rows[2].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")) / time;
+                tableData.rows[3].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC1")) / time;
+            }
             break;
 
         case FLOPS_SP:
-            bassigncstr(event_0, "SSE_RETIRED_ADD_SINGLE_FLOPS");
-            bassigncstr(event_1, "SSE_RETIRED_MULT_SINGLE_FLOPS");
-            bassigncstr(event_2, "CPU_CLOCKS_UNHALTED");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
-            break;
+            numRows = 4;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,SP MFlops/s);
+            bstrListAdd(3,SP Add MFlops/s);
+            bstrListAdd(4,SP Mult MFlops/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
 
-        case L1:
-            bassigncstr(event_0, "DATA_CACHE_REFILLS_L2_ALL");
-            bassigncstr(event_1, "DATA_CACHE_EVICTED_ALL");
-            bassigncstr(event_2, "CPU_CLOCKS_UNHALTED");
-            bassigncstr(event_3, "DATA_CACHE_REFILLS_NORTHBRIDGE_ALL");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
-            setupCounterThread(thread_id, PMC3, event_3);
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC2") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")+ perfmon_getResult(threadId,"PMC1")) / time;
+                tableData.rows[2].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")) / time;
+                tableData.rows[3].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC1")) / time;
+            }
             break;
 
         case L2:
-            bassigncstr(event_0, "DATA_CACHE_REFILLS_L2_ALL");
-            bassigncstr(event_1, "DATA_CACHE_EVICTED_ALL");
-            bassigncstr(event_2, "CPU_CLOCKS_UNHALTED");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
+            numRows = 4;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,L2 bandwidth MBytes/s);
+            bstrListAdd(3,L2 refill bandwidth MBytes/s);
+            bstrListAdd(4,L2 evict MBytes/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC2") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")+ perfmon_getResult(threadId,"PMC1"))*64.0 / time;
+                tableData.rows[2].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")*64.0) / time;
+                tableData.rows[3].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC1")*64.0) / time;
+            }
             break;
 
         case L3:
-            bassigncstr(event_0, "L3_FILLS_ALL_ALL_CORES");
-            bassigncstr(event_1, "L3_READ_REQUEST_ALL_ALL_CORES");
-            bassigncstr(event_2, "CPU_CLOCKS_UNHALTED");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
+            numRows = 4;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,L3 bandwidth MBytes/s);
+            bstrListAdd(3,L3 evict bandwidth MBytes/s);
+            bstrListAdd(4,L3 read MBytes/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC2") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")+ perfmon_getResult(threadId,"PMC1"))*64.0 / time;
+                tableData.rows[2].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")*64.0) / time;
+                tableData.rows[3].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC1")*64.0) / time;
+            }
             break;
 
         case MEM:
             break;
 
         case DATA:
-            bassigncstr(event_0, "INST_RETIRED_LOADS");
-            bassigncstr(event_1, "INST_RETIRED_STORES");
-            bassigncstr(event_2, "CPU_CLOCKS_UNHALTED");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
+            numRows = 2;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,Store to Load ratio);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC2") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC0")/ perfmon_getResult(threadId,"PMC1"));
+            }
             break;
 
         case BRANCH:
-            bassigncstr(event_0, "BRANCH_RETIRED");
-            bassigncstr(event_1, "BRANCH_MISPREDICT_RETIRED");
-            bassigncstr(event_2, "CPU_CLOCKS_UNHALTED");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
-            setupCounterThread(thread_id, PMC2, event_2);
+            numRows = 2;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,Ratio Mispredicted Branches);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC2") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"PMC0"));
+            }
             break;
 
         case CPI:
-            bassigncstr(event_0, "UOPS_RETIRED");
-            bassigncstr(event_1, "CPU_CLOCKS_UNHALTED");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,uops retired);
+            bstrListAdd(2,CPI);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC1") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     perfmon_getResult(threadId,"PMC0");
+                tableData.rows[2].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"PMC0"));
+            }
             break;
 
         case TLB:
-            bassigncstr(event_0, "DTLB_L2_MISS_4K");
-            bassigncstr(event_1, "CPU_CLOCKS_UNHALTED");
-            setupCounterThread(thread_id, PMC0, event_0);
-            setupCounterThread(thread_id, PMC1, event_1);
+            numRows = 2;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,TLB misses);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC1") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     perfmon_getResult(threadId,"PMC0");
+            }
+            break;
+
+        case NOGROUP:
+            numRows = 2;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,CPI);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC0") * inverseClock;
+                if (perfmon_getResult(threadId,"PMC1") < 1.0E-12)
+                {
+                    cpi  =  0.0;
+                }
+                else
+                {
+                    cpi  =  perfmon_getResult(threadId,"PMC0")/
+                        perfmon_getResult(threadId,"PMC1");
+                }
+
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+            }
+
             break;
 
         default:
+            fprintf (stderr, "perfmon_printDerivedMetricsCore2: Unknown group! Exiting!\n" );
+            exit (EXIT_FAILURE);
             break;
     }
 
-    bdestroy(event_0);
-    bdestroy(event_1);
-    bdestroy(event_2);
-    bdestroy(event_3);
-}
-
-
-void perfmon_printResults_k10(PerfmonThread *thread, PerfmonGroup group_set, float time)
-{
-    int cpu_id = thread->cpu_id;
-
-    switch ( group_set ) {
-        case FLOPS_DP:
-            printf ("[%d] Double MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]+thread->pc[1])/time);
-            printf ("[%d] Double Add MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0])/time);
-            printf ("[%d] Double Mult MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1])/time);
-            break;
-
-        case FLOPS_SP:
-            printf ("[%d] Single MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]+thread->pc[1])/time);
-            printf ("[%d] Single Add MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0])/time);
-            printf ("[%d] Single Mult MFlops/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1])/time);
-            break;
-
-        case L1:
-            printf ("[%d] L1 bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1]+thread->pc[3])*64)/time);
-            printf ("[%d] L2 refill bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*64)/time);
-            printf ("[%d] L2 evict MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1]*64)/time);
-            printf ("[%d] Northbridge refill MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[3]*64)/time);
-            break;
-
-        case L2:
-            printf ("[%d] L2 bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
-            printf ("[%d] L2 refill bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*64)/time);
-            printf ("[%d] L2 evict MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1]*64)/time);
-            break;
-
-        case L3:
-            printf ("[%d] L3 bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)((thread->pc[0]+thread->pc[1])*64)/time);
-            printf ("[%d] L3 evict from L2 bandwidth MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[0]*64)/time);
-            printf ("[%d] L2 read MBytes/s: %f \n",cpu_id,1.0E-06*(float)(thread->pc[1]*64)/time);
-            break;
-
-        case MEM:
-            break;
-
-        case DATA:
-            printf ("[%d] Store to Load ratio: 1:%f \n",cpu_id,(float)thread->pc[0]/(float)thread->pc[1]);
-            break;
-
-        case BRANCH:
-            printf ("[%d] Ratio Mispredicted Branches: %f \n",cpu_id,(float)thread->pc[1]/(float)thread->pc[0]);
-            break;
-
-        case CPI:
-            printf ("[%d] Cycles per uop/s: %f \n",cpu_id,(float)thread->cycles/(float)thread->pc[0]);
-            break;
-
-
-        case TLB:
-            break;
-
-        default:
-            break;
-    }
-
+    printResultTable(&tableData);
+    bdestroy(label);
+    bstrListDestroy(fc);
 }
 
