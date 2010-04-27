@@ -45,7 +45,7 @@ $(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(OBJ)
 	@echo "===>  LINKING  $@"
 	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ)
 
-$(TARGET_LIB):
+$(TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE LIB  $(TARGET_LIB)"
 	$(Q)${AR} -cq $(TARGET_LIB) $(filter-out $(BUILD_DIR)/main.o,$(OBJ))
 
