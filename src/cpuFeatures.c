@@ -76,13 +76,19 @@ cpuFeatures_init(int cpu)
 {
     uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
 
-	TEST_FLAG(fastStrings,1);
+	TEST_FLAG(fastStrings,0);
 	TEST_FLAG(thermalControl,3);
 	TEST_FLAG(perfMonitoring,7);
 	TEST_FLAG(hardwarePrefetcher,9);
+	TEST_FLAG(ferrMultiplex,10);
+	TEST_FLAG(branchTraceStorage,11);
 	TEST_FLAG(pebs,12);
 	TEST_FLAG(speedstep,16);
+	TEST_FLAG(monitor,18);
 	TEST_FLAG(clPrefetcher,19);
+	TEST_FLAG(speedstepLock,20);
+	TEST_FLAG(cpuidMaxVal,22);
+	TEST_FLAG(xdBit,34);
 	TEST_FLAG(dcuPrefetcher,37);
 	TEST_FLAG(dynamicAcceleration,38);
 	TEST_FLAG(ipPrefetcher,39);
@@ -134,6 +140,16 @@ cpuFeatures_print(int cpu)
         PRINT_VALUE(GREEN,enabled);
     }
 
+    printf("Branch Trace Storage: \t\t");
+    if (flags & (1ULL<<11)) 
+    {
+        PRINT_VALUE(RED,notsupported);
+    }
+    else
+    {
+        PRINT_VALUE(GREEN,supported);
+    }
+
     printf("PEBS: \t\t\t\t");
     if (flags & (1ULL<<12)) 
     {
@@ -154,8 +170,38 @@ cpuFeatures_print(int cpu)
         PRINT_VALUE(RED,disabled);
     }
 
+    printf("MONITOR/MWAIT: \t\t\t\t");
+    if (flags & (1ULL<<18)) 
+    {
+        PRINT_VALUE(RED,notsupported);
+    }
+    else
+    {
+        PRINT_VALUE(GREEN,supported);
+    }
+
     printf("Adjacent Cache Line Prefetch: \t");
     if (flags & (1ULL<<19)) 
+    {
+        PRINT_VALUE(RED,disabled);
+    }
+    else
+    {
+        PRINT_VALUE(GREEN,enabled);
+    }
+
+    printf("Limit CPUID Maxval: \t");
+    if (flags & (1ULL<<22)) 
+    {
+        PRINT_VALUE(RED,enabled);
+    }
+    else
+    {
+        PRINT_VALUE(GREEN,disabled);
+    }
+
+    printf("XD Bit Disable: \t\t");
+    if (flags & (1ULL<<34)) 
     {
         PRINT_VALUE(RED,disabled);
     }

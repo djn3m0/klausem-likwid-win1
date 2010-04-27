@@ -8,16 +8,22 @@ typedef enum {
     IP_PREFETCHER} CpuFeature;
 
 typedef struct {
-	char fastStrings;
-	char thermalControl;
-	char perfMonitoring;
-	char hardwarePrefetcher;
-	char pebs;
-	char speedstep;
-	char clPrefetcher;
-	char dcuPrefetcher;
-	char dynamicAcceleration;
-	char ipPrefetcher;
+	unsigned int fastStrings:1;
+	unsigned int thermalControl:1;
+	unsigned int perfMonitoring:1;
+	unsigned int hardwarePrefetcher:1;
+	unsigned int ferrMultiplex:1;
+	unsigned int branchTraceStorage:1;
+	unsigned int pebs:1;
+	unsigned int speedstep:1;
+	unsigned int monitor:1;
+	unsigned int clPrefetcher:1;
+	unsigned int speedstepLock:1;
+	unsigned int cpuidMaxVal:1;
+	unsigned int xdBit:1;
+	unsigned int dcuPrefetcher:1;
+	unsigned int dynamicAcceleration:1;
+	unsigned int ipPrefetcher:1;
     } CpuFeatureFlags;
 
 

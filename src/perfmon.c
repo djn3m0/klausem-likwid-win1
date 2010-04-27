@@ -113,7 +113,7 @@ static void initThread(int , int );
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
 //#include <perfmon_k8.h>
-#include <perfmon_k10.h>
+//#include <perfmon_k10.h>
 
 /* #####  EXPORTED  FUNCTION POINTERS   ################################### */
 void (*perfmon_startCountersThread) (int thread_id);
@@ -777,7 +777,6 @@ perfmon_init(int numThreads_local, int threads[])
             perfmon_startCountersThread = perfmon_startCountersThread_k10;
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
             break;
-#endif
 
 
         case K10_FAMILY:
@@ -796,6 +795,7 @@ perfmon_init(int numThreads_local, int threads[])
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
             perfmon_setupCounterThread = perfmon_setupCounterThread_k10;
             break;
+#endif
 
         default:
             fprintf(stderr, "Unsupported Processor!\n");
