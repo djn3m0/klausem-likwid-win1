@@ -26,10 +26,10 @@ typedef struct {
 } CpuInfo;
 
 typedef struct {
-    int threadId;
-    int coreId;
-    int packageId;
-    int apicId;
+    uint32_t threadId;
+    uint32_t coreId;
+    uint32_t packageId;
+    uint32_t apicId;
 } HWThread;
 
 typedef struct {

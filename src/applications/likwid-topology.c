@@ -132,7 +132,7 @@ int main (int argc, char** argv)
     printf("HWThread\tThread\t\tCore\t\tSocket\n");
     for (i=0; i< cpuid_topology.numHWThreads; i++)
     {
-        printf("%d\t\t%d\t\t%d\t\t%d\n",i
+        printf("%d\t\t%u\t\t%u\t\t%u\n",i
                 ,cpuid_topology.threadPool[i].threadId
                 ,cpuid_topology.threadPool[i].coreId
                 ,cpuid_topology.threadPool[i].packageId);
