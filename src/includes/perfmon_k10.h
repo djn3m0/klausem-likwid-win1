@@ -38,7 +38,7 @@
 #include <perfmon_k10_events.h>
 
 #define NUM_COUNTERS_K10 4
-#define NUM_GROUPS_K10 7
+#define NUM_GROUPS_K10 9
 #define NUM_SETS_K10 8
 
 static int perfmon_numCountersK10 = NUM_COUNTERS_K10;
@@ -68,7 +68,7 @@ static PerfmonGroupMap k10_group_map[NUM_GROUPS_K10] = {
 void perfmon_init_k10(PerfmonThread *thread)
 {
     uint64_t flags = 0x0ULL;
-    int cpu_id = thread->cpu_id;
+    int cpu_id = thread->processorId;
 
     thread->counters[PMC0].configRegister = MSR_AMD_PERFEVTSEL0;
     thread->counters[PMC0].counterRegister = MSR_AMD_PMC0;
@@ -103,8 +103,8 @@ perfmon_setupCounterThread_k10(int thread_id,
         PerfmonCounterIndex index)
 {
     uint64_t flags;
-    uint64_t reg = perfmon_threadData[thread_id].counters[index].config_reg;
-    int cpu_id = perfmon_threadData[thread_id].cpu_id;
+    uint64_t reg = perfmon_threadData[thread_id].counters[index].configRegister;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
     perfmon_threadData[thread_id].counters[index].init = TRUE;
 
     flags = msr_read(cpu_id,reg);
@@ -129,23 +129,23 @@ perfmon_startCountersThread_k10(int thread_id)
 {
     int i;
     uint64_t flags;
-    int cpu_id = perfmon_threadData[thread_id].cpu_id;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     for (i=0;i<NUM_COUNTERS_K10;i++) 
     {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counter_reg , 0x0ULL);
-            flags = msr_read(cpu_id,perfmon_threadData[thread_id].counters[i].config_reg);
+            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
+            flags = msr_read(cpu_id,perfmon_threadData[thread_id].counters[i].configRegister);
             flags |= (1<<22);  /* enable flag */
             if (perfmon_verbose) 
             {
                 printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                        LLU_CAST perfmon_threadData[thread_id].counters[i].config_reg,
+                        LLU_CAST perfmon_threadData[thread_id].counters[i].configRegister,
                         LLU_CAST flags);
             }
 
-            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].config_reg , flags);
+            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].configRegister , flags);
         }
     }
 }
@@ -155,25 +155,24 @@ perfmon_stopCountersThread_k10(int thread_id)
 {
     uint64_t flags;
     int i;
-    int cpu_id = perfmon_threadData[thread_id].cpu_id;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     for (i=0;i<NUM_COUNTERS_K10;i++) 
     {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            flags = msr_read(cpu_id,perfmon_threadData[thread_id].counters[i].config_reg);
+            flags = msr_read(cpu_id,perfmon_threadData[thread_id].counters[i].configRegister);
             flags &= ~(1<<22);  /* clear enable flag */
-            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].config_reg , flags);
+            msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].configRegister , flags);
             if (perfmon_verbose)
             {
                 printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                        LLU_CAST perfmon_threadData[thread_id].counters[i].config_reg,
+                        LLU_CAST perfmon_threadData[thread_id].counters[i].configRegister,
                         LLU_CAST flags);
             }
-            perfmon_threadData[thread_id].pc[i] = msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counter_reg);
+            perfmon_threadData[thread_id].counters[i].counterData = msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister);
         }
     }
-    perfmon_threadData[thread_id].cycles = perfmon_threadData[thread_id].pc[2];
 }
 
 
@@ -350,27 +349,15 @@ void perfmon_printDerivedMetrics_k10(PerfmonGroup group)
             break;
 
         case NOGROUP:
-            numRows = 2;
+            numRows = 1;
             INIT_BASIC;
             bstrListAdd(1,Runtime [s]);
-            bstrListAdd(2,CPI);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
                 time = perfmon_getResult(threadId,"PMC0") * inverseClock;
-                if (perfmon_getResult(threadId,"PMC1") < 1.0E-12)
-                {
-                    cpi  =  0.0;
-                }
-                else
-                {
-                    cpi  =  perfmon_getResult(threadId,"PMC0")/
-                        perfmon_getResult(threadId,"PMC1");
-                }
-
                 tableData.rows[0].value[threadId] = time;
-                tableData.rows[1].value[threadId] = cpi;
             }
 
             break;

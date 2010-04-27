@@ -47,7 +47,6 @@
 #include <asciiTable.h>
 #include <registers.h>
 //#include <perfmon_pm_events.h>
-//#include <perfmon_k8_events.h>
 
 
 /* #####   EXPORTED VARIABLES   ########################################### */
@@ -112,8 +111,8 @@ static void initThread(int , int );
 //#include <perfmon_pm.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
-//#include <perfmon_k8.h>
-//#include <perfmon_k10.h>
+#include <perfmon_k8.h>
+#include <perfmon_k10.h>
 
 /* #####  EXPORTED  FUNCTION POINTERS   ################################### */
 void (*perfmon_startCountersThread) (int thread_id);
@@ -764,20 +763,21 @@ perfmon_init(int numThreads_local, int threads[])
             }
             break;
 
-#if 0
         case K8_FAMILY:
             eventHash = k8_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEvents_K8;
+            perfmon_numArchEvents = perfmon_numArchEventsK8;
+
+            group_map = k8_group_map;
+            perfmon_numGroups = perfmon_numGroupsK8;
+
+            counter_map = k10_counter_map;
+            perfmon_numCounters = perfmon_numCountersK10;
 
             initThreadArch = perfmon_init_k10;
-            getGroupId = perfmon_getGroupId_k8;
-            setupGroupThread = perfmon_setupGroupThread_k8;
-            printResults = perfmon_printResults_k8;
-            perfmon_printAvailableGroups = perfmon_printGroups_k8;
             perfmon_startCountersThread = perfmon_startCountersThread_k10;
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
+            perfmon_setupCounterThread = perfmon_setupCounterThread_k10;
             break;
-
 
         case K10_FAMILY:
             eventHash = k10_arch_events;
@@ -795,7 +795,6 @@ perfmon_init(int numThreads_local, int threads[])
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
             perfmon_setupCounterThread = perfmon_setupCounterThread_k10;
             break;
-#endif
 
         default:
             fprintf(stderr, "Unsupported Processor!\n");
