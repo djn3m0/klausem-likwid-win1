@@ -46,11 +46,12 @@
 #define CORE_DUO  0x0EU
 #define CORE2_65  0x0FU
 #define CORE2_45  0x17U
+#define ATOM      0x1CU
 #define NEHALEM   0x1AU
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU
 #define NEHALEM_WESTMERE     0x2CU
-#define NEHALEM_NEHALEM_EX   0x2EU
+#define NEHALEM_EX   0x2EU
 #define XEON_MP   0x1DU
 
 /* AMD K10 */

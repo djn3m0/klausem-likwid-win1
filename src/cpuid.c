@@ -12,8 +12,8 @@
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  HPCUtil
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *        Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
@@ -79,6 +79,8 @@ static char* core_2a_str = "Intel Core 2 65nm processor";
 static char* core_2b_str = "Intel Core 2 45nm processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
+static char* nehalem_west_str = "Intel Core Westmere processor";
+static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
@@ -250,7 +252,7 @@ intelCpuidFunc_4(CacheLevel** cachePool)
 			if ((cpuid_info.model == NEHALEM_BLOOMFIELD) ||
 					(cpuid_info.model == NEHALEM_LYNNFIELD) ||
 					(cpuid_info.model == NEHALEM_WESTMERE) ||
-					(cpuid_info.model == NEHALEM_NEHALEM_EX))
+					(cpuid_info.model == NEHALEM_EX))
 			{
 				if (cpuid_topology.numThreadsPerCore == 1)
 				{
@@ -348,6 +350,14 @@ cpuid_init (void)
 
                 case NEHALEM_LYNNFIELD:
                     cpuid_info.name = nehalem_lynn_str;
+                    break;
+
+                case NEHALEM_WESTMERE:
+                    cpuid_info.name = nehalem_west_str;
+                    break;
+
+                case NEHALEM_EX:
+                    cpuid_info.name = nehalem_ex_str;
                     break;
 
                 case XEON_MP:
@@ -481,7 +491,7 @@ cpuid_initTopology(void)
     int width;
 
 
-    /* First determine the number of cpus accessible */
+    /* First determine the number of processors accessible */
     pipe = popen("cat /proc/cpuinfo | grep ^processor | wc -l", "r");
     if (fscanf(pipe, "%u\n", &cpuid_topology.numHWThreads) != 1)
     {
@@ -490,10 +500,7 @@ cpuid_initTopology(void)
     }
 
     /* check if 0x0B cpuid leaf is supported */
-    eax = 0x0;
-    CPUID;
-
-    if (eax >= 0x0B)
+    if (largest_function >= 0x0B)
     {
         eax = 0x0B;
         ecx = 0;
@@ -512,7 +519,6 @@ cpuid_initTopology(void)
     }
 
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
-
     tree_init(&cpuid_topology.topologyTree, 0);
 
     if (hasBLeaf)
@@ -554,21 +560,21 @@ cpuid_initTopology(void)
                 currOffset = eax&0xFU;
 
                 switch ( level ) {
-                    case 0:
+                    case 0:  /* SMT thread */
                         bitField = extractBitField(apicId,
-                                currOffset-prevOffset,
-                                prevOffset);
+                                currOffset,
+                                0);
                         hwThreadPool[i].threadId = bitField;
                         break;
 
-                    case 1:
+                    case 1:  /* Core */
                         bitField = extractBitField(apicId,
                                 currOffset-prevOffset,
                                 prevOffset);
                         hwThreadPool[i].coreId = bitField;
                         break;
 
-                    case 2:
+                    case 2:  /* Package */
                         bitField = extractBitField(apicId,
                                 32-prevOffset,
                                 prevOffset);
