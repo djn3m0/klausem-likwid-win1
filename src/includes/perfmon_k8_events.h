@@ -87,7 +87,7 @@ static PerfmonEvent  k8_arch_events[NUM_ARCH_EVENTS_K8] = {
    0x42,0x10}
 ,{"DATA_CACHE_REFILLS_L2_ALL",
   "PMC", 
-   0x42,0x1F}
+   0x42,0x1E}
 ,{"DATA_CACHE_REFILLS_NORTHBRIDGE_INVALID",
   "PMC", 
    0x43,0x01}

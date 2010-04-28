@@ -38,7 +38,7 @@
 #include <perfmon_k10_events.h>
 
 #define NUM_COUNTERS_K10 4
-#define NUM_GROUPS_K10 9
+#define NUM_GROUPS_K10 13
 #define NUM_SETS_K10 8
 
 static int perfmon_numCountersK10 = NUM_COUNTERS_K10;
@@ -54,14 +54,18 @@ static PerfmonCounterMap k10_counter_map[NUM_COUNTERS_K10] = {
 
 static PerfmonGroupMap k10_group_map[NUM_GROUPS_K10] = {
     {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s","SSE_RETIRED_ADD_DOUBLE_FLOPS:PMC0,SSE_RETIRED_MULT_DOUBLE_FLOPS:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
-    {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","SSE_RETIRED_ADD_SINLGE_FLOPS:PMC0,SSE_RETIRED_MULT_SINLGE_FLOPS:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
-    {"L2",L2,"L2: L2 cache bandwidth in MBytes/s","DATA_CACHE_REFILLS_L2_ALL:PMC0,DATA_CACHE_EVICTED_ALL:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
-    {"L3",L3,"L3: L3 cache bandwidth in MBytes/s","L3_FILLS_ALL_ALL_CORES:PMC0,L3_READ_REQUEST_ALL_ALL_CORES:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
-    {"MEM",MEM,"Main memory bandwidth in MBytes/s",""},
-    {"DATA",DATA,"Load to store ratio","INST_RETIRED_LOADS:PMC0,INST_RETIRED_STORES:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
-    {"BRANCH",BRANCH,"Branch prediction miss rate","BRANCH_RETIRED:PMC0,BRANCH_MISPREDICT_RETIRED:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
-    {"CPI",CPI,"CPI: cycles per instruction","UOPS_RETIRED:PMC0,CPU_CLOCKS_UNHALTED:PMC1"},
-    {"TLB",TLB,"Translation lookaside buffer miss rate","DTLB_L2_MISS_4K:PMC0,CPU_CLOCKS_UNHALTED:PMC1"}
+    {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","SSE_RETIRED_ADD_SINGLE_FLOPS:PMC0,SSE_RETIRED_MULT_SINGLE_FLOPS:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"L2",L2,"L2 cache bandwidth in MBytes/s","DATA_CACHE_REFILLS_L2_ALL:PMC0,DATA_CACHE_EVICTED_ALL:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"L3",L3,"L3 cache bandwidth in MBytes/s","L3_FILLS_ALL_ALL_CORES:PMC0,L3_READ_REQUEST_ALL_ALL_CORES:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"MEM",MEM,"Main memory bandwidth in MBytes/s","NORTHBRIDGE_READ_RESPONSE_ALL:PMC0,OCTWORDS_WRITE_TRANSFERS:PMC1,DRAM_ACCESSES_DCTO_ALL:PMC2,DRAM_ACCESSES_DCT1_ALL:PMC3"},
+    {"CACHE",CACHE,"Data cache miss rate/ratio","INSTRUCTIONS_RETIRED:PMC0,DATA_CACHE_ACCESSES:PMC1,DATA_CACHE_REFILLS_L2_ALL:PMC2,DATA_CACHE_REFILLS_NORTHBRIDGE_ALL:PMC3"},
+    {"ICACHE",ICACHE,"Instruction cache miss rate/ratio","INSTRUCTIONS_RETIRED:PMC0,ICACHE_FETCHES:PMC1,ICACHE_REFILLS_L2:PMC2,ICACHE_REFILLS_MEM:PMC3"},
+    {"L2CACHE",L2CACHE,"L2 cache miss rate/ratio","INSTRUCTIONS_RETIRED:PMC0,L2_REQUESTS_ALL:PMC1,L2_MISSES_ALL:PMC2,L2_FILL_ALL:PMC3"},
+    {"L3CACHE",L3CACHE,"L3 cache miss rate/ratio","INSTRUCTIONS_RETIRED:PMC0,L3_READ_REQUEST_ALL_ALL_CORES:PMC1,L3_MISSES_ALL_ALL_CORES:PMC2"},
+    {"BRANCH",BRANCH,"Branch prediction miss rate/ratio","INSTRUCTIONS_RETIRED:PMC0,BRANCH_RETIRED:PMC1,BRANCH_MISPREDICT_RETIRED:PMC2,BRANCH_TAKEN_RETIRED:PMC3"},
+    {"CPI",CPI,"cycles per instruction","INSTRUCTIONS_RETIRED:PMC0,CPU_CLOCKS_UNHALTED:PMC1,UOPS_RETIRED:PMC2"},
+    {"FPU_EXCEPTION",FPU_EXCEPTION,"Floating point exceptions","INSTRUCTIONS_RETIRED:PMC0,FP_INSTRUCTIONS_RETIRED_ALL:PMC1,FPU_EXCEPTIONS_ALL:PMC2"},
+    {"TLB",TLB,"TLB miss rate/ratio","INSTRUCTIONS_RETIRED:PMC0,DATA_CACHE_ACCESSES:PMC1,DTLB_L2_HIT_ALL:PMC2,DTLB_L2_MISS_ALL:PMC3"}
 };
 
 
@@ -279,46 +283,151 @@ void perfmon_printDerivedMetrics_k10(PerfmonGroup group)
             break;
 
         case MEM:
-            break;
-
-        case DATA:
-            numRows = 2;
+            numRows = 4;
             INIT_BASIC;
             bstrListAdd(1,Runtime [s]);
-            bstrListAdd(2,Store to Load ratio);
+            bstrListAdd(2,Read data bandwidth (MBytes/s));
+            bstrListAdd(3,Write data bandwidth (MBytes/s));
+            bstrListAdd(4,DRAM bandwidth (MBytes/s));
+            initResultTable(&tableData, fc, numRows, numColumns);
+            printf("NOTE: Runtime is based on external cycles measurement and not on CPU_CLOCKS_UNHALTED!\n");
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = timer_printCyclesTime(&timeData);
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     1.0E-06*((perfmon_getResult(threadId,"PMC0")*64.0) / time);
+                tableData.rows[2].value[threadId] =
+                     1.0E-06*((perfmon_getResult(threadId,"PMC1")*8.0) / time);
+                tableData.rows[3].value[threadId] =
+                     1.0E-06*(((perfmon_getResult(threadId,"PMC2")+perfmon_getResult(threadId,"PMC3"))*64.0) / time);
+            }
+
+            break;
+
+        case CACHE:
+            numRows = 4;
+            INIT_BASIC;
+            bstrListAdd(1,Data cache misses);
+            bstrListAdd(2,Data cache request rate);
+            bstrListAdd(3,Data cache miss rate);
+            bstrListAdd(4,Data cache miss ratio);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
-                time = perfmon_getResult(threadId,"PMC2") * inverseClock;
-                tableData.rows[0].value[threadId] = time;
+                tableData.rows[0].value[threadId] =
+                     perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3");
                 tableData.rows[1].value[threadId] =
+                     perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[2].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3")) / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[3].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3")) / perfmon_getResult(threadId,"PMC1");
+            }
+
+            break;
+
+        case ICACHE:
+            numRows = 4;
+            INIT_BASIC;
+            bstrListAdd(1,Instruction cache misses);
+            bstrListAdd(2,Instruction cache request rate);
+            bstrListAdd(3,Instruction cache miss rate);
+            bstrListAdd(4,Instruction cache miss ratio);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] =
+                     perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3");
+                tableData.rows[1].value[threadId] =
+                     perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[2].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3")) / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[3].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3")) / perfmon_getResult(threadId,"PMC1");
+            }
+
+            break;
+
+        case L2CACHE:
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,L2 request rate);
+            bstrListAdd(2,L2 miss rate);
+            bstrListAdd(3,L2 miss ratio);
+            initResultTable(&tableData, fc, numRows, numColumns);
+            printf("NOTE: Direct method with limited accuracy!\n");
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC1") + perfmon_getResult(threadId,"PMC3")) / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[1].value[threadId] =
+                     perfmon_getResult(threadId,"PMC2") / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[2].value[threadId] =
+                     perfmon_getResult(threadId,"PMC2") / (perfmon_getResult(threadId,"PMC1") + perfmon_getResult(threadId,"PMC3"));
+            }
+
+            break;
+
+        case L3CACHE:
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,L3 request rate);
+            bstrListAdd(2,L3 miss rate);
+            bstrListAdd(3,L3 miss ratio);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] =
+                     perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[1].value[threadId] =
+                     perfmon_getResult(threadId,"PMC2") / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[2].value[threadId] =
+                     perfmon_getResult(threadId,"PMC2") / perfmon_getResult(threadId,"PMC1");
+            }
+
+            break;
+
+        case BRANCH:
+            numRows = 6;
+            INIT_BASIC;
+            bstrListAdd(1,Branch rate);
+            bstrListAdd(2,Branch misprediction rate);
+            bstrListAdd(3,Branch misprediction ratio);
+            bstrListAdd(4,Branch taken rate);
+            bstrListAdd(5,Branch taken ratio);
+            bstrListAdd(6,Instructions per branch);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] = 
+                     (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"PMC0"));
+                tableData.rows[1].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC2")/ perfmon_getResult(threadId,"PMC0"));
+                tableData.rows[2].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC2")/ perfmon_getResult(threadId,"PMC1"));
+                tableData.rows[3].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC3")/ perfmon_getResult(threadId,"PMC0"));
+                tableData.rows[4].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC3")/ perfmon_getResult(threadId,"PMC1"));
+                tableData.rows[5].value[threadId] =
                      (perfmon_getResult(threadId,"PMC0")/ perfmon_getResult(threadId,"PMC1"));
             }
             break;
 
-        case BRANCH:
-            numRows = 2;
-            INIT_BASIC;
-            bstrListAdd(1,Runtime [s]);
-            bstrListAdd(2,Ratio Mispredicted Branches);
-            initResultTable(&tableData, fc, numRows, numColumns);
-
-            for(threadId=0; threadId < perfmon_numThreads; threadId++)
-            {
-                time = perfmon_getResult(threadId,"PMC2") * inverseClock;
-                tableData.rows[0].value[threadId] = time;
-                tableData.rows[1].value[threadId] =
-                     (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"PMC0"));
-            }
-            break;
-
         case CPI:
-            numRows = 3;
+            numRows = 4;
             INIT_BASIC;
             bstrListAdd(1,Runtime [s]);
-            bstrListAdd(2,uops retired);
             bstrListAdd(2,CPI);
+            bstrListAdd(3,CPI (based on uops));
+            bstrListAdd(4,IPC);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
@@ -326,25 +435,57 @@ void perfmon_printDerivedMetrics_k10(PerfmonGroup group)
                 time = perfmon_getResult(threadId,"PMC1") * inverseClock;
                 tableData.rows[0].value[threadId] = time;
                 tableData.rows[1].value[threadId] =
-                     perfmon_getResult(threadId,"PMC0");
-                tableData.rows[2].value[threadId] =
                      (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"PMC0"));
+                tableData.rows[2].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"PMC2"));
+                tableData.rows[3].value[threadId] =
+                     (perfmon_getResult(threadId,"PMC0")/ perfmon_getResult(threadId,"PMC1"));
             }
             break;
 
         case TLB:
+            numRows = 6;
+            INIT_BASIC;
+            bstrListAdd(1,L1 DTLB request rate);
+            bstrListAdd(2,L1 DTLB miss rate);
+            bstrListAdd(3,L1 DTLB miss ratio);
+            bstrListAdd(4,L2 DTLB request rate);
+            bstrListAdd(5,L2 DTLB miss rate);
+            bstrListAdd(6,L2 DTLB miss ratio);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            printf("NOTE: The L2 metrics are only relevant if L2 DTLB request rate is equal to the L1 DTLB miss rate!\n");
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] = 
+                     perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[1].value[threadId] =
+                    (perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3")) / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[2].value[threadId] =
+                    (perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3")) / perfmon_getResult(threadId,"PMC1");
+                tableData.rows[3].value[threadId] =
+                    (perfmon_getResult(threadId,"PMC2") + perfmon_getResult(threadId,"PMC3")) / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[4].value[threadId] = 
+                     perfmon_getResult(threadId,"PMC3") / perfmon_getResult(threadId,"PMC0");
+                tableData.rows[5].value[threadId] = 
+                     perfmon_getResult(threadId,"PMC3") / (perfmon_getResult(threadId,"PMC2")+perfmon_getResult(threadId,"PMC3"));
+            }
+            break;
+
+        case FPU_EXCEPTION:
             numRows = 2;
             INIT_BASIC;
-            bstrListAdd(1,Runtime [s]);
-            bstrListAdd(2,TLB misses);
+            bstrListAdd(1,Overall FP exception rate);
+            bstrListAdd(2,FP exception rate);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
-                time = perfmon_getResult(threadId,"PMC1") * inverseClock;
-                tableData.rows[0].value[threadId] = time;
+                tableData.rows[0].value[threadId] = 
+                     perfmon_getResult(threadId,"PMC2") / perfmon_getResult(threadId,"PMC0");
                 tableData.rows[1].value[threadId] =
-                     perfmon_getResult(threadId,"PMC0");
+                     perfmon_getResult(threadId,"PMC2") / perfmon_getResult(threadId,"PMC1");
             }
             break;
 
@@ -356,8 +497,15 @@ void perfmon_printDerivedMetrics_k10(PerfmonGroup group)
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
-                time = perfmon_getResult(threadId,"PMC0") * inverseClock;
-                tableData.rows[0].value[threadId] = time;
+                if (perfmon_getResult(threadId,"PMC3") > 1.0E-6)
+                {
+                    time = perfmon_getResult(threadId,"PMC3") * inverseClock;
+                    tableData.rows[0].value[threadId] = time;
+                }
+                else
+                {
+                    tableData.rows[0].value[threadId] = 0.0;
+                }
             }
 
             break;
