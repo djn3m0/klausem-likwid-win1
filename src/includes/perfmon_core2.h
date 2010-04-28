@@ -159,7 +159,7 @@ void
 perfmon_startCountersThread_core2(int thread_id)
 {
     int i;
-    uint64_t flags;
+    uint64_t flags = 0ULL;
     int cpu_id = perfmon_threadData[thread_id].processorId;
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);

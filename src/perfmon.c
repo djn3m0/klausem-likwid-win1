@@ -303,7 +303,7 @@ printResultTable(PerfmonResultTable* tableData)
     int i,j;
     TableContainer* table;
     bstrList* labelStrings = NULL;
-    bstring label;
+    bstring label = bfromcstr("NO");
 
     table = asciiTable_allocate(tableData->numRows,
             tableData->numColumns+1,
@@ -496,7 +496,7 @@ perfmon_printMarkerResults()
     int i;
     int j;
     int region;
-    LikwidResults* results;
+    LikwidResults* results = NULL;
     PerfmonResultTable tableData;
     int numRows = perfmon_set.numberOfEvents;
     int numColumns = perfmon_numThreads;
