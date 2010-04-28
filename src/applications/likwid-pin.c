@@ -58,7 +58,7 @@ printf("-v\t Version information\n"); \
 printf("-c\t comma separated processor ids\n"); \
 printf("-s\t bitmask with threads to skip\n\n"); \
 printf("-t\t Threading implementation type (at the moment only intel)\n\n"); \
-printf("-t\t No special type necessary for gcc OpenMP\n\n")
+printf("\t No special type necessary for gcc OpenMP\n\n")
 
 #define VERSION_MSG \
 printf("likwid-pin   %d.%d \n\n",VERSION,RELEASE)
