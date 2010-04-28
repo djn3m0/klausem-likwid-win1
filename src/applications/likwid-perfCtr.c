@@ -84,7 +84,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);    
     }
 
-    while ((c = getopt (argc, argv, "+c:g:p:hvmVair")) != -1)
+    while ((c = getopt (argc, argv, "+c:g:hvmVair")) != -1)
     {
         switch (c)
         {
