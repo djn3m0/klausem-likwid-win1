@@ -59,6 +59,7 @@ printf("-i\t print cpu info\n"); \
 printf("-m\t use markers inside code \n"); \
 printf("-g\t performance group  or event set string\n"); \
 printf("-a\t list available performance groups\n"); \
+printf("-e\t list available counters and events\n"); \
 printf("-c\t processor ids to measure (required), e.g. 1,2-4,8\n\n")
 
 
@@ -69,6 +70,7 @@ int main (int argc, char** argv)
 { 
     int optInfo = 0;
     int optPrintGroups = 0;
+    int optPrintEvents = 0;
     int optUseMarker = 0;
     int optReport = 0;
     int c;
@@ -84,7 +86,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);    
     }
 
-    while ((c = getopt (argc, argv, "+c:g:hvmVair")) != -1)
+    while ((c = getopt (argc, argv, "+c:g:hvmVaeir")) != -1)
     {
         switch (c)
         {
@@ -127,6 +129,11 @@ int main (int argc, char** argv)
                 numThreads=1; /*to get over the error message */
                 threads[0]=0;
                 optPrintGroups = 1;
+                break;
+            case 'e':
+                numThreads=1; /*to get over the error message */
+                threads[0]=0;
+                optPrintEvents = 1;
                 break;
             case 'm':
                 optUseMarker = 1;
@@ -222,6 +229,12 @@ int main (int argc, char** argv)
     if (optPrintGroups)
     {
         perfmon_printAvailableGroups();
+        exit (EXIT_SUCCESS);    
+    }
+    if (optPrintEvents)
+    {
+        perfmon_printCounters();
+        perfmon_printEvents();
         exit (EXIT_SUCCESS);    
     }
     if (optind == argc) 

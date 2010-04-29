@@ -67,5 +67,7 @@ extern void perfmon_stopCounters(void);
 extern double perfmon_getResult(int threadId, char* counterString);
 extern void perfmon_printMarkerResults(void);
 extern void perfmon_printCounterResults(void);
+extern void perfmon_printCounters(void);
+extern void perfmon_printEvents(void);
 
 #endif /*PERFMON_H*/

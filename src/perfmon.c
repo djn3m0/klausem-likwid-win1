@@ -433,6 +433,40 @@ initResultTable(PerfmonResultTable* tableData,
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
+void
+perfmon_printCounters(void)
+{
+    int i;
+
+    printf("This architecture has %d counters.\n", perfmon_numCounters);
+    printf("Counters names:  ");
+
+    for (i=0; i<perfmon_numCounters; i++)
+    {
+        printf("%s\t",counter_map[i].key);
+    }
+    printf(".\n");
+}
+
+void
+perfmon_printEvents(void)
+{
+    int i;
+
+    printf("This architecture has %d events.\n", perfmon_numArchEvents);
+    printf("Event tags (tag, id, umask, counters):\n");
+
+    for (i=0; i<perfmon_numArchEvents; i++)
+    {
+        printf("%s, 0x%X, 0x%X, %s \n",
+                eventHash[i].name,
+                eventHash[i].eventId,
+                eventHash[i].umask,
+                eventHash[i].limit);
+    }
+}
+
+
 double
 perfmon_getResult(int threadId, char* counterString)
 {
@@ -707,11 +741,11 @@ perfmon_init(int numThreads_local, int threads[])
                     perfmon_startCountersThread = perfmon_startCountersThread_pm;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_pm;
                     break;
+#endif
 
                 case CORE_DUO:
                     fprintf(stderr, "Unsupported Processor!\n");
                     exit(EXIT_FAILURE);
-#endif
                     break;
 
                 case XEON_MP:
