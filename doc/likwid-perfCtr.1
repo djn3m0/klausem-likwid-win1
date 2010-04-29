@@ -83,14 +83,14 @@ applications.
 .IP 1. 4
 As wrapper with performance group:
 .TP
-.B ./likwid-perfCtr  -c 1,2  -g TLB   likwid-pin -c 0,1,2 ./cacheBench -n 2 -l 1048576 -i 100 -t Stream
+.B likwid-perfCtr  -c 1,2  -g TLB   likwid-pin -c 0,1,2 ./cacheBench -n 2 -l 1048576 -i 100 -t Stream
 .PP
 The parent process is pinned to processor 0, Thread 0 to processor 1 and Thread 1 to processor 2.
 We want to measure the threads only. Therefore only processor 1 and 2 are measured.
 .IP 2. 4
 As wrapper with custom event set on AMD:
 .TP
-.B ./likwid-perfCtr  -c 1,2  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   likwid-pin -c 0,1-4 ./cacheBench
+.B likwid-perfCtr  -c 1,2  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   likwid-pin -c 0,1-4 ./cacheBench
 .PP
 Only processors 1 and 2 are measured. It is specified that the event
 .B INSTRUCTIONS_RETIRED_SSE
@@ -107,7 +107,7 @@ event. If you want this you have to include this event in your custom event stri
 .IP 3. 4
 As wrapper with custom event set on Intel:
 .TP
-.B ./likwid-perfCtr  -c 0  -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_LINES_IN_ANY:UPMC0   likwid-pin -c 0  ./stream-icc
+.B likwid-perfCtr  -c 0  -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_LINES_IN_ANY:UPMC0   likwid-pin -c 0  ./stream-icc
 .PP
 On Intel processors fixed events are measured on dedicated counters. These are
 .B INSTR_RETIRED_ANY
@@ -120,7 +120,7 @@ will calculate the runtime and CPI metric for your run.
 .IP 4. 4
 Using the marker API to measure only parts of your code (this can be used both with groups or custom event sets):
 .TP
-.B ./likwid-perfCtr -m -c 1-4  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   likwid-pin -c 0,1-4 ./cacheBench
+.B likwid-perfCtr -m -c 1-4  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   likwid-pin -c 0,1-4 ./cacheBench
 .PP
 You have to link you code against liblikwid.a and use the marker API calls.
 The following code snippet shows the necessary calls:
