@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+my $arch;
 my $key;
 my $eventId;
 my $limit;
@@ -10,7 +11,21 @@ my $umask;
 my $num_events=0;
 my @events = ();
 
-while (<>) {
+if (! $ARGV[0] ){
+    die "ERROR: Usage: perl ./$0 perfmon_<ARCH>_events.txt\n\n";
+}
+
+my $filename = $ARGV[0];
+
+if ($filename =~ /perfmon_([A-Za-z0-9]+)_events\.txt/){
+    $arch = $1;
+} else {
+    die "The input filename must follow the scheme perfmon_<ARCH>_events.txt\n";
+}
+
+open INFILE,"<$filename";
+
+while (<INFILE>) {
 
     if (/(EVENT_[A-Z0-9_]*)[ ]+(0x[A-F0-9]+)[ ]+([A-Z0-9|]+)/) {
         $eventId = $2;
@@ -22,20 +37,29 @@ while (<>) {
         $num_events++;
     }
 }
+close INFILE;
 
-open RESULTFILE,">out.h";
-print RESULTFILE "#define NUM_ARCH_EVENTS_CORE2 $num_events\n\n";
-print RESULTFILE "static PerfmonEvent  arch_events[NUM_ARCH_EVENTS_CORE2] = {\n";
+my $ucArch = uc($arch);
+my $delim;
+$delim = "";
+
+
+$filename =~ s/\.txt/.h/;
+open OUTFILE,">$filename";
+print OUTFILE "#define NUM_ARCH_EVENTS_$ucArch $num_events\n\n";
+print OUTFILE "static PerfmonEvent  ".$arch."_arch_events[NUM_ARCH_EVENTS_$ucArch] = {\n";
 
 foreach my $event (@events) {
 
-        print RESULTFILE <<END;
-,{\"$event->{name}\",
+    print OUTFILE <<END;
+$delim {\"$event->{name}\",
   \"$event->{limit}\", 
    $event->{eventId},$event->{mask}}
 END
+    $delim = ',';
+
 }
 
-print  RESULTFILE "};\n";
-close RESULTFILE;
+print  OUTFILE "};\n";
+close OUTFILE;
 
