@@ -46,7 +46,6 @@
 #include <perfmon.h>
 #include <asciiTable.h>
 #include <registers.h>
-//#include <perfmon_pm_events.h>
 
 
 /* #####   EXPORTED VARIABLES   ########################################### */
@@ -108,7 +107,7 @@ static void initThread(int , int );
     bstrListAlloc(fc, numRows+1); \
     bstrListAdd(0,Metric);
 
-//#include <perfmon_pm.h>
+#include <perfmon_pm.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
 #include <perfmon_k8.h>
@@ -725,23 +724,19 @@ perfmon_init(int numThreads_local, int threads[])
 
             switch ( cpuid_info.model ) 
             {
-#if 0
                 case PENTIUM_M_BANIAS:
 
                 case PENTIUM_M_DOTHAN:
 
                     eventHash = pm_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEvents_PM;
+                    perfmon_numArchEvents = perfmon_numArchEventsPM;
 
                     initThreadArch = perfmon_init_pm;
-                    getGroupId = perfmon_getGroupId_pm;
-                    setupGroupThread = perfmon_setupGroupThread_pm;
-                    printResults = perfmon_print_results_pm;
-                    perfmon_printAvailableGroups = perfmon_printGroups_pm;
+                    printDerivedMetrics = perfmon_printDerivedMetricsPM;
                     perfmon_startCountersThread = perfmon_startCountersThread_pm;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_pm;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
                     break;
-#endif
 
                 case CORE_DUO:
                     fprintf(stderr, "Unsupported Processor!\n");
