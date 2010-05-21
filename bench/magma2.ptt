@@ -1,0 +1,12 @@
+STREAMS 3
+TYPE SINGLE
+FLOPS 3
+BYTES 24
+LOOP 4
+movaps    FPR1, [STR0 + GPR1*4]
+mulps     FPR1, [STR1 + GPR1*4]
+movaps    FPR2, [STR0 + GPR1*4 + 16]
+mulps     FPR2, [STR1 + GPR1*4 + 16]
+addps     FPR1, FPR2
+movaps    [STR2 + GPR1*4], FPR1
+
