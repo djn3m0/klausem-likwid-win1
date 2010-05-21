@@ -5,13 +5,14 @@ VERSION=0.1
 BUILD_DIR  = ./$(TAG)
 SRC_DIR    = ./src
 DOC_DIR    = ./doc
+BENCH_DIR  = ./bench
 MAKE_DIR   = ./
 Q         ?= @
 
 #DO NOT EDIT BELOW
 include $(MAKE_DIR)/include_$(TAG).mk
 include $(MAKE_DIR)/config.mk
-INCLUDES  += -I./src/includes
+INCLUDES  += -I./src/includes -I$(BUILD_DIR)
 DEFINES   += -DVERSION=$(VERSION) \
 			 -DRELEASE=$(RELEASE) \
 			 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
@@ -27,11 +28,13 @@ TARGET_LIB = liblikwid.a
 PINLIB  = liblikwidpin.so
 
 VPATH     = $(SRC_DIR)
-OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+OBJ       = $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
+OBJ      += $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
 APPS      = likwid-perfCtr  \
 			likwid-features \
 			likwid-topology \
-			likwid-pin
+			likwid-pin \
+            likwid-bench
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
@@ -62,12 +65,22 @@ $(BUILD_DIR)/%.o:  %.c
 	$(Q)$(CC) -c  $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
+$(BUILD_DIR)/%.pas:  $(BENCH_DIR)/%.ptt
+	@echo "===>  GENERATE BENCHMARKS"
+	$(Q)$(GEN_PAS) ./bench  $(BUILD_DIR) ./perl/templates
+
+$(BUILD_DIR)/%.o:  $(BUILD_DIR)/%.pas
+	@echo "===>  ASSEMBLE  $@"
+	$(Q)$(PAS) -i x86-64 -o $(BUILD_DIR)/$*.s $<  '$(DEFINES)'
+	$(Q)$(AS) $(ASFLAGS)  $(BUILD_DIR)/$*.s -o $@
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
 .PHONY: clean distclean install uninstall
+
+.PRECIOUS: $(BUILD_DIR)/%.pas
 
 clean:
 	@echo "===>  CLEAN"

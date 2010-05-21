@@ -1,0 +1,13 @@
+STREAMS 3
+TYPE SINGLE
+FLOPS 3
+BYTES 24
+LOOP 1
+fld  dword ptr   [STR0 + GPR1*4]
+fld  dword ptr   [STR1 + GPR1*4]
+fmulp
+fld  dword ptr   [STR0 + GPR1*4 + 4]
+fld  dword ptr   [STR1 + GPR1*4 + 4]
+fmulp
+faddp
+fstp dword ptr   [STR2 + GPR1*4]
