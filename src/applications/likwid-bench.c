@@ -143,6 +143,12 @@ int main(int argc, char** argv)
 
                 for (i=0; i<test->streams; i++)
                 {
+                    if (currentWorkgroup->streams[i].offset%test->stride)
+                    {
+                        fprintf (stderr, "Stream %d: offset is not a multiple of stride!\n",i);
+                        return EXIT_FAILURE;
+                    }
+
                     allocator_allocateVector(&(currentWorkgroup->streams[i].ptr),
                             PAGE_ALIGNMENT,
                             currentWorkgroup->size,

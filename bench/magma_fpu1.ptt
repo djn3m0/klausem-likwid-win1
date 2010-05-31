@@ -1,7 +1,7 @@
 STREAMS 3
 TYPE SINGLE
 FLOPS 3
-BYTES 24
+BYTES 12
 LOOP 1
 fld  dword ptr   [STR0 + GPR1*4]
 fld  dword ptr   [STR1 + GPR1*4]

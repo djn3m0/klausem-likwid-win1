@@ -90,15 +90,15 @@ allocator_allocateVector(void** ptr,
     int i;
     const AffinityDomain* domain;
 
-    size += offset;
+ //   size += offset;
     switch (type)
     {
         case SINGLE:
-            bytesize = size * sizeof(float);
+            bytesize = (size+offset) * sizeof(float);
             break;
 
         case DOUBLE:
-            bytesize = size * sizeof(double);
+            bytesize = (size+offset) * sizeof(double);
             break;
     }
     
