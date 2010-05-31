@@ -12,5 +12,5 @@ movaps    FPR6, [STR6 + GPR1*4]
 movaps    FPR7,[STR7 + GPR1*4]
 movaps    FPR8,[STR8 + GPR1*4]
 movaps    FPR9,[STR9 + GPR1*4]
-movaps    [STR0 + GPR1*4], FPR3
+movaps    [STR0 + GPR1*4], FPR2
 
