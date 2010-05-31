@@ -1,0 +1,22 @@
+STREAMS 6
+TYPE SINGLE
+FLOPS 12
+BYTES 24
+movaps    FPR1, [STR0 + GPR1*4]
+LOOP 4
+movaps    FPR4, [STR2 + GPR1*4]
+movaps    FPR2, [STR0 + GPR1*4]
+movaps    FPR6, [STR3 + GPR1*4]
+movaps    FPR7, [STR4 + GPR1*4]
+dpps      FPR7, FPR6, 0xFF
+movaps    FPR3, FPR1
+mulps     FPR4, FPR1
+movaps    FPR5, [STR2 + GPR1*4 + 16]
+shufps    FPR3, FPR2, 0x01
+mulps     FPR3, FPR5
+addps     FPR3, FPR4
+addps     FPR3, FPR7
+mulps     FPR3,  [STR5 + GPR1*4]
+movaps    [STR1 + GPR1*4], FPR3
+movaps    FPR1, FPR2
+
