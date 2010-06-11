@@ -170,14 +170,14 @@ cpuFeatures_print(int cpu)
         PRINT_VALUE(RED,disabled);
     }
 
-    printf("MONITOR/MWAIT: \t\t\t\t");
+    printf("MONITOR/MWAIT: \t\t\t");
     if (flags & (1ULL<<18)) 
     {
-        PRINT_VALUE(RED,notsupported);
+        PRINT_VALUE(GREEN,supported);
     }
     else
     {
-        PRINT_VALUE(GREEN,supported);
+        PRINT_VALUE(RED,notsupported);
     }
 
     printf("Adjacent Cache Line Prefetch: \t");

@@ -108,6 +108,7 @@ static void initThread(int , int );
     bstrListAdd(0,Metric);
 
 #include <perfmon_pm.h>
+#include <perfmon_atom.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
 #include <perfmon_k8.h>
@@ -744,6 +745,25 @@ perfmon_init(int numThreads_local, int threads[])
                     perfmon_stopCountersThread = perfmon_stopCountersThread_pm;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_pm;
                     break;
+
+                case ATOM:
+
+                    eventHash = atom_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsAtom;
+
+                    group_map = atom_group_map;
+                    perfmon_numGroups = perfmon_numGroupsAtom;
+
+                    counter_map = core2_counter_map;
+                    perfmon_numCounters = perfmon_numCountersCore2;
+
+                    initThreadArch = perfmon_init_core2;
+                    printDerivedMetrics = perfmon_printDerivedMetricsAtom;
+                    perfmon_startCountersThread = perfmon_startCountersThread_core2;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
+                    break;
+
 
                 case CORE_DUO:
                     fprintf(stderr, "Unsupported Processor!\n");
