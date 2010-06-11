@@ -120,25 +120,26 @@ perfmon_setupCounterThread_pm(int thread_id,
 void
 perfmon_startCountersThread_pm(int thread_id)
 {
-    uint64_t flags;
+    uint64_t flags = 0ULL;
     int processorId = perfmon_threadData[thread_id].processorId;
 
-    /* zero the counter registers */
-    msr_write(processorId, perfmon_threadData[thread_id].counters[0].counterRegister , 0x0ULL);
-    msr_write(processorId, perfmon_threadData[thread_id].counters[1].counterRegister , 0x0ULL);
+    if (perfmon_threadData[thread_id].counters[0].init == TRUE) {
+        msr_write(processorId, perfmon_threadData[thread_id].counters[0].counterRegister , 0x0ULL);
+        msr_write(processorId, perfmon_threadData[thread_id].counters[1].counterRegister , 0x0ULL);
 
-    /* on p6 only MSR_PERFEVTSEL0 has the enable bit
-     * it enables both counters as long MSR_PERFEVTSEL1 
-     * has a valid configuration */
-    flags = msr_read(processorId, MSR_PERFEVTSEL0);
-    flags |= (1<<22);  /* enable flag */
+        /* on p6 only MSR_PERFEVTSEL0 has the enable bit
+         * it enables both counters as long MSR_PERFEVTSEL1 
+         * has a valid configuration */
+        flags = msr_read(processorId, MSR_PERFEVTSEL0);
+        flags |= (1<<22);  /* enable flag */
 
-    if (perfmon_verbose)
-    {
-        printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERFEVTSEL0, LLU_CAST flags);
+        if (perfmon_verbose)
+        {
+            printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",MSR_PERFEVTSEL0, LLU_CAST flags);
+        }
+
+        msr_write(processorId, MSR_PERFEVTSEL0, flags);
     }
-
-    msr_write(processorId, MSR_PERFEVTSEL0, flags);
 
 }
 
@@ -151,7 +152,7 @@ perfmon_stopCountersThread_pm(int thread_id)
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
     msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
 
-    for (i=0;i<NUM_PMC;i++) 
+    for (i=0;i<NUM_COUNTERS_PM;i++) 
     {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
