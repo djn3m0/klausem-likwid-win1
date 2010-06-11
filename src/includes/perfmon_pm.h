@@ -68,8 +68,10 @@ perfmon_init_pm(PerfmonThread *thread)
 
     thread->counters[PMC0].configRegister = MSR_PERFEVTSEL0;
     thread->counters[PMC0].counterRegister = MSR_PMC0;
+    thread->counters[PMC0].type = PMC;
     thread->counters[PMC1].configRegister = MSR_PERFEVTSEL1;
     thread->counters[PMC1].counterRegister = MSR_PMC1;
+    thread->counters[PMC1].type = PMC;
 
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
     msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
@@ -83,8 +85,6 @@ perfmon_init_pm(PerfmonThread *thread)
     msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
 }
 
-// TODO: duplicate of perfmon_setupCounterThread_core2, could not find a difference between core2 and pm
-// use common function pointer if both are really equal?
 void
 perfmon_setupCounterThread_pm(int thread_id,
         uint32_t event, uint32_t umask,
@@ -113,10 +113,6 @@ perfmon_setupCounterThread_pm(int thread_id,
                     LLU_CAST reg,
                     LLU_CAST flags);
         }
-    }
-    else if (perfmon_threadData[thread_id].counters[index].type == FIXED)
-    {
-        perfmon_threadData[thread_id].counters[index].init = TRUE;
     }
 }
 
@@ -154,7 +150,6 @@ perfmon_stopCountersThread_pm(int thread_id)
 
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
     msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
-
 
     for (i=0;i<NUM_PMC;i++) 
     {
