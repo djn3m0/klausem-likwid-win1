@@ -42,8 +42,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
-#include <string.h>                                                                                                   
-#include <unistd.h> 
+#include <string.h>
+#include <unistd.h>
 
 #include <msr.h>
 
@@ -58,11 +58,13 @@ msr_check()
 
     if (fd < 0)
     {
-        fprintf(stderr, "ERROR\n");                      
-        fprintf(stderr, "rdmsr: failed to open '%s': %s!\n",msr_file_name , strerror(errno));                      
-        fprintf(stderr, "       Please check if the msr module is loaded and the device file has correct permissions.\n\n");  
+        fprintf(stderr, "ERROR\n");
+        fprintf(stderr, "rdmsr: failed to open '%s': %s!\n",msr_file_name , strerror(errno));
+        fprintf(stderr, "       Please check if the msr module is loaded and the device file has correct permissions.\n\n");
         exit(127);
     }
+
+    close(fd);
 }
 
 

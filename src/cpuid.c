@@ -815,6 +815,11 @@ cpuid_initTopology(void)
     cpuid_topology.numCoresPerSocket = tree_countChildren(currentNode);
     currentNode = tree_getNode(currentNode, 0);
     cpuid_topology.numThreadsPerCore = tree_countChildren(currentNode);
+
+    if (pclose(pipe) == -1) {
+        fprintf(stderr, "Failed to close pipe for cpuinfo!\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void 

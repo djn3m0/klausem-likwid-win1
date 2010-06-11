@@ -44,7 +44,7 @@
 #include <types.h>
 
 extern int perfmon_verbose;
-extern PerfmonThread* threadData;
+extern PerfmonThread* perfmon_threadData;
 extern int perfmon_numThreads;
 
 extern void (*perfmon_startCountersThread) (int thread_id);

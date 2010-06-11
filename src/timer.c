@@ -57,7 +57,7 @@ getCpuSpeed(void)
     struct timeval tv1;
     struct timeval tv2;
     struct timezone tzp;
-    struct timespec delay = { 0, 800000000 }; /* calibration time: 400 ms */
+    struct timespec delay = { 0, 800000000 }; /* calibration time: 800 ms */
 
     for (i=0; i< 2; i++)
     {
