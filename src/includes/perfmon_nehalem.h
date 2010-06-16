@@ -42,7 +42,7 @@
 #include <perfmon_nehalem_events.h>
 
 #define NUM_COUNTERS_NEHALEM 14
-#define NUM_GROUPS_NEHALEM 8
+#define NUM_GROUPS_NEHALEM 11
 #define NUM_SETS_NEHALEM 8
 
 static int perfmon_numCountersNehalem = NUM_COUNTERS_NEHALEM;
@@ -74,10 +74,13 @@ static PerfmonGroupMap nehalem_group_map[NUM_GROUPS_NEHALEM] = {
     {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC2,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC3"},
     {"L2",L2,"L2 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1"},
     {"L3",L3,"L3 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L2_LINES_IN_ANY:PMC0,L2_LINES_OUT_ANY:PMC1"},
-    {"MEM",MEM,"Main memory bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_LINES_IN_ANY:UPMC0,UNC_L3_LINES_OUT_ANY:UPMC1"},
+    {"MEM",MEM,"Main memory bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_QMC_NORMAL_READS_ANY:UPMC0,UNC_QMC_WRITES_FULL_ANY:UPMC1"},
+    {"CACHE",CACHE,"Data cache miss rate/ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_ALL_REF_ANY:PMC1"},
+    {"L2CACHE",L2CACHE,"L2 cache miss rate/ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L2_DATA_RQSTS_DEMAND_ANY:PMC0,L2_RQSTS_MISS:PMC1"},
+    {"L3CACHE",L3CACHE,"L3 cache miss rate/ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_HITS_ANY:UPMC0,UNC_L3_MISS_ANY:UPMC1,UNC_L3_LINES_IN_ANY:UPMC2,UNC_L3_LINES_OUT_ANY:UPMC3"},
     {"DATA",DATA,"Load to store ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,MEM_INST_RETIRED_LOADS:PMC0,MEM_INST_RETIRED_STORES:PMC1"},
-    {"BRANCH",BRANCH,"Branch prediction miss rate","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,BR_INST_RETIRED_ALL_BRANCHES:PMC0,BR_MISP_RETIRED_ALL_BRANCHES:PMC1"},
-    {"TLB",TLB,"Translation lookaside buffer miss rate","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,DTLB_MISSES_ANY:PMC0"}
+    {"BRANCH",BRANCH,"Branch prediction miss rate/ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,BR_INST_RETIRED_ALL_BRANCHES:PMC0,BR_MISP_RETIRED_ALL_BRANCHES:PMC1"},
+    {"TLB",TLB,"TLB miss rate/ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,DTLB_MISSES_ANY:PMC0,L1D_ALL_REF_ANY:PMC1"}
 };
 
 void
@@ -541,41 +544,111 @@ perfmon_printDerivedMetricsNehalem(PerfmonGroup group)
             }
             break;
 
-        case BRANCH:
-            numRows = 3;
+        case CACHE:
+            numRows = 4;
             INIT_BASIC;
-            bstrListAdd(1,Runtime [s]);
-            bstrListAdd(2,CPI);
-            bstrListAdd(3,Branches Mispredicted [%]);
+            bstrListAdd(1,Data cache misses);
+            bstrListAdd(2,Data cache request rate);
+            bstrListAdd(3,Data cache miss rate);
+            bstrListAdd(4,Data cache miss ratio);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
-                time = perfmon_getResult(threadId,"FIXC1") * inverseClock;
-                cpi  =  perfmon_getResult(threadId,"FIXC1")/
-                    perfmon_getResult(threadId,"FIXC0");
-                tableData.rows[0].value[threadId] = time;
-                tableData.rows[1].value[threadId] = cpi;
+                tableData.rows[0].value[threadId] = perfmon_getResult(threadId,"PMC0");
+                tableData.rows[1].value[threadId] =
+                    perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"FIXC0");
                 tableData.rows[2].value[threadId] =
-                    (perfmon_getResult(threadId,"PMC1")/perfmon_getResult(threadId,"PMC0")) *100;
+                    perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[3].value[threadId] =
+                    perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"PMC1");
+
+            }
+
+            break;
+
+        case L2CACHE:
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,L2 request rate);
+            bstrListAdd(2,L2 miss rate);
+            bstrListAdd(3,L2 miss ratio);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] =
+                     perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[1].value[threadId] =
+                     perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[2].value[threadId] =
+                     perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"PMC0");
+            }
+
+            break;
+
+        case L3CACHE:
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,L2 request rate);
+            bstrListAdd(2,L2 miss rate);
+            bstrListAdd(3,L2 miss ratio);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] =
+                     perfmon_getResult(threadId,"UPMC0") / perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[1].value[threadId] =
+                     perfmon_getResult(threadId,"UPMC1") / perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[2].value[threadId] =
+                     perfmon_getResult(threadId,"UPMC1") / perfmon_getResult(threadId,"UPMC0");
+            }
+
+            break;
+
+
+
+        case BRANCH:
+            numRows = 4;
+            INIT_BASIC;
+            bstrListAdd(1,Branch rate);
+            bstrListAdd(2,Branch misprediction rate);
+            bstrListAdd(3,Branch misprediction ratio);
+            bstrListAdd(4,Instructions per branch);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] = 
+                    (perfmon_getResult(threadId,"PMC0")/ perfmon_getResult(threadId,"FIXC0"));
+                tableData.rows[1].value[threadId] =
+                    (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"FIXC0"));
+                tableData.rows[2].value[threadId] =
+                    (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"PMC0"));
+                tableData.rows[3].value[threadId] =
+                    (perfmon_getResult(threadId,"FIXC0")/ perfmon_getResult(threadId,"PMC0"));
             }
             break;
 
         case TLB:
-            numRows = 2;
+            numRows = 3;
             INIT_BASIC;
-            bstrListAdd(1,Runtime [s]);
-            bstrListAdd(2,CPI);
+            bstrListAdd(1,L1 DTLB request rate);
+            bstrListAdd(2,L1 DTLB miss rate);
+            bstrListAdd(3,L1 DTLB miss ratio);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
-                time = perfmon_getResult(threadId,"FIXC1") * inverseClock;
-                cpi  =  perfmon_getResult(threadId,"FIXC1")/
-                    perfmon_getResult(threadId,"FIXC0");
-                tableData.rows[0].value[threadId] = time;
-                tableData.rows[1].value[threadId] = cpi;
+                tableData.rows[0].value[threadId] = 
+                    perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[1].value[threadId] =
+                    perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[2].value[threadId] =
+                    perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"PMC1");
             }
+
             break;
 
         case NOGROUP:

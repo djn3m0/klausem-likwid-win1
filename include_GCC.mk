@@ -7,7 +7,7 @@ ANSI_CFLAGS += -Wextra
 
 CFLAGS   = -O1 -Wno-format  -Wall
 CPPFLAGS =
-LFLAGS   =
+LFLAGS   =  -pthread
 DEFINES  = -D_GNU_SOURCE
 
 INCLUDES =

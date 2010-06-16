@@ -63,6 +63,7 @@ typedef enum {
     L2,
     L3,
     MEM,
+    BUS,
     DATA,
     CACHE,
     ICACHE,

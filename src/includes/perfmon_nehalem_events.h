@@ -265,7 +265,7 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"L2_DATA_RQSTS_DEMAND_PREFETCH_MESI",
   "PMC", 
    0x26,0xF0}
-, {"L2_DATA_RQSTS_DEMAND_PREFETCH_ANY",
+, {"L2_DATA_RQSTS_DEMAND_ANY",
   "PMC", 
    0x26,0xFF}
 , {"L2_WRITE_RFO_I_STATE",

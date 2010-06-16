@@ -53,6 +53,7 @@
 printf("likwid-pin --  Version %d.%d \n\n",VERSION,RELEASE); \
 printf("\n"); \
 printf("Supported Options:\n"); \
+printf("Example usage: likwid-pin -c 0,4-6 ./myApp\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-c\t comma separated processor ids\n"); \
@@ -172,6 +173,7 @@ int main (int argc, char** argv)
     if (biseqcstr(typeString,"intel")) 
     {
 		skipMask = 0x1;
+        setenv("KMP_AFFINITY", "disabled", 1);
     }
 
 	if (numThreads > 1)
