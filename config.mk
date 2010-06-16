@@ -1,3 +1,6 @@
+# supported: GCC, ICC
+COMPILER = GCC
+
 # Define the color of the likwid-pin output
 # Can be NONE, BLACK, RED, GREEN, YELLOW, BLUE,
 # MAGENTA, CYAN or WHITE
@@ -6,8 +9,6 @@ COLOR = CYAN
 # Path were to install likwid
 PREFIX =  /usr/local
 MANPREFIX = $(PREFIX)/man
-
-#LIBPTHREAD = 
 
 MAX_NUM_THREADS = 128
 MAX_NUM_SOCKETS = 4

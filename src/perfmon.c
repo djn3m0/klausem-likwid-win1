@@ -294,7 +294,18 @@ readMarkerFile(char* filename, LikwidResults** resultsRef)
 		fclose (fp);
 		bdestroy (src);
 	}
+    else
+    {
+        fprintf (stderr, "ERROR: Could not open result file /tmp/likwid_results.txt!\n" );
+        exit(EXIT_FAILURE);
+    }
     *resultsRef = results;
+
+    if (system("rm  -f /tmp/likwid_results.txt") == EOF)
+    {
+        fprintf(stderr, "Failed to execute rm\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 static void

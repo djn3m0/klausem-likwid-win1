@@ -40,4 +40,9 @@ extern void likwid_markerStopRegion(int thread_id, int core_id, int regionTag);
 extern int  likwid_markerRegisterRegion(char* regionTag);
 extern int  likwid_markerGetRegionId(char* regionTag);
 
+extern int  likwid_processGetProcessorId();
+extern int  likwid_threadGetProcessorId();
+extern int  likwid_pinProcess(int processorId);
+extern int  likwid_pinThread(int processorId);
+
 #endif /*LIKWID_H*/

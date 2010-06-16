@@ -1,7 +1,7 @@
-TAG = GCC
-VERSION=0.1
+include ./config.mk
 
 #CONFIGURE BUILD SYSTEM
+TAG        = $(COMPILER)
 BUILD_DIR  = ./$(TAG)
 SRC_DIR    = ./src
 DOC_DIR    = ./doc
@@ -10,7 +10,6 @@ Q         ?= @
 
 #DO NOT EDIT BELOW
 include $(MAKE_DIR)/include_$(TAG).mk
-include $(MAKE_DIR)/config.mk
 INCLUDES  += -I./src/includes
 DEFINES   += -DVERSION=$(VERSION) \
 			 -DRELEASE=$(RELEASE) \
