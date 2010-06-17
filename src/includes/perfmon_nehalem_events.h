@@ -679,7 +679,7 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"MACHINE_CLEARS_SMC",
   "PMC", 
    0xC3,0x04}
-, {"BR_INST_RETIRED_ALL_BRANCHES2",
+, {"BR_INST_RETIRED_ALL_BRANCHES",
   "PMC", 
    0xC4,0x00}
 , {"BR_INST_RETIRED_CONDITIONAL",
