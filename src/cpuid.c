@@ -97,7 +97,7 @@ static char* amd_k8_str = "AMD K8 architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
-static int lock = 0;
+static int init = 0;
 static uint32_t eax, ebx, ecx, edx;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -299,8 +299,8 @@ cpuid_init (void)
 {
     int isIntel = 1;
 
-    if (lock) return;
-    lock =1;
+    if (init) return;
+    init =1;
 
     eax = 0x00;
     CPUID;

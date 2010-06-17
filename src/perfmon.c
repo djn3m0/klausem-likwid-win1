@@ -267,6 +267,7 @@ readMarkerFile(char* filename, LikwidResults** resultsRef)
         if (numberOfThreads != perfmon_numThreads)
         {
             fprintf (stderr, "WARNING: Number of threads in marker file unequal to number of threads in likwid-perfCtr!\n" );
+            exit(EXIT_FAILURE);
         }
 
 		/* allocate  LikwidResults struct */

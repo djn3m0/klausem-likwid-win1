@@ -73,7 +73,7 @@ static PerfmonGroupMap nehalem_group_map[NUM_GROUPS_NEHALEM] = {
     {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC2,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC3"},
     {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC2,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC3"},
     {"L2",L2,"L2 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1"},
-    {"L3",L3,"L3 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L2_LINES_IN_ANY:PMC0,L2_LINES_OUT_ANY:PMC1"},
+    {"L3",L3,"L3 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L2_LINES_IN_ANY:PMC0,L2_LINES_OUT_DEMAND_DIRTY:PMC1"},
     {"MEM",MEM,"Main memory bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_QMC_NORMAL_READS_ANY:UPMC0,UNC_QMC_WRITES_FULL_ANY:UPMC1"},
     {"CACHE",CACHE,"Data cache miss rate/ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_ALL_REF_ANY:PMC1"},
     {"L2CACHE",L2CACHE,"L2 cache miss rate/ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L2_DATA_RQSTS_DEMAND_ANY:PMC0,L2_RQSTS_MISS:PMC1"},
@@ -416,7 +416,7 @@ perfmon_printDerivedMetricsNehalem(PerfmonGroup group)
             break;
 
         case FLOPS_SP:
-            numRows = 3;
+            numRows = 7;
             INIT_BASIC;
             bstrListAdd(1,Runtime [s]);
             bstrListAdd(2,CPI);
@@ -436,7 +436,7 @@ perfmon_printDerivedMetricsNehalem(PerfmonGroup group)
                 tableData.rows[0].value[threadId] = time;
                 tableData.rows[1].value[threadId] = cpi;
                 tableData.rows[2].value[threadId] =
-                     1.0E-06*(perfmon_getResult(threadId,"PMC0")*2.0+
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")*4.0+
                             perfmon_getResult(threadId,"PMC1")) / time;
                 tableData.rows[3].value[threadId] =
                      1.0E-06*(perfmon_getResult(threadId,"PMC0")) / time;
@@ -467,12 +467,12 @@ perfmon_printDerivedMetricsNehalem(PerfmonGroup group)
                 tableData.rows[0].value[threadId] = time;
                 tableData.rows[1].value[threadId] = cpi;
                 tableData.rows[2].value[threadId] =
-                    1.0E-06*(perfmon_getResult(threadId,"PMC0")*64)/time;
+                    1.0E-06*(perfmon_getResult(threadId,"PMC0")*64.0)/time;
                 tableData.rows[3].value[threadId] =
-                    1.0E-06*(perfmon_getResult(threadId,"PMC1")*64)/time;
+                    1.0E-06*(perfmon_getResult(threadId,"PMC1")*64.0)/time;
                 tableData.rows[4].value[threadId] =
                     1.0E-06*((perfmon_getResult(threadId,"PMC0")+
-                                perfmon_getResult(threadId,"PMC1"))*64)/time;
+                                perfmon_getResult(threadId,"PMC1"))*64.0)/time;
             }
             break;
 
@@ -494,12 +494,12 @@ perfmon_printDerivedMetricsNehalem(PerfmonGroup group)
                 tableData.rows[0].value[threadId] = time;
                 tableData.rows[1].value[threadId] = cpi;
                 tableData.rows[2].value[threadId] =
-                    1.0E-06*(perfmon_getResult(threadId,"PMC0")*64)/time;
+                    1.0E-06*(perfmon_getResult(threadId,"PMC0")*64.0)/time;
                 tableData.rows[3].value[threadId] =
-                    1.0E-06*(perfmon_getResult(threadId,"PMC1")*64)/time;
+                    1.0E-06*(perfmon_getResult(threadId,"PMC1")*64.0)/time;
                 tableData.rows[4].value[threadId] =
                     1.0E-06*((perfmon_getResult(threadId,"PMC0")+
-                                perfmon_getResult(threadId,"PMC1"))*64)/time;
+                                perfmon_getResult(threadId,"PMC1"))*64.0)/time;
             }
             break;
 
