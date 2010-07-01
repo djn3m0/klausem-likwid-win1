@@ -1,7 +1,13 @@
-#define NUM_ARCH_EVENTS_ATOM 312
+#define NUM_ARCH_EVENTS_ATOM 314
 
 static PerfmonEvent  atom_arch_events[NUM_ARCH_EVENTS_ATOM] = {
- {"BACLEARS_ANY",
+ {"INSTR_RETIRED_ANY",
+  "FIXC0", 
+   0x00,0x00}
+, {"CPU_CLK_UNHALTED_CORE",
+  "FIXC1", 
+   0x00,0x00}
+, {"BACLEARS_ANY",
   "PMC", 
    0xE6,0x01}
 , {"BOGUS_BR",
