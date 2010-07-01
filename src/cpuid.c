@@ -929,7 +929,16 @@ cpuid_initCacheTopology()
                 cachePool[2].sets = cachePool[1].size/
                     (cachePool[1].associativity * cachePool[1].lineSize);
             }
-            cachePool[2].threads = cpuid_topology.numCoresPerSocket;
+
+            if (! (cpuid_info.model == MAGNYCOURS))
+            {
+                cachePool[2].threads = cpuid_topology.numCoresPerSocket;
+            }
+            else
+            {
+                cachePool[2].threads = cpuid_topology.numCoresPerSocket/2;
+            }
+
             cachePool[2].inclusive = 1;
 
             break;
