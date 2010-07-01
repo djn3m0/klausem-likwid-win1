@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include <bstrlib.h>
 #include <strUtil.h>
@@ -332,7 +333,15 @@ printResultTable(PerfmonResultTable* tableData)
 
         for (j=0; j<(tableData->numColumns);j++)
         {
-            label = bformat("%g", tableData->rows[i].value[j]);
+            if (!isnan(tableData->rows[i].value[j]))
+            {
+                label = bformat("%g", tableData->rows[i].value[j]);
+            }
+            else
+            {
+                label = bformat("0");
+            }
+
             labelStrings->entry[1+j] = bstrcpy(label);
             labelStrings->qty++;
         }
