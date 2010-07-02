@@ -11,10 +11,19 @@
 #include <threads.h>
 #include <affinity.h>
 #include <barrier.h>
+#include <likwid.h>
 
 
 //#define BARRIER pthread_barrier_wait(&threads_barrier) 
 #define BARRIER   barrier_synchronize(&barr)
+
+#ifdef PERFMON
+#define START_PERFMON likwid_markerStartRegion(threadId,affinity_threadGetProcessorId());
+#define STOP_PERFMON  likwid_markerStopRegion(threadId,affinity_threadGetProcessorId(),0);
+#else
+#define START_PERFMON
+#define STOP_PERFMON
+#endif
 
 #define EXECUTE(func)   \
     BARRIER; \
@@ -22,11 +31,13 @@
     { \
         timer_startCycles(&time); \
     } \
+    START_PERFMON  \
     for (i=0; i< (int) data->data.iter; i++) \
     {   \
     func; \
     } \
     BARRIER; \
+    STOP_PERFMON  \
     if (data->globalThreadId == 0) \
     { \
         timer_stopCycles(&time); \

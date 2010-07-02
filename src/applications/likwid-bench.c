@@ -48,6 +48,8 @@
 #include <strUtil.h>
 #include <allocator.h>
 
+#include <likwid.h>
+
 extern void* runTest(void* arg);
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -224,6 +226,13 @@ int main(int argc, char** argv)
     barrier_init(1);
     barrier_registerGroup(globalNumberOfThreads);
 
+#ifdef PERFMON
+    printf("Using likwid\n");
+    likwid_markerInit(globalNumberOfThreads,1);
+    likwid_markerRegisterRegion("Bench");
+#endif
+
+
     /* initialize data structures for threads */
     for (i=0; i<numberOfWorkgroups; i++)
     {
@@ -288,6 +297,9 @@ int main(int argc, char** argv)
     }
 
     printf(HLINE);
+#ifdef PERFMON
+   likwid_markerClose();
+#endif
 
     return EXIT_SUCCESS;
 }
