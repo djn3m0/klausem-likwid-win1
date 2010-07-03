@@ -46,11 +46,11 @@ static int perfmon_numArchEventsAtom = NUM_ARCH_EVENTS_ATOM;
 static PerfmonGroupMap atom_group_map[NUM_GROUPS_ATOM] = {
     {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1"},
     {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_SINGLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_SINGLE:PMC1"},
-    {"L2",L2,"L2 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1"},
+    {"FLOPS_X87",FLOPS_X87,"X87 MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,X87_COMP_OPS_EXE_ANY_AR:PMC0"},
     {"MEM",MEM,"Main memory bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,BUS_TRANS_MEM_THIS_CORE_THIS_A:PMC0"},
-    {"DATA",DATA,"Load to store ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,INST_RETIRED_LOADS:PMC0,INST_RETIRED_STORES:PMC1"},
+    {"DATA",DATA,"Load to store ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_CACHE_LD:PMC0,L1D_CACHE_ST:PMC1"},
     {"BRANCH",BRANCH,"Branch prediction miss rate","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,BR_INST_RETIRED_ANY:PMC0,BR_INST_RETIRED_MISPRED:PMC1"},
-    {"TLB",TLB,"Translation lookaside buffer miss rate","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,DTLB_MISSES_ANY:PMC0,DTLB_MISSES_MISS_LD:PMC1"}
+    {"TLB",TLB,"Translation lookaside buffer miss rate","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,DATA_TLB_MISSES_DTLB_MISS:PMC0"}
 };
 
 
@@ -106,19 +106,17 @@ perfmon_printDerivedMetricsAtom(PerfmonGroup group)
                 tableData.rows[0].value[threadId] = time;
                 tableData.rows[1].value[threadId] = cpi;
                 tableData.rows[2].value[threadId] =
-                    (perfmon_getResult(threadId,"PMC0")*4+
+                    1.0E-06*(perfmon_getResult(threadId,"PMC0")*4+
                      perfmon_getResult(threadId,"PMC1")) / time;
             }
             break;
 
-        case L2:
-            numRows = 5;
+        case FLOPS_X87:
+            numRows = 3;
             INIT_BASIC;
             bstrListAdd(1,Runtime [s]);
             bstrListAdd(2,CPI);
-            bstrListAdd(3,L2 Load [MBytes/s]);
-            bstrListAdd(4,L2 Evict [MBytes/s]);
-            bstrListAdd(5,L2 bandwidth [MBytes/s]);
+            bstrListAdd(3,X87 MFlops/s);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
@@ -129,14 +127,10 @@ perfmon_printDerivedMetricsAtom(PerfmonGroup group)
                 tableData.rows[0].value[threadId] = time;
                 tableData.rows[1].value[threadId] = cpi;
                 tableData.rows[2].value[threadId] =
-                    1.0E-06*(perfmon_getResult(threadId,"PMC0")*64)/time;
-                tableData.rows[3].value[threadId] =
-                    1.0E-06*(perfmon_getResult(threadId,"PMC1")*64)/time;
-                tableData.rows[4].value[threadId] =
-                1.0E-06*((perfmon_getResult(threadId,"PMC0")+
-                            perfmon_getResult(threadId,"PMC1"))*64)/time;
+                    1.0E-06*(perfmon_getResult(threadId,"PMC0")) / time;
             }
             break;
+
 
         case MEM:
             numRows = 3;
@@ -164,7 +158,7 @@ perfmon_printDerivedMetricsAtom(PerfmonGroup group)
             INIT_BASIC;
             bstrListAdd(1,Runtime [s]);
             bstrListAdd(2,CPI);
-            bstrListAdd(3,Store to Load ratio);
+            bstrListAdd(3,Load to Store ratio);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
@@ -181,11 +175,34 @@ perfmon_printDerivedMetricsAtom(PerfmonGroup group)
             break;
 
         case BRANCH:
+            numRows = 4;
+            INIT_BASIC;
+            bstrListAdd(1,Branch rate);
+            bstrListAdd(2,Branch misprediction rate);
+            bstrListAdd(3,Branch misprediction ratio);
+            bstrListAdd(4,Instructions per branch);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                tableData.rows[0].value[threadId] = 
+                    (perfmon_getResult(threadId,"PMC0")/ perfmon_getResult(threadId,"FIXC0"));
+                tableData.rows[1].value[threadId] =
+                    (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"FIXC0"));
+                tableData.rows[2].value[threadId] =
+                    (perfmon_getResult(threadId,"PMC1")/ perfmon_getResult(threadId,"PMC0"));
+                tableData.rows[3].value[threadId] =
+                    (perfmon_getResult(threadId,"FIXC0")/ perfmon_getResult(threadId,"PMC0"));
+
+            }
+            break;
+
+        case TLB:
             numRows = 3;
             INIT_BASIC;
             bstrListAdd(1,Runtime [s]);
             bstrListAdd(2,CPI);
-            bstrListAdd(3,Branches Mispredicted [%]);
+            bstrListAdd(3,L1 DTLB miss rate);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
@@ -196,24 +213,7 @@ perfmon_printDerivedMetricsAtom(PerfmonGroup group)
                 tableData.rows[0].value[threadId] = time;
                 tableData.rows[1].value[threadId] = cpi;
                 tableData.rows[2].value[threadId] =
-                    (perfmon_getResult(threadId,"PMC1")/perfmon_getResult(threadId,"PMC0")) *100;
-            }
-            break;
-
-        case TLB:
-            numRows = 2;
-            INIT_BASIC;
-            bstrListAdd(1,Runtime [s]);
-            bstrListAdd(2,CPI);
-            initResultTable(&tableData, fc, numRows, numColumns);
-
-            for(threadId=0; threadId < perfmon_numThreads; threadId++)
-            {
-                time = perfmon_getResult(threadId,"FIXC1") * inverseClock;
-                cpi  =  perfmon_getResult(threadId,"FIXC1")/
-                    perfmon_getResult(threadId,"FIXC0");
-                tableData.rows[0].value[threadId] = time;
-                tableData.rows[1].value[threadId] = cpi;
+                    perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"FIXC0");
             }
 
             break;

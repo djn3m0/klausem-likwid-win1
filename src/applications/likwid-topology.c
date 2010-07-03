@@ -41,6 +41,7 @@
 #include <types.h>
 #include <timer.h>
 #include <cpuid.h>
+#include <cpuFeatures.h>
 #include <tree.h>
 #include <asciiBoxes.h>
 
@@ -106,6 +107,18 @@ int main (int argc, char** argv)
 
     timer_init();
     cpuid_init();
+
+    if( cpuid_info.family == P6_FAMILY )
+    {
+        cpuFeatures_init(0);
+
+        if (cpuFeatureFlags.speedstep)
+        {
+            fprintf (stderr, "Speedstep is enabled!\nThis produces inaccurate timing measurements.\n");
+            fprintf (stderr, "For reliable clock measurements disable speedstep.\n");
+        }
+    }
+
     printf(HLINE);
     printf("CPU type:\t%s \n",cpuid_info.name);
     printf("CPU clock:\t%3.2f GHz \n\n",  (float) cpuid_info.clock * 1.E-09);

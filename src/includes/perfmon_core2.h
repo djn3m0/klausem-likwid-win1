@@ -373,7 +373,7 @@ perfmon_printDerivedMetricsCore2(PerfmonGroup group)
             INIT_BASIC;
             bstrListAdd(1,Runtime [s]);
             bstrListAdd(2,CPI);
-            bstrListAdd(3,Store to Load ratio);
+            bstrListAdd(3,Load to Store ratio);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
