@@ -60,6 +60,7 @@ typedef enum {
     NOGROUP = 0,
     FLOPS_DP,
     FLOPS_SP,
+    FLOPS_X87,
     L2,
     L3,
     MEM,

@@ -42,7 +42,7 @@
 #include <perfmon_nehalem_events.h>
 
 #define NUM_COUNTERS_NEHALEM 14
-#define NUM_GROUPS_NEHALEM 11
+#define NUM_GROUPS_NEHALEM 12
 #define NUM_SETS_NEHALEM 8
 
 static int perfmon_numCountersNehalem = NUM_COUNTERS_NEHALEM;
@@ -72,6 +72,7 @@ static PerfmonCounterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
 static PerfmonGroupMap nehalem_group_map[NUM_GROUPS_NEHALEM] = {
     {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC2,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC3"},
     {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FP_COMP_OPS_EXE_SSE_FP_PACKED:PMC0,FP_COMP_OPS_EXE_SSE_FP_SCALAR:PMC1,FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION:PMC2,FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION:PMC3"},
+    {"FLOPS_X87",FLOPS_X87,"X87 MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,INST_RETIRED_X87:PMC0"},
     {"L2",L2,"L2 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1"},
     {"L3",L3,"L3 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L2_LINES_IN_ANY:PMC0,L2_LINES_OUT_DEMAND_DIRTY:PMC1"},
     {"MEM",MEM,"Main memory bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_QMC_NORMAL_READS_ANY:UPMC0,UNC_QMC_WRITES_FULL_ANY:UPMC1"},
@@ -448,6 +449,27 @@ perfmon_printDerivedMetricsNehalem(PerfmonGroup group)
                      1.0E-06*(perfmon_getResult(threadId,"PMC3")) / time;
             }
             break;
+
+        case FLOPS_X87:
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,CPI);
+            bstrListAdd(3,X87 MFlops/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"FIXC1") * inverseClock;
+                cpi  =  perfmon_getResult(threadId,"FIXC1")/
+                    perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+                tableData.rows[2].value[threadId] =
+                    1.0E-06*(perfmon_getResult(threadId,"PMC0")) / time;
+            }
+            break;
+
 
         case L2:
             numRows = 5;

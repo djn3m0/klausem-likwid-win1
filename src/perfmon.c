@@ -112,6 +112,7 @@ static void initThread(int , int );
 #include <perfmon_atom.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
+#include <perfmon_westmere.h>
 #include <perfmon_k8.h>
 #include <perfmon_k10.h>
 
@@ -828,6 +829,26 @@ perfmon_init(int numThreads_local, int threads[])
 
                     initThreadArch = perfmon_init_nehalem;
                     printDerivedMetrics = perfmon_printDerivedMetricsNehalem;
+                    perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_nehalem;
+                    break;
+
+                case NEHALEM_WESTMERE_M:
+                    
+                case NEHALEM_WESTMERE:
+
+                    eventHash = westmere_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsWestmere;
+
+                    group_map = westmere_group_map;
+                    perfmon_numGroups = perfmon_numGroupsWestmere;
+
+                    counter_map = nehalem_counter_map;
+                    perfmon_numCounters = perfmon_numCountersNehalem;
+
+                    initThreadArch = perfmon_init_nehalem;
+                    printDerivedMetrics = perfmon_printDerivedMetricsWestmere;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_nehalem;
