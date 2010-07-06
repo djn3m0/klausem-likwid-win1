@@ -28,8 +28,10 @@ TARGET_LIB = liblikwid.a
 PINLIB  = liblikwidpin.so
 
 VPATH     = $(SRC_DIR)
-OBJ       = $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
-OBJ      += $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+ifeq ($(MAKECMDGOALS),likwid-bench)
+OBJ      += $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
+endif
 APPS      = likwid-perfCtr  \
 			likwid-features \
 			likwid-topology \
@@ -38,13 +40,13 @@ APPS      = likwid-perfCtr  \
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
-all: $(BUILD_DIR) $(OBJ) $(APPS) $(TARGET_LIB)  $(PINLIB) 
+all: $(BUILD_DIR) $(OBJ) $(filter-out likwid-bench,$(APPS)) $(TARGET_LIB)  $(PINLIB) 
 
 tags:
 	@echo "===>  GENERATE  TAGS"
 	$(Q)ctags -R
 
-$(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(OBJ)
+$(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD_DIR)  $(OBJ)
 	@echo "===>  LINKING  $@"
 	$(Q)${CC} $(CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ)
 
