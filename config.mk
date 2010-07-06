@@ -16,7 +16,7 @@ MAX_NUM_SOCKETS = 4
 # Versioning Information
 VERSION = 1
 RELEASE = 0
-DATE    = 30.11.2009
+DATE    = 10.07.2010
 
 LIBLIKWIDPIN = $(PREFIX)/lib/liblikwidpin.so
 
