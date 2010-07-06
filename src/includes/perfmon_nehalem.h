@@ -611,9 +611,9 @@ perfmon_printDerivedMetricsNehalem(PerfmonGroup group)
         case L3CACHE:
             numRows = 3;
             INIT_BASIC;
-            bstrListAdd(1,L2 request rate);
-            bstrListAdd(2,L2 miss rate);
-            bstrListAdd(3,L2 miss ratio);
+            bstrListAdd(1,L3 request rate);
+            bstrListAdd(2,L3 miss rate);
+            bstrListAdd(3,L3 miss ratio);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
