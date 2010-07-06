@@ -5,12 +5,12 @@
  *
  *    Description:  Module implementing output of ascii table.
  *
- *        Version:  1.0
- *        Created:  03/24/2010
+ *        Version:  <VERSION>
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  none
+ *        Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify

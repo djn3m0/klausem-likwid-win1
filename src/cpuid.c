@@ -6,9 +6,8 @@
  *    Description:  Implementation of cpuid module.
  *                  Provides API to extract cpuid info on x86 processors.
  *
- *        Version:  1.0
- *        Created:  07/06/2009
- *       Revision:  none
+ *        Version:  <VERSION>
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
@@ -97,7 +96,7 @@ static char* amd_k8_str = "AMD K8 architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
-static int lock = 0;
+static int init = 0;
 static uint32_t eax, ebx, ecx, edx;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -252,6 +251,7 @@ intelCpuidFunc_4(CacheLevel** cachePool)
 			if ((cpuid_info.model == NEHALEM_BLOOMFIELD) ||
 					(cpuid_info.model == NEHALEM_LYNNFIELD) ||
 					(cpuid_info.model == NEHALEM_WESTMERE) ||
+					(cpuid_info.model == NEHALEM_WESTMERE_M) ||
 					(cpuid_info.model == NEHALEM_EX))
 			{
 				if (cpuid_topology.numThreadsPerCore == 1)
@@ -299,8 +299,8 @@ cpuid_init (void)
 {
     int isIntel = 1;
 
-    if (lock) return;
-    lock =1;
+    if (init) return;
+    init =1;
 
     eax = 0x00;
     CPUID;
@@ -351,6 +351,8 @@ cpuid_init (void)
                 case NEHALEM_LYNNFIELD:
                     cpuid_info.name = nehalem_lynn_str;
                     break;
+
+                case NEHALEM_WESTMERE_M:
 
                 case NEHALEM_WESTMERE:
                     cpuid_info.name = nehalem_west_str;
@@ -815,6 +817,11 @@ cpuid_initTopology(void)
     cpuid_topology.numCoresPerSocket = tree_countChildren(currentNode);
     currentNode = tree_getNode(currentNode, 0);
     cpuid_topology.numThreadsPerCore = tree_countChildren(currentNode);
+
+    if (pclose(pipe) == -1) {
+        fprintf(stderr, "Failed to close pipe for cpuinfo!\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void 
@@ -924,7 +931,16 @@ cpuid_initCacheTopology()
                 cachePool[2].sets = cachePool[1].size/
                     (cachePool[1].associativity * cachePool[1].lineSize);
             }
-            cachePool[2].threads = cpuid_topology.numCoresPerSocket;
+
+            if (! (cpuid_info.model == MAGNYCOURS))
+            {
+                cachePool[2].threads = cpuid_topology.numCoresPerSocket;
+            }
+            else
+            {
+                cachePool[2].threads = cpuid_topology.numCoresPerSocket/2;
+            }
+
             cachePool[2].inclusive = 1;
 
             break;

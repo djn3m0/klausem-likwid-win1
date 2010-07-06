@@ -1,17 +1,16 @@
 /*
  * ===========================================================================
  *
- *       Filename:  asciiTable.h
+ *      Filename:  asciiTable.h
  *
- *       Description:  Module to create and print a ascii table
+ *      Description:  Module to create and print a ascii table
  *
- *        Version:  1.0
- *        Created:  03/24/2010
- *       Revision:  none
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  none
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify

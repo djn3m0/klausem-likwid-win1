@@ -51,6 +51,7 @@
 #define HELP_MSG \
 printf("likwid-perfCtr --  Version  %d.%d \n\n",VERSION,RELEASE); \
 printf("\n"); \
+printf("Example Usage: likwid-perfCtr -c 2  likwid-pin -c 2 ./a.out \n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \

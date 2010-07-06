@@ -12,7 +12,7 @@ ANSI_CFLAGS += -Wextra
 CFLAGS   = -O1 -Wno-format  -Wall
 ASFLAGS  = -g -gstabs
 CPPFLAGS =
-LFLAGS   = -pthread 
+LFLAGS   =  -pthread -lm
 DEFINES  = -D_GNU_SOURCE
 DEFINES  += -DMAX_NUM_THREADS=128
 DEFINES  += -DPAGE_ALIGNMENT=4096
