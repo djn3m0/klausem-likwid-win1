@@ -1,21 +1,21 @@
-/**
- *       @file  timer.h
- *      @brief  Measure runtime with getTimeOfday and rdtsc.
+/*
+ *      Filename:  timer.h
  *
- * A C module to measure runtime. There are two methods: with gettimeofday for
- * longer time periods (over 0.5 sec) and with rdtsc (read time stamp counter)
- * for shorter periods. There is a variation for measurements with rdtsc
- * of 100 cycles in the worst case. Therefore sensible measurements should be 
- * over 1000 cycles.
+ *      Description:  Measure runtime with getTimeOfday and rdtsc.
  *
- *     @author  Jan Treibig (jt), jan.treibig@gmail.com
+ *      A C module to measure runtime. There are two methods: with gettimeofday
+ *      for longer time periods (over 0.5 sec) and with rdtsc (read time stamp
+ *      counter) for shorter periods. There is a variation for measurements
+ *      with rdtsc of 100 cycles in the worst case. Therefore sensible
+ *      measurements should be over 1000 cycles.
  *
- *   @internal
- *     Created  07/30/2009
- *    Revision  ---
- *    Compiler  gcc
- *     Company  RRZE Erlangen
- *   Copyright  Copyright (c) 2009, Jan Treibig
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
+ *
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
@@ -29,6 +29,8 @@
  *      You should have received a copy of the GNU General Public License
  *      along with this program; if not, write to the Free Software
  *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+
  *
  * ============================================================================
  */

@@ -1,17 +1,16 @@
 /*
  * ===========================================================================
  *
- *       Filename:  perfmon.c
+ *      Filename:  perfmon.c
  *
- *    Description:  Implementation of perfmon Module.
+ *      Description:  Implementation of perfmon Module.
  *
- *        Version:  1.0
- *        Created:  07/15/2009
- *       Revision:  none
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  none
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -36,6 +35,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include <bstrlib.h>
 #include <strUtil.h>
@@ -46,7 +46,6 @@
 #include <perfmon.h>
 #include <asciiTable.h>
 #include <registers.h>
-//#include <perfmon_pm_events.h>
 
 
 /* #####   EXPORTED VARIABLES   ########################################### */
@@ -108,9 +107,11 @@ static void initThread(int , int );
     bstrListAlloc(fc, numRows+1); \
     bstrListAdd(0,Metric);
 
-//#include <perfmon_pm.h>
+#include <perfmon_pm.h>
+#include <perfmon_atom.h>
 #include <perfmon_core2.h>
 #include <perfmon_nehalem.h>
+#include <perfmon_westmere.h>
 #include <perfmon_k8.h>
 #include <perfmon_k10.h>
 
@@ -267,6 +268,7 @@ readMarkerFile(char* filename, LikwidResults** resultsRef)
         if (numberOfThreads != perfmon_numThreads)
         {
             fprintf (stderr, "WARNING: Number of threads in marker file unequal to number of threads in likwid-perfCtr!\n" );
+            exit(EXIT_FAILURE);
         }
 
 		/* allocate  LikwidResults struct */
@@ -294,7 +296,18 @@ readMarkerFile(char* filename, LikwidResults** resultsRef)
 		fclose (fp);
 		bdestroy (src);
 	}
+    else
+    {
+        fprintf (stderr, "ERROR: Could not open result file /tmp/likwid_results.txt!\n" );
+        exit(EXIT_FAILURE);
+    }
     *resultsRef = results;
+
+    if (system("rm  -f /tmp/likwid_results.txt") == EOF)
+    {
+        fprintf(stderr, "Failed to execute rm\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 static void
@@ -320,7 +333,15 @@ printResultTable(PerfmonResultTable* tableData)
 
         for (j=0; j<(tableData->numColumns);j++)
         {
-            label = bformat("%g", tableData->rows[i].value[j]);
+            if (!isnan(tableData->rows[i].value[j]))
+            {
+                label = bformat("%g", tableData->rows[i].value[j]);
+            }
+            else
+            {
+                label = bformat("0");
+            }
+
             labelStrings->entry[1+j] = bstrcpy(label);
             labelStrings->qty++;
         }
@@ -725,23 +746,45 @@ perfmon_init(int numThreads_local, int threads[])
 
             switch ( cpuid_info.model ) 
             {
-#if 0
                 case PENTIUM_M_BANIAS:
 
                 case PENTIUM_M_DOTHAN:
 
                     eventHash = pm_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEvents_PM;
+                    perfmon_numArchEvents = perfmon_numArchEvents_pm;
+
+                    group_map = pm_group_map;
+                    perfmon_numGroups = perfmon_numGroups_pm;
+
+                    counter_map = pm_counter_map;
+                    perfmon_numCounters = perfmon_numCounters_pm;
 
                     initThreadArch = perfmon_init_pm;
-                    getGroupId = perfmon_getGroupId_pm;
-                    setupGroupThread = perfmon_setupGroupThread_pm;
-                    printResults = perfmon_print_results_pm;
-                    perfmon_printAvailableGroups = perfmon_printGroups_pm;
+                    printDerivedMetrics = perfmon_printDerivedMetrics_pm;
+
                     perfmon_startCountersThread = perfmon_startCountersThread_pm;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_pm;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_pm;
                     break;
-#endif
+
+                case ATOM:
+
+                    eventHash = atom_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsAtom;
+
+                    group_map = atom_group_map;
+                    perfmon_numGroups = perfmon_numGroupsAtom;
+
+                    counter_map = core2_counter_map;
+                    perfmon_numCounters = perfmon_numCountersCore2;
+
+                    initThreadArch = perfmon_init_core2;
+                    printDerivedMetrics = perfmon_printDerivedMetricsAtom;
+                    perfmon_startCountersThread = perfmon_startCountersThread_core2;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
+                    break;
+
 
                 case CORE_DUO:
                     fprintf(stderr, "Unsupported Processor!\n");
@@ -785,6 +828,26 @@ perfmon_init(int numThreads_local, int threads[])
 
                     initThreadArch = perfmon_init_nehalem;
                     printDerivedMetrics = perfmon_printDerivedMetricsNehalem;
+                    perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_nehalem;
+                    break;
+
+                case NEHALEM_WESTMERE_M:
+                    
+                case NEHALEM_WESTMERE:
+
+                    eventHash = westmere_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsWestmere;
+
+                    group_map = westmere_group_map;
+                    perfmon_numGroups = perfmon_numGroupsWestmere;
+
+                    counter_map = nehalem_counter_map;
+                    perfmon_numCounters = perfmon_numCountersNehalem;
+
+                    initThreadArch = perfmon_init_nehalem;
+                    printDerivedMetrics = perfmon_printDerivedMetricsWestmere;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_nehalem;

@@ -1,20 +1,19 @@
 /*
  * ===========================================================================
  *
- *       Filename:  cpuid.h
+ *      Filename:  cpuid.h
  *
- *    Description:  Header File cpuid Module. 
- *                  Reads out cpuid information and initilaizes a global 
- *                  data structure cpuid_info.
+ *      Description:  Header File cpuid Module. 
+ *                    Reads out cpuid information and initilaizes a global 
+ *                    data structure cpuid_info.
  *
- *        Version:  1.0
- *        Created:  07/15/2009
- *       Revision:  none
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  none
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
@@ -51,6 +50,7 @@
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU
 #define NEHALEM_WESTMERE     0x2CU
+#define NEHALEM_WESTMERE_M   0x25U
 #define NEHALEM_EX   0x2EU
 #define XEON_MP   0x1DU
 

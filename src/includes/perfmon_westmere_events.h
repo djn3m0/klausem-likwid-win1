@@ -1,48 +1,27 @@
-#define NUM_ARCH_EVENTS_NEHALEM 480
+#define NUM_ARCH_EVENTS_WESTMERE 482
 
-static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
+static PerfmonEvent  westmere_arch_events[NUM_ARCH_EVENTS_WESTMERE] = {
  {"INSTR_RETIRED_ANY",
   "FIXC0", 
    0x00,0x00}
 , {"CPU_CLK_UNHALTED_CORE",
   "FIXC1", 
    0x00,0x00}
-, {"SB_FORWARD_ANY",
+, {"LOAD_BLOCK_OVERLAP_STORE",
   "PMC", 
-   0x02,0x01}
-, {"LOAD_BLOCK_STD",
-  "PMC", 
-   0x03,0x01}
-, {"LOAD_BLOCK_ADDRESS_OFFSET",
-  "PMC", 
-   0x03,0x04}
+   0x03,0x02}
 , {"SB_DRAIN_ANY",
   "PMC", 
    0x04,0x07}
-, {"MISALIGN_MEM_REF_LOAD",
-  "PMC", 
-   0x05,0x01}
-, {"MISALIGN_MEM_REF_STORE",
+, {"MISALIGN_MEMORY_STORE",
   "PMC", 
    0x05,0x02}
-, {"MISALIGN_MEM_REF_ANY",
-  "PMC", 
-   0x05,0x03}
-, {"STORE_BLOCK_NOT_STA",
-  "PMC", 
-   0x06,0x01}
-, {"STORE_BLOCK_STA",
-  "PMC", 
-   0x06,0x02}
-, {"STORE_BLOCK_AT_RET",
+, {"STORE_BLOCKS_L1D_BLOCK",
   "PMC", 
    0x06,0x04}
-, {"STORE_BLOCK_L1D_BLOCK",
+, {"STORE_BLOCKS_L1D_BLOCK",
   "PMC", 
    0x06,0x08}
-, {"STORE_BLOCK_ANY",
-  "PMC", 
-   0x06,0x0F}
 , {"PARTIAL_ADDRESS_ALIAS",
   "PMC", 
    0x07,0x01}
@@ -52,30 +31,15 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"DTLB_LOAD_MISSES_WALK_COMPLETED",
   "PMC", 
    0x08,0x02}
+, {"DTLB_LOAD_MISSES_WALK_CYCLES",
+  "PMC", 
+   0x08,0x04}
 , {"DTLB_LOAD_MISSES_STLB_HIT",
   "PMC", 
    0x08,0x10}
 , {"DTLB_LOAD_MISSES_PDE_MISS",
   "PMC", 
    0x08,0x20}
-, {"DTLB_LOAD_MISSES_PDP_MISS",
-  "PMC", 
-   0x08,0x40}
-, {"DTLB_LOAD_MISSES_LARGE_WALK_COMPLETED",
-  "PMC", 
-   0x08,0x80}
-, {"MEMORY_DISAMBIGURATION_RESET",
-  "PMC", 
-   0x09,0x01}
-, {"MEMORY_DISAMBIGURATION_SUCCESS",
-  "PMC", 
-   0x09,0x01}
-, {"MEMORY_DISAMBIGURATION_WATCHDOG",
-  "PMC", 
-   0x09,0x01}
-, {"MEMORY_DISAMBIGURATION_WATCH_CYCLES",
-  "PMC", 
-   0x09,0x01}
 , {"MEM_INST_RETIRED_LOADS",
   "PMC", 
    0x0B,0x01}
@@ -94,18 +58,21 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"UOPS_ISSUED_FUSED",
   "PMC", 
    0x0E,0x02}
-, {"MEM_UNCORE_RETIRED_OTHER_CORE_L2_HITM",
+, {"MEM_UNCORE_RETIRED_LOCAL_HITM",
   "PMC", 
    0x0F,0x02}
-, {"MEM_UNCORE_RETIRED_REMOTE_CACHE_LOCAL_HOME_HIT",
+, {"MEM_UNCORE_RETIRED_LOCAL_DRAM_AND_REMOTE_CACHE_HIT",
   "PMC", 
    0x0F,0x08}
-, {"MEM_UNCORE_RETIRED_REMOTE_DRAM",
-  "PMC", 
-   0x0F,0x10}
 , {"MEM_UNCORE_RETIRED_LOCAL_DRAM",
   "PMC", 
+   0x0F,0x10}
+, {"MEM_UNCORE_RETIRED_REMOTE_DRAM",
+  "PMC", 
    0x0F,0x20}
+, {"MEM_UNCORE_RETIRED_UNCACHEABLE",
+  "PMC", 
+   0x0F,0x80}
 , {"FP_COMP_OPS_EXE_X87",
   "PMC", 
    0x10,0x01}
@@ -178,15 +145,6 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"TWO_UPOS_INST_DECODED",
   "PMC", 
    0x19,0x01}
-, {"HW_INT_RCV",
-  "PMC", 
-   0x1D,0x01}
-, {"HW_CYCLES_MASKED",
-  "PMC", 
-   0x1D,0x02}
-, {"HW_CYCLES_PENDING_AND_MASKED",
-  "PMC", 
-   0x1D,0x04}
 , {"INST_QUEUE_WRITE_CYCLES",
   "PMC", 
    0x1E,0x01}
@@ -274,9 +232,6 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"L2_WRITE_RFO_S_STATE",
   "PMC", 
    0x27,0x02}
-, {"L2_WRITE_RFO_E_STATE",
-  "PMC", 
-   0x27,0x04}
 , {"L2_WRITE_RFO_M_STATE",
   "PMC", 
    0x27,0x08}
@@ -331,90 +286,24 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"CPU_CLOCK_UNHALTED_REF_P",
   "PMC", 
    0x3C,0x01}
-, {"UOPS_DECODED_DEC0",
-  "PMC", 
-   0x3C,0x01}
-, {"L1D_CACHE_LD_I_STATE",
-  "PMC0|PMC1", 
-   0x40,0x01}
-, {"L1D_CACHE_LD_S_STATE",
-  "PMC0|PMC1", 
-   0x40,0x02}
-, {"L1D_CACHE_LD_E_STATE",
-  "PMC0|PMC1", 
-   0x40,0x04}
-, {"L1D_CACHE_LD_M_STATE",
-  "PMC0|PMC1", 
-   0x40,0x08}
-, {"L1D_CACHE_LD_MESI",
-  "PMC0|PMC1", 
-   0x40,0x0F}
-, {"L1D_CACHE_ST_I_STATE",
-  "PMC0|PMC1", 
-   0x41,0x01}
-, {"L1D_CACHE_ST_S_STATE",
-  "PMC0|PMC1", 
-   0x41,0x02}
-, {"L1D_CACHE_ST_E_STATE",
-  "PMC0|PMC1", 
-   0x41,0x04}
-, {"L1D_CACHE_ST_M_STATE",
-  "PMC0|PMC1", 
-   0x41,0x08}
-, {"L1D_CACHE_ST_MESI",
-  "PMC0|PMC1", 
-   0x41,0x0F}
-, {"L1D_CACHE_LOCK_HIT",
-  "PMC0|PMC1", 
-   0x42,0x01}
-, {"L1D_CACHE_LOCK_S_STATE",
-  "PMC0|PMC1", 
-   0x42,0x02}
-, {"L1D_CACHE_LOCK_E_STATE",
-  "PMC0|PMC1", 
-   0x42,0x04}
-, {"L1D_CACHE_LOCK_M_STATE",
-  "PMC0|PMC1", 
-   0x42,0x08}
-, {"L1D_ALL_REF_ANY",
-  "PMC0|PMC1", 
-   0x43,0x01}
-, {"L1D_ALL_REF_CACHEABLE",
-  "PMC0|PMC1", 
-   0x43,0x02}
-, {"L1D_PEND_MISS_LOAD_BUFFERS_FULL",
-  "PMC0|PMC1", 
-   0x48,0x02}
 , {"DTLB_MISSES_ANY",
   "PMC", 
    0x49,0x01}
 , {"DTLB_MISSES_WALK_COMPLETED",
   "PMC", 
    0x49,0x02}
+, {"DTLB_MISSES_WALK_CYCLES",
+  "PMC", 
+   0x49,0x04}
 , {"DTLB_MISSES_STLB_HIT",
   "PMC", 
    0x49,0x10}
-, {"DTLB_MISSES_PDE_MISS",
-  "PMC", 
-   0x49,0x20}
-, {"DTLB_MISSES_PDP_MISS",
-  "PMC", 
-   0x49,0x40}
 , {"DTLB_MISSES_LARGE_WALK_COMPLETED",
   "PMC", 
    0x49,0x80}
-, {"SSE_MEM_EXEC_NTA",
-  "PMC", 
-   0x4B,0x01}
-, {"SSE_MEM_EXEC_STREAMING_STORES",
-  "PMC", 
-   0x4B,0x08}
 , {"LOAD_HIT_PRE",
   "PMC", 
    0x4C,0x01}
-, {"SFENCE_CYCLES",
-  "PMC", 
-   0x4D,0x01}
 , {"L1D_PREFETCH_REQUESTS",
   "PMC", 
    0x4E,0x01}
@@ -424,15 +313,9 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"L1D_PREFETCH_TRIGGERS",
   "PMC", 
    0x4E,0x04}
-, {"EPT_EPDE_MISS",
+, {"EPT_WALK_CYCLES",
   "PMC", 
-   0x4F,0x02}
-, {"EPT_EPDPE_HIT",
-  "PMC", 
-   0x4F,0x04}
-, {"EPT_EPDPE_MISS",
-  "PMC", 
-   0x4F,0x08}
+   0x4F,0x10}
 , {"L1D_REPL",
   "PMC0|PMC1", 
    0x51,0x01}
@@ -449,25 +332,25 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
   "PMC", 
    0x52,0x01}
 , {"L1D_CACHE_LOCK_FB_HIT",
-  "PMC0|PMC1", 
+  "PMC", 
    0x53,0x01}
 , {"OFFCORE_EVENTS_OUTSTANDING_DEMAND_READ_DATA",
-  "PMC", 
+  "PMC0", 
    0x60,0x01}
 , {"OFFCORE_EVENTS_OUTSTANDING_DEMAND_READ_CODE",
-  "PMC", 
+  "PMC0", 
    0x60,0x02}
 , {"OFFCORE_EVENTS_OUTSTANDING_DEMAND_RFO",
-  "PMC", 
+  "PMC0", 
    0x60,0x04}
 , {"OFFCORE_EVENTS_OUTSTANDING_ANY_READ",
-  "PMC", 
+  "PMC0", 
    0x60,0x08}
 , {"CACHE_LOCK_CYCLES_L1D_L2",
-  "PMC", 
+  "PMC0|PMC1", 
    0x63,0x01}
 , {"CACHE_LOCK_CYCLES_L1D",
-  "PMC", 
+  "PMC0|PMC1", 
    0x63,0x02}
 , {"IO_TRANSACTIONS",
   "PMC", 
@@ -484,37 +367,34 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"L1I_CYCLES_STALLED",
   "PMC", 
    0x80,0x04}
-, {"IFU_IVC_FULL",
-  "PMC", 
-   0x81,0x01}
-, {"IFU_IVC_L1I_EVICTION",
-  "PMC", 
-   0x81,0x02}
 , {"LARGE_ITLB_HIT",
   "PMC", 
    0x82,0x01}
-, {"L1I_OPPORTUNISTIC_HITS",
-  "PMC", 
-   0x83,0x01}
 , {"ITLB_MISSES_ANY",
   "PMC", 
    0x85,0x01}
 , {"ITLB_MISSES_WALK_COMPLETED",
   "PMC", 
    0x85,0x02}
-, {"ITLB_STALL_LCP",
+, {"ITLB_MISSES_WALK_CYCLES",
+  "PMC", 
+   0x85,0x04}
+, {"ITLB_MISSES_LARGE_WALK_COMPLETED",
+  "PMC", 
+   0x85,0x80}
+, {"ILD_STALL_LCP",
   "PMC", 
    0x87,0x01}
-, {"ITLB_STALL_MRU",
+, {"ILD_STALL_MRU",
   "PMC", 
    0x87,0x02}
-, {"ITLB_STALL_IQ_FULL",
+, {"ILD_STALL_IQ_FULL",
   "PMC", 
    0x87,0x04}
-, {"ITLB_STALL_REGEN",
+, {"ILD_STALL_REGEN",
   "PMC", 
    0x87,0x08}
-, {"ITLB_STALL_ANY",
+, {"ILD_STALL_ANY",
   "PMC", 
    0x87,0x0F}
 , {"BR_INST_EXEC_COND",
@@ -613,9 +493,27 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"ITLB_FLUSH",
   "PMC", 
    0xAE,0x01}
+, {"OFFCORE_REQUESTS_DEMAND_READ_DATA",
+  "PMC", 
+   0xB0,0x01}
+, {"OFFCORE_REQUESTS_DEMAND_READ_CODE",
+  "PMC", 
+   0xB0,0x02}
+, {"OFFCORE_REQUESTS_DEMAND_RFO",
+  "PMC", 
+   0xB0,0x04}
+, {"OFFCORE_REQUESTS_ANY_READ",
+  "PMC", 
+   0xB0,0x08}
+, {"OFFCORE_REQUESTS_ANY_RFO",
+  "PMC", 
+   0xB0,0x10}
 , {"OFFCORE_REQUESTS_L1D_WRITEBACK",
   "PMC", 
    0xB0,0x40}
+, {"OFFCORE_REQUESTS_ANY",
+  "PMC", 
+   0xB0,0x80}
 , {"UOPS_EXECUTED_PORT0",
   "PMC", 
    0xB1,0x01}
@@ -631,9 +529,15 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"UOPS_EXECUTED_PORT4_CORE",
   "PMC", 
    0xB1,0x10}
+, {"UOPS_EXECUTED_CORE_ACTIVE_CYCLES_NO_PORT5",
+  "PMC", 
+   0xB1,0x1F}
 , {"UOPS_EXECUTED_PORT5",
   "PMC", 
    0xB1,0x20}
+, {"UOPS_EXECUTED_CORE_ACTIVE_CYCLES",
+  "PMC", 
+   0xB1,0x3F}
 , {"UOPS_EXECUTED_PORT015",
   "PMC", 
    0xB1,0x40}
@@ -643,6 +547,24 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"OFFCORE_REQUESTS_SQ_FULL",
   "PMC", 
    0xB2,0x01}
+, {"SNOOPQ_REQUESTS_OUTSTANDING_DATA",
+  "PMC", 
+   0xB3,0x01}
+, {"SNOOPQ_REQUESTS_OUTSTANDING_INVALIDATE",
+  "PMC", 
+   0xB3,0x02}
+, {"SNOOPQ_REQUESTS_OUTSTANDING_CODE",
+  "PMC", 
+   0xB3,0x04}
+, {"SNOOPQ_REQUESTS_CODE",
+  "PMC", 
+   0xB4,0x01}
+, {"SNOOPQ_REQUESTS_DATA",
+  "PMC", 
+   0xB4,0x02}
+, {"SNOOPQ_REQUESTS_INVALIDATE",
+  "PMC", 
+   0xB4,0x03}
 , {"SNOOP_RESPONSE_HIT",
   "PMC", 
    0xB8,0x01}
@@ -694,6 +616,9 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"BR_MISP_RETIRED_ALL_BRANCHES",
   "PMC", 
    0xC5,0x00}
+, {"BR_MISP_RETIRED_CONDITIONAL",
+  "PMC", 
+   0xC5,0x01}
 , {"BR_MISP_RETIRED_NEAR_CALL",
   "PMC", 
    0xC5,0x02}
@@ -799,9 +724,9 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"BPU_CLEARS_LATE",
   "PMC", 
    0xE8,0x02}
-, {"BPU_CLEARS_ANY",
+, {"THREAD_ACTIVE",
   "PMC", 
-   0xE8,0x03}
+   0xEC,0x01}
 , {"L2_TRANSACTIONS_LOAD",
   "PMC", 
    0xF0,0x01}
@@ -850,36 +775,9 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"L2_LINES_OUT_ANY",
   "PMC", 
    0xF2,0x0F}
-, {"L2_HW_PREFETCH_HIT",
-  "PMC", 
-   0xF3,0x01}
-, {"L2_HW_PREFETCH_ALLOC",
-  "PMC", 
-   0xF3,0x02}
-, {"L2_HW_PREFETCH_DATA_TRIGGER",
-  "PMC", 
-   0xF3,0x04}
-, {"L2_HW_PREFETCH_CODE_TRIGGER",
-  "PMC", 
-   0xF3,0x08}
-, {"L2_HW_PREFETCH_DCA_TRIGGER",
-  "PMC", 
-   0xF3,0x10}
-, {"L2_HW_PREFETCH_KICK_START",
-  "PMC", 
-   0xF3,0x20}
-, {"SQ_MISC_PROMOTION",
-  "PMC", 
-   0xF4,0x01}
-, {"SQ_MISC_PROMOTION_POST_GO",
-  "PMC", 
-   0xF4,0x02}
 , {"SQ_MISC_LRU_HINTS",
   "PMC", 
    0xF4,0x04}
-, {"SQ_MISC_FILL_DROPPED",
-  "PMC", 
-   0xF4,0x08}
 , {"SQ_MISC_SPLIT_LOCK",
   "PMC", 
    0xF4,0x10}
@@ -934,6 +832,9 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"UNC_GQ_CYCLES_NOT_EMPTY_PEER_PROBE_TRACKER",
   "UPMC", 
    0x01,0x04}
+, {"UNC_GQ_OCCUPANCY_READ_TRACKER",
+  "UPMC", 
+   0x02,0x01}
 , {"UNC_GQ_ALLOC_READ_TRACKER",
   "UPMC", 
    0x03,0x01}
@@ -1075,6 +976,12 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"UNC_L3_LINES_OUT_ANY",
   "UPMC", 
    0x0B,0x1F}
+, {"UNC_GQ_SNOOP_GOTO_S",
+  "UPMC", 
+   0x0C,0x01}
+, {"UNC_GQ_SNOOP_GOTO_I",
+  "UPMC", 
+   0x0C,0x02}
 , {"UNC_QHL_REQUESTS_IOH_READS",
   "UPMC", 
    0x20,0x01}
@@ -1138,24 +1045,6 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"UNC_QHL_TO_QMC_BYPASS",
   "UPMC", 
    0x26,0x01}
-, {"UNC_QMC_NORMAL_FULL_READ_CH0",
-  "UPMC", 
-   0x27,0x01}
-, {"UNC_QMC_NORMAL_FULL_READ_CH1",
-  "UPMC", 
-   0x27,0x02}
-, {"UNC_QMC_NORMAL_FULL_READ_CH2",
-  "UPMC", 
-   0x27,0x04}
-, {"UNC_QMC_NORMAL_FULL_WRITE_CH0",
-  "UPMC", 
-   0x27,0x08}
-, {"UNC_QMC_NORMAL_FULL_WRITE_CH1",
-  "UPMC", 
-   0x27,0x10}
-, {"UNC_QMC_NORMAL_FULL_WRITE_CH2",
-  "UPMC", 
-   0x27,0x20}
 , {"UNC_QMC_ISOC_FULL_READ_CH0",
   "UPMC", 
    0x28,0x01}
@@ -1201,6 +1090,9 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"UNC_QMC_OCCUPANCY_CH2",
   "UPMC", 
    0x2A,0x04}
+, {"UNC_QMC_OCCUPANCY_ANY",
+  "UPMC", 
+   0x2A,0x07}
 , {"UNC_QMC_ISSOC_OCCUPANCY_CH0",
   "UPMC", 
    0x2B,0x01}
@@ -1297,9 +1189,57 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"UNC_QMC_PRIORITY_UPDATES_ANY",
   "UPMC", 
    0x31,0x07}
+, {"UNC_IMC_RETRY_CH0",
+  "UPMC", 
+   0x32,0x01}
+, {"UNC_IMC_RETRY_CH1",
+  "UPMC", 
+   0x32,0x02}
+, {"UNC_IMC_RETRY_CH2",
+  "UPMC", 
+   0x32,0x04}
+, {"UNC_IMC_RETRY_ANY",
+  "UPMC", 
+   0x32,0x07}
+, {"UNC_QHL_FRC_ACK_CNFLTS_IOH",
+  "UPMC", 
+   0x33,0x01}
+, {"UNC_QHL_FRC_ACK_CNFLTS_REMOTE",
+  "UPMC", 
+   0x33,0x02}
 , {"UNC_QHL_FRC_ACK_CNFLTS_LOCAL",
   "UPMC", 
    0x33,0x04}
+, {"UNC_QHL_FRC_ACK_CNFLTS_ANY",
+  "UPMC", 
+   0x33,0x07}
+, {"UNC_QHL_SLEEPS_IOH_ORDER",
+  "UPMC", 
+   0x34,0x01}
+, {"UNC_QHL_SLEEPS_REMOTE_ORDER",
+  "UPMC", 
+   0x34,0x02}
+, {"UNC_QHL_SLEEPS_LOCAL_ORDER",
+  "UPMC", 
+   0x34,0x04}
+, {"UNC_QHL_SLEEPS_IOH_CONFLICT",
+  "UPMC", 
+   0x34,0x08}
+, {"UNC_QHL_SLEEPS_REMOTE_CONFLICT",
+  "UPMC", 
+   0x34,0x10}
+, {"UNC_QHL_SLEEPS_LOCAL_CONFLICT",
+  "UPMC", 
+   0x34,0x20}
+, {"UNC_ADDR_OPCODE_MATCH_IOH",
+  "UPMC", 
+   0x35,0x01}
+, {"UNC_ADDR_OPCODE_MATCH_REMOTE",
+  "UPMC", 
+   0x35,0x02}
+, {"UNC_ADDR_OPCODE_MATCH_LOCAL",
+  "UPMC", 
+   0x35,0x04}
 , {"UNC_QPI_TX_STALLED_SINGLE_FLIT_HOME_LINK_0",
   "UPMC", 
    0x40,0x01}
@@ -1326,31 +1266,37 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
    0x40,0x38}
 , {"UNC_QPI_TX_STALLED_MULTI_FLIT_DRS_LINK_0",
   "UPMC", 
-   0x40,0x01}
+   0x41,0x01}
 , {"UNC_QPI_TX_STALLED_MULTI_FLIT_NCB_LINK_0",
   "UPMC", 
-   0x40,0x02}
+   0x41,0x02}
 , {"UNC_QPI_TX_STALLED_MULTI_FLIT_NCS_LINK_0",
   "UPMC", 
-   0x40,0x04}
+   0x41,0x04}
 , {"UNC_QPI_TX_STALLED_MULTI_FLIT_DRS_LINK_1",
   "UPMC", 
-   0x40,0x08}
+   0x41,0x08}
 , {"UNC_QPI_TX_STALLED_MULTI_FLIT_NCB_LINK_1",
   "UPMC", 
-   0x40,0x10}
+   0x41,0x10}
 , {"UNC_QPI_TX_STALLED_MULTI_FLIT_NCS_LINK_1",
   "UPMC", 
-   0x40,0x20}
+   0x41,0x20}
 , {"UNC_QPI_TX_STALLED_MULTI_FLIT_LINK_0",
   "UPMC", 
-   0x40,0x07}
+   0x41,0x07}
 , {"UNC_QPI_TX_STALLED_MULTI_FLIT_LINK_1",
   "UPMC", 
-   0x40,0x38}
+   0x41,0x38}
+, {"UNC_QPI_TX_HEADER_FULL_LINK_0",
+  "UPMC", 
+   0x42,0x01}
 , {"UNC_QPI_TX_HEADER_BUSY_LINK_0",
   "UPMC", 
    0x42,0x02}
+, {"UNC_QPI_TX_HEADER_FULL_LINK_1",
+  "UPMC", 
+   0x42,0x04}
 , {"UNC_QPI_TX_HEADER_BUSY_LINK_1",
   "UPMC", 
    0x42,0x08}
@@ -1441,4 +1387,64 @@ static PerfmonEvent  nehalem_arch_events[NUM_ARCH_EVENTS_NEHALEM] = {
 , {"UNC_DRAM_PRE_ALL_CH2",
   "UPMC", 
    0x66,0x04}
+, {"UNC_DRAM_THERMAL_THROTTLED",
+  "UPMC", 
+   0x67,0x01}
+, {"UNC_THERMAL_THROTTLING_TEMP_CORE_0",
+  "UPMC", 
+   0x80,0x01}
+, {"UNC_THERMAL_THROTTLING_TEMP_CORE_1",
+  "UPMC", 
+   0x80,0x02}
+, {"UNC_THERMAL_THROTTLING_TEMP_CORE_2",
+  "UPMC", 
+   0x80,0x04}
+, {"UNC_THERMAL_THROTTLING_TEMP_CORE_3",
+  "UPMC", 
+   0x80,0x08}
+, {"UNC_THERMAL_THROTTLED_TEMP_CORE_0",
+  "UPMC", 
+   0x81,0x01}
+, {"UNC_THERMAL_THROTTLED_TEMP_CORE_1",
+  "UPMC", 
+   0x81,0x02}
+, {"UNC_THERMAL_THROTTLED_TEMP_CORE_2",
+  "UPMC", 
+   0x81,0x04}
+, {"UNC_THERMAL_THROTTLED_TEMP_CORE_3",
+  "UPMC", 
+   0x81,0x08}
+, {"UNC_PROCHOT_ASSERTION",
+  "UPMC", 
+   0x82,0x01}
+, {"UNC_THERMAL_THROTTLING_PROCHOT_CORE_0",
+  "UPMC", 
+   0x83,0x01}
+, {"UNC_THERMAL_THROTTLING_PROCHOT_CORE_1",
+  "UPMC", 
+   0x83,0x02}
+, {"UNC_THERMAL_THROTTLING_PROCHOT_CORE_2",
+  "UPMC", 
+   0x83,0x04}
+, {"UNC_THERMAL_THROTTLING_PROCHOT_CORE_3",
+  "UPMC", 
+   0x83,0x08}
+, {"UNC_TURBO_MODE_CORE_0",
+  "UPMC", 
+   0x84,0x01}
+, {"UNC_TURBO_MODE_CORE_1",
+  "UPMC", 
+   0x84,0x02}
+, {"UNC_TURBO_MODE_CORE_2",
+  "UPMC", 
+   0x84,0x04}
+, {"UNC_TURBO_MODE_CORE_3",
+  "UPMC", 
+   0x84,0x08}
+, {"UNC_CYCLES_UNHALTED_L3_FLL_ENABLE",
+  "UPMC", 
+   0x85,0x02}
+, {"UNC_CYCLES_UNHALTED_L3_FLL_DISABLE",
+  "UPMC", 
+   0x86,0x01}
 };

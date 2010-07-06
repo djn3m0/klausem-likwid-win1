@@ -1,3 +1,6 @@
+# supported: GCC, ICC
+COMPILER = GCC
+
 # Define the color of the likwid-pin output
 # Can be NONE, BLACK, RED, GREEN, YELLOW, BLUE,
 # MAGENTA, CYAN or WHITE
@@ -7,15 +10,13 @@ COLOR = CYAN
 PREFIX =  /usr/local
 MANPREFIX = $(PREFIX)/man
 
-#LIBPTHREAD = 
-
 MAX_NUM_THREADS = 128
 MAX_NUM_SOCKETS = 4
 
 # Versioning Information
 VERSION = 1
 RELEASE = 0
-DATE    = 30.11.2009
+DATE    = 10.07.2010
 
 LIBLIKWIDPIN = $(PREFIX)/lib/liblikwidpin.so
 

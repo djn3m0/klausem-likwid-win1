@@ -9,14 +9,13 @@
  *                  Allows to turn on and off the Hardware prefetcher
  *                  available.
  *
- *        Version:  1.0
- *        Created:  07/05/2009
- *       Revision:  none
+ *        Version:  <VERSION>
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  HPCUtil
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *        Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
