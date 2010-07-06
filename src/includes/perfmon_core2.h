@@ -1,17 +1,16 @@
 /*
  * ===========================================================================
  *
- *       Filename:  perfmon_core2.h
+ *      Filename:  perfmon_core2.h
  *
- *    Description:  Core 2 specific subroutines
+ *      Description:  Core 2 specific subroutines
  *
- *        Version:  <VERSION>
- *        Created:  07/15/2009
- *       Revision:  none
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  none
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify

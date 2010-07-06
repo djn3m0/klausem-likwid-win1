@@ -5,13 +5,13 @@
  *
  *    Description:  Module implementing output of nested ascii art boxes
  *
- *        Version:  1.0
- *        Created:  08/13/2009
+ *        Version:  <VERSION>
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  none
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *        Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as

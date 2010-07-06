@@ -1,17 +1,17 @@
 /*
  * ===========================================================================
  *
- *       Filename:  strUtil.c
+ *      Filename:  strUtil.c
  *
- *    Description:  Utility routines for strings. Depends on bstring lib.
+ *      Description:  Utility routines for strings. Depends on bstring lib.
  *
- *        Version:  <VERSION>
- *        Created:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  likwid
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as

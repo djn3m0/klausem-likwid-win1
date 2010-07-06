@@ -6,9 +6,8 @@
  *    Description:  Implementation of cpuid module.
  *                  Provides API to extract cpuid info on x86 processors.
  *
- *        Version:  1.0
- *        Created:  07/06/2009
- *       Revision:  none
+ *        Version:  <VERSION>
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
@@ -252,6 +251,7 @@ intelCpuidFunc_4(CacheLevel** cachePool)
 			if ((cpuid_info.model == NEHALEM_BLOOMFIELD) ||
 					(cpuid_info.model == NEHALEM_LYNNFIELD) ||
 					(cpuid_info.model == NEHALEM_WESTMERE) ||
+					(cpuid_info.model == NEHALEM_WESTMERE_M) ||
 					(cpuid_info.model == NEHALEM_EX))
 			{
 				if (cpuid_topology.numThreadsPerCore == 1)
@@ -351,6 +351,8 @@ cpuid_init (void)
                 case NEHALEM_LYNNFIELD:
                     cpuid_info.name = nehalem_lynn_str;
                     break;
+
+                case NEHALEM_WESTMERE_M:
 
                 case NEHALEM_WESTMERE:
                     cpuid_info.name = nehalem_west_str;
