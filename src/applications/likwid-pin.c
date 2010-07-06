@@ -1,16 +1,16 @@
 /*
  * ===========================================================================
  *
- *       Filename:  likwid-pin.c
+ *      Filename:  likwid-pin.c
  *
- *    Description:  An application to pin a program including threads
+ *      Description:  An application to pin a program including threads
  *
- *        Version:  <VERSION>
- *        Created:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  likwid
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify

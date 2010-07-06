@@ -7,12 +7,11 @@
  *                  on x86 processors.
  *
  *        Version:  <VERSION>
- *        Created:  08/13/2009
- *       Revision:  none
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  none
+ *        Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify

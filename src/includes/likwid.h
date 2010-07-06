@@ -1,18 +1,17 @@
 /*
  * ===========================================================================
  *
- *       Filename:  likwid.h
+ *      Filename:  likwid.h
  *
- *    Description:  Header File of likwid marker API
+ *      Description:  Header File of likwid marker API
  *
- *        Version:  1.0
- *        Created:  12/10/2009
- *       Revision:  none
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  none
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as

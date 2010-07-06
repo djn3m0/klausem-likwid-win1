@@ -1,19 +1,18 @@
 /*
  * ===========================================================================
  *
- *       Filename:  cpuFeaturesMain.c
+ *       Filename:  likwid-features.c
  *
  *    Description:  An application to read out and set the feature flag
  *                  register on Intel Core 2 processors.
  *
  *        Version:  <VERSION>
- *        Created:  08/13/2009
- *       Revision:  none
+ *        Created:  <DATE>
  *
  *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *        Company:  RRZE Erlangen
- *        Project:  none
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *        Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
