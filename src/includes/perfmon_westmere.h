@@ -30,10 +30,6 @@
  *
  * ===========================================================================
  */
- 
-#ifndef PERFMON_WESTMERE_H
-#define PERFMON_WESTMERE_H
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -265,23 +261,17 @@ perfmon_printDerivedMetricsWestmere(PerfmonGroup group)
             break;
 
         case CACHE:
-            numRows = 4;
+            numRows = 2;
             INIT_BASIC;
             bstrListAdd(1,Data cache misses);
-            bstrListAdd(2,Data cache request rate);
-            bstrListAdd(3,Data cache miss rate);
-            bstrListAdd(4,Data cache miss ratio);
+            bstrListAdd(2,Data cache miss rate);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
                 tableData.rows[0].value[threadId] = perfmon_getResult(threadId,"PMC0");
                 tableData.rows[1].value[threadId] =
-                    perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"FIXC0");
-                tableData.rows[2].value[threadId] =
                     perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"FIXC0");
-                tableData.rows[3].value[threadId] =
-                    perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"PMC1");
 
             }
 
@@ -310,9 +300,9 @@ perfmon_printDerivedMetricsWestmere(PerfmonGroup group)
         case L3CACHE:
             numRows = 3;
             INIT_BASIC;
-            bstrListAdd(1,L2 request rate);
-            bstrListAdd(2,L2 miss rate);
-            bstrListAdd(3,L2 miss ratio);
+            bstrListAdd(1,L3 request rate);
+            bstrListAdd(2,L3 miss rate);
+            bstrListAdd(3,L3 miss ratio);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
@@ -352,21 +342,15 @@ perfmon_printDerivedMetricsWestmere(PerfmonGroup group)
             break;
 
         case TLB:
-            numRows = 3;
+            numRows = 1;
             INIT_BASIC;
-            bstrListAdd(1,L1 DTLB request rate);
-            bstrListAdd(2,L1 DTLB miss rate);
-            bstrListAdd(3,L1 DTLB miss ratio);
+            bstrListAdd(1,L1 DTLB miss rate);
             initResultTable(&tableData, fc, numRows, numColumns);
 
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
-                tableData.rows[0].value[threadId] = 
-                    perfmon_getResult(threadId,"PMC1") / perfmon_getResult(threadId,"FIXC0");
-                tableData.rows[1].value[threadId] =
+                tableData.rows[0].value[threadId] =
                     perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"FIXC0");
-                tableData.rows[2].value[threadId] =
-                    perfmon_getResult(threadId,"PMC0") / perfmon_getResult(threadId,"PMC1");
             }
 
             break;
@@ -407,5 +391,3 @@ perfmon_printDerivedMetricsWestmere(PerfmonGroup group)
     bstrListDestroy(fc);
 
 }
-
-#endif
