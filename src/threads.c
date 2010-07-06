@@ -103,9 +103,19 @@ threads_registerDataAll(ThreadUserData* data, threads_copyDataFunc func)
 {
     int i;
 
-    for(i = 0; i < numThreads; i++)
+    if (func == NULL)
     {
-        threads_data[i].data = (*data);
+        for(i = 0; i < numThreads; i++)
+        {
+            threads_data[i].data = (*data);
+        }
+    }
+    else
+    {
+        for(i = 0; i < numThreads; i++)
+        {
+            func( data, &threads_data[i].data);
+        }
     }
 }
 
@@ -114,7 +124,14 @@ threads_registerDataThread(int threadId,
         ThreadUserData* data,
         threads_copyDataFunc func)
 {
-    threads_data[threadId].data = (*data);
+    if (func == NULL)
+    {
+        threads_data[threadId].data = (*data);
+    }
+    else
+    {
+        func( data, &threads_data[threadId].data);
+    }
 }
 
 void

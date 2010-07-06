@@ -196,7 +196,7 @@ void bstr_to_workgroup(Workgroup* group,
     int i;
     int parseStreams = 0;
     bstring threadInfo;
-    bstring streams;
+    bstring streams= bformat("0");
     struct bstrList* tokens;
     struct bstrList* subtokens;
     const AffinityDomain* domain;
