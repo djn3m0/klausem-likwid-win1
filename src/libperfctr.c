@@ -95,6 +95,8 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
 
     switch ( cpuid_info.model ) 
     {
+        case NEHALEM_WESTMERE_M:
+        case NEHALEM_WESTMERE:
         case NEHALEM_BLOOMFIELD:
         case NEHALEM_LYNNFIELD:
             for(int i=0; i<MAX_NUM_SOCKETS; i++) nehalem_socket_lock[i] = 0;
@@ -222,6 +224,10 @@ likwid_markerStartRegion(int thread_id, int cpu_id)
                     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x300000003ULL);
                     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000003ULL);
                     break;
+
+                case NEHALEM_WESTMERE_M:
+
+                case NEHALEM_WESTMERE:
 
                 case NEHALEM_BLOOMFIELD:
 
@@ -379,6 +385,10 @@ likwid_markerStopRegion(int thread_id, int cpu_id, int regionId)
                     likwid_results[regionId].counters[thread_id][3] += (double) msr_read(cpu_id, MSR_PMC1);
                     break;
 
+                case NEHALEM_WESTMERE_M:
+
+                case NEHALEM_WESTMERE:
+
                 case NEHALEM_BLOOMFIELD:
 
                 case NEHALEM_LYNNFIELD:
@@ -413,12 +423,7 @@ likwid_markerStopRegion(int thread_id, int cpu_id, int regionId)
             }
             break;
 
-
- /* :TODO:04/20/2010 11:16:57 AM:jt: Add K8 */
-        case NETBURST_FAMILY:
-            fprintf(stderr, "Unsupported Processor!\n");
-            exit(EXIT_FAILURE);
-            break;
+        case K8_FAMILY:
 
         case K10_FAMILY:
 

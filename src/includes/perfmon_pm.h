@@ -159,17 +159,31 @@ perfmon_stopCountersThread_pm(int thread_id)
 				msr_read(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister);
         }
     }
-
-    /*
-    threadData[thread_id].cycles = RDTSC;
-    */
-	/* TODO: check for overflow ?*/
 }
 
 void
-perfmon_printDerivedMetrics_pm()
+perfmon_printDerivedMetrics_pm(PerfmonGroup group)
 {
-	//TODO: Implement me
+
+    switch ( group ) 
+    {
+        case FLOPS_DP:
+
+        case FLOPS_SP:
+
+        case L2:
+
+        case BRANCH:
+
+        case NOGROUP:
+            fprintf (stderr, "The Pentium M supports only two counters. Therefore derived metrics are not computed due to missing runtime!\n" );
+            break;
+
+        default:
+            fprintf (stderr, "perfmon_printDerivedMetricsCore2: Unknown group! Exiting!\n" );
+            exit (EXIT_FAILURE);
+            break;
+    }
 }
 
 

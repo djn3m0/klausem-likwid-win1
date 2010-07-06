@@ -5,7 +5,7 @@ ANSI_CFLAGS += -std=c99
 
 CFLAGS   =  -O1 -Wno-format
 CPPFLAGS =
-LFLAGS   =
+LFLAGS   = -pthread 
 DEFINES  = -D_GNU_SOURCE
 
 INCLUDES =
