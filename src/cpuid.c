@@ -939,6 +939,7 @@ cpuid_initCacheTopology()
             else
             {
                 cachePool[2].threads = cpuid_topology.numCoresPerSocket/2;
+                cachePool[2].size /= 2 ;
             }
 
             cachePool[2].inclusive = 1;
