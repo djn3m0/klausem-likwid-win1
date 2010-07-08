@@ -1,17 +1,16 @@
 /*
  * ===========================================================================
  *
- *       Filename:  affinity.c
+ *      Filename:  affinity.c
  *
- *    Description:  Implementation of affinity module.
+ *      Description:  Implementation of affinity module.
  *
- *        Version:  1.0
- *        Created:  30/04/2010
- *       Revision:  none
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  likwid
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify

@@ -1,17 +1,16 @@
 /*
  * ===========================================================================
  *
- *       Filename:  likwid-bench.c
+ *      Filename:  likwid-bench.c
  *
- *    Description:  A flexible and extensible benchmarking toolbox
+ *      Description:  A flexible and extensible benchmarking toolbox
  *
- *        Version:  <VERSION>
- *        Created:  30/04/2010
- *       Revision:  none
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  none
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -61,10 +60,12 @@ printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-a\t list available benchmarks \n"); \
 printf("-p\t list available thread domains \n"); \
-printf("-i\t number of iterations \n"); \
-printf("-g\t number of workgroups \n"); \
-printf("-t\t type of test \n"); \
-printf("-w\t <thread_domain>:<size>[:<num_threads>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB\n"); \
+printf("-l <TEST>\t list properties of benchmark \n"); \
+printf("-i <INT>\t number of iterations \n"); \
+printf("-g <INT>\t number of workgroups (mandatory)\n"); \
+printf("-t <TEST>\t type of test \n"); \
+printf("-w\t <thread_domain>:<size>[:<num_threads>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
+printf("Usage: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB \n"); \
 exit(0);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ############ */
@@ -116,7 +117,7 @@ int main(int argc, char** argv)
     /* Handling of command line options */
     if (argc ==  1) { HELP_MSG }
 
-    while ((c = getopt (argc, argv, "g:w:t:i:aph")) != -1) {
+    while ((c = getopt (argc, argv, "g:w:t:i:l:aph")) != -1) {
         switch (c)
         {
             case 'h':
@@ -162,6 +163,43 @@ int main(int argc, char** argv)
                 break;
             case 'i':
                 iter =  atoi(optarg);
+                break;
+            case 'l':
+                testcase = bfromcstr(optarg);
+                for (i=0; i<NUMKERNELS; i++)
+                {
+                    if (biseqcstr(testcase, kernels[i].name))
+                    {
+                        test = kernels+i;
+                        break;
+                    }
+                }
+
+                if (biseqcstr(testcase,"none"))
+                {
+                    fprintf (stderr, "Unknown test case %s\n",optarg);
+                    return EXIT_FAILURE;
+                }
+                else
+                {
+                    printf("Name: %s\n",test->name);
+                    printf("Number of streams: %d\n",test->streams);
+                    printf("Loop stride: %d\n",test->stride);
+                    printf("Flops: %d\n",test->flops);
+                    printf("Bytes: %d\n",test->bytes);
+                    switch (test->type)
+                    {
+                        case SINGLE:
+                            printf("Data Type: Single precision float\n");
+                            break;
+                        case DOUBLE:
+                            printf("Data Type: Double precision float\n");
+                            break;
+                    }
+                }
+                bdestroy(testcase);
+                exit (EXIT_SUCCESS);    
+
                 break;
             case 'p':
                 optPrintDomains = 1;
