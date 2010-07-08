@@ -23,10 +23,8 @@ my $isLoop=0;
 my $BenchRoot = $ARGV[0];
 my $OutputDirectory = $ARGV[1];
 my $TemplateRoot = $ARGV[2];
-#my $ROOT = abs_path('./bench');
 my $DEBUG = 0;
 
-#chdir ("$BenchRoot") or die "Cannot change in  : $!\n";
 opendir (DIR, "./$BenchRoot") or die "Cannot open bench directory: $!\n";
 my $tpl = Template->new({
         INCLUDE_PATH => ["$TemplateRoot"]
@@ -93,11 +91,12 @@ while (defined(my $file = readdir(DIR))) {
     }
 }
 #print Dumper(@Testcases);
+my @TestcasesSorted = sort {$a->{name} cmp $b->{name}} @Testcases;
 
 my $Vars;
-$Vars->{Testcases} = \@Testcases;
-$Vars->{numKernels} = $#Testcases+1;
-$Vars->{allTests} = join('\n',map {$_->{name}} @Testcases);
+$Vars->{Testcases} = \@TestcasesSorted;
+$Vars->{numKernels} = $#TestcasesSorted+1;
+$Vars->{allTests} = join('\n',map {$_->{name}} @TestcasesSorted);
 $tpl->process('testcases.tt', $Vars, "$OutputDirectory/testcases.h");
 
 
