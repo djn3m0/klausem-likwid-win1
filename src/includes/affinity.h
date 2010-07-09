@@ -1,17 +1,17 @@
 /*
  * ===========================================================================
  *
- *      Filename:  strUtil.h
+ *       Filename:  affinity.h
  *
- *      Description:  Header File strUtil Module. 
- *                    Helper routines for bstrlib and command line parsing
+ *    Description:  Header File affinity Module. 
  *
- *      Version:  <VERSION>
- *      Created:  <DATE>
+ *        Version:  1.0
+ *        Created:  30/04/2010
+ *       Revision:  none
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *      Company:  RRZE Erlangen
- *      Project:  likwid
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  none
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -30,17 +30,20 @@
  * ===========================================================================
  */
 
-#ifndef STRUTIL_H
-#define STRUTIL_H
+#ifndef AFFINITY_H
+#define AFFINITY_H
 
-#include <bstrlib.h>
 #include <types.h>
 
-extern int str2int(const char* str);
-extern int bstr_to_cpuset(int* threads,  bstring str);
-extern void bstr_to_eventset(StrUtilEventSet* set, bstring str);
-extern bstring bSecureInput (int maxlen, char* vgcCtx);
-extern int bJustifyCenter (bstring b, int width);
-extern void bstr_to_workgroup(Workgroup* threads,  bstring str, DataType type, int numberOfStreams);
+extern void affinity_init();
+extern void affinity_finalize();
+extern int  affinity_processGetProcessorId();
+extern int  affinity_threadGetProcessorId();
+extern int  affinity_pinProcess(int processorId);
 
-#endif /*STRUTIL_H*/
+extern int  affinity_pinThread(int processorId);
+extern const AffinityDomain* affinity_getDomain(bstring domain);
+extern void affinity_printDomains();
+
+#endif /*AFFINITY_H*/
+

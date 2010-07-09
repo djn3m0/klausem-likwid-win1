@@ -35,8 +35,10 @@
 #include <errno.h>
 #include <sys/types.h>
 
-#include <multiplex.h>
+#include <types.h>
+#include <bstrlib.h>
 #include <strUtil.h>
+#include <affinity.h>
 
 int
 str2int(const char* str)
@@ -63,7 +65,7 @@ str2int(const char* str)
 }
 
 int
-bstr_to_cpuset(int* threads,  bstring q)
+bstr_to_cpuset_physical(int* threads,  bstring q)
 {
     int i;
     unsigned int rangeBegin;
@@ -71,7 +73,6 @@ bstr_to_cpuset(int* threads,  bstring q)
     int numThreads=0;
     struct bstrList* tokens;
     struct bstrList* subtokens;
-//    bstring q = bfromcstr(str);
 
     tokens = bsplit(q,',');
 
@@ -121,6 +122,70 @@ bstr_to_cpuset(int* threads,  bstring q)
     return numThreads;
 }
 
+int
+bstr_to_cpuset_logical(int* threads,  bstring q)
+{
+    int i;
+    int j;
+    int tmpThreads[MAX_NUM_THREADS];
+    int globalNumThreads=0;
+    int numThreads=0;
+    struct bstrList* tokens;
+    struct bstrList* subtokens;
+    bstring limiter = bfromcstr("-S");
+    bstring domainTag;
+    bstring emptyString = bfromcstr("");
+    bstring sString = bfromcstr("S");
+    const AffinityDomain* domain;
+
+    tokens = bsplitstr(q,limiter);
+
+    for (i=0;i<tokens->qty;i++)
+    {
+        bfindreplace (tokens->entry[i], sString, emptyString , 0);
+
+        subtokens = bsplit(tokens->entry[i],':');
+
+        if ( subtokens->qty == 2 )
+        {
+            domainTag = bformat("S%s",subtokens->entry[0]);
+            domain =  affinity_getDomain(domainTag);
+
+            numThreads = bstr_to_cpuset(tmpThreads, subtokens->entry[1]);
+
+            for (j=0; j<numThreads; j++)
+            {
+                threads[globalNumThreads++] = domain->processorList[tmpThreads[j]];
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Parse Error\n");
+            exit(EXIT_FAILURE);
+        }
+        bstrListDestroy(subtokens);
+    }
+
+    bstrListDestroy(tokens);
+    bdestroy(q);
+
+    return numThreads;
+}
+
+
+int
+bstr_to_cpuset(int* threads,  bstring q)
+{
+    if (bstrchr (q, 'S') ==  BSTR_ERR)
+    {
+        return bstr_to_cpuset_physical(threads,q);
+    }
+    else
+    {
+        return bstr_to_cpuset_logical(threads,q);
+    }
+}
+
 
 void
 bstr_to_eventset(StrUtilEventSet* set, bstring q)
@@ -155,6 +220,179 @@ bstr_to_eventset(StrUtilEventSet* set, bstring q)
     bstrListDestroy(tokens);
     bdestroy(q);
 }
+
+int bstr_to_doubleSize(bstring str, DataType type)
+{
+    bstring unit = bmidstr(str, blength(str)-2, 2);
+    bstring sizeStr = bmidstr(str, 0, blength(str)-2);
+    int sizeU = str2int(bdata(sizeStr));
+    int junk = 0;
+    int bytesize = 0;
+
+    switch (type)
+    {
+        case SINGLE:
+            bytesize = 4;
+            break;
+
+        case DOUBLE:
+            bytesize = 8;
+            break;
+    }
+
+    if (biseqcstr(unit, "kB")) {
+        junk = (sizeU *1024)/bytesize;
+    } else if (biseqcstr(unit, "MB")) {
+        junk = (sizeU *1024*1024)/bytesize;
+    } else if (biseqcstr(unit, "GB")) {
+        junk = (sizeU *1024*1024*1024)/bytesize;
+    }
+
+    return junk;
+}
+
+void bstr_to_workgroup(Workgroup* group,
+        bstring str,
+        DataType type,
+        int numberOfStreams)
+{
+    int i;
+    int parseStreams = 0;
+    bstring threadInfo;
+    bstring streams= bformat("0");
+    struct bstrList* tokens;
+    struct bstrList* subtokens;
+    const AffinityDomain* domain;
+
+    /* split the workgroup into the thread and the streams part */
+    tokens = bsplit(str,'-');
+
+    if (tokens->qty == 2)
+    {
+        threadInfo = bstrcpy(tokens->entry[0]);
+        streams = bstrcpy(tokens->entry[1]);
+        parseStreams = 1;
+    } 
+    else if (tokens->qty == 1)
+    {
+        threadInfo = bstrcpy(tokens->entry[0]);
+    }
+    else
+    {
+        fprintf(stderr, "Error in parsing workgroup string\n");
+        exit(EXIT_FAILURE);
+    }
+
+    bstrListDestroy (tokens);
+    tokens = bsplit(threadInfo,':');
+
+    if (tokens->qty == 3)
+    {
+        domain = affinity_getDomain(tokens->entry[0]);
+        group->size = bstr_to_doubleSize(tokens->entry[1], type);
+        group->numberOfThreads = str2int(bdata(tokens->entry[2]));
+
+        if (group->numberOfThreads > domain->numberOfProcessors)
+        {
+            fprintf(stderr, "Error: Domain %s supports only up to %d threads.\n",
+                    bdata(tokens->entry[0]),domain->numberOfProcessors);
+            exit(EXIT_FAILURE);
+        }
+
+        group->processorIds = (int*) malloc(group->numberOfThreads * sizeof(int));
+
+        for (i=0; i<group->numberOfThreads; i++)
+        {
+            group->processorIds[i] = domain->processorList[i];
+        }
+    } 
+    else if (tokens->qty == 2)
+    {
+        domain = affinity_getDomain(tokens->entry[0]);
+        group->size = bstr_to_doubleSize(tokens->entry[1], type);
+        group->numberOfThreads = domain->numberOfProcessors;
+
+        group->processorIds = (int*) malloc(group->numberOfThreads * sizeof(int));
+
+        for (i=0; i<group->numberOfThreads; i++)
+        {
+            group->processorIds[i] = domain->processorList[i];
+        }
+    }
+    else
+    {
+        fprintf(stderr, "Error in parsing workgroup string\n");
+        exit(EXIT_FAILURE);
+    }
+
+    bstrListDestroy(tokens);
+
+    /* parse stream list */
+    if (parseStreams)
+    {
+        tokens = bsplit(streams,',');
+
+        if (tokens->qty < numberOfStreams)
+        {
+            fprintf(stderr, "Error: Testcase requires at least %d streams.\n",
+                    numberOfStreams);
+            exit(EXIT_FAILURE);
+        }
+
+        group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
+
+        for (i=0;i<tokens->qty;i++)
+        {
+            subtokens = bsplit(tokens->entry[i],':');
+
+            if ( subtokens->qty == 3 )
+            {
+               int index = str2int(bdata(subtokens->entry[0]));
+               if (index >= numberOfStreams)
+               {
+                   fprintf(stderr, "Error: Stream Index %d out of range.\n", index);
+                   exit(EXIT_FAILURE);
+               }
+               group->streams[index].domain = bstrcpy(subtokens->entry[1]);
+               group->streams[index].offset = str2int(bdata(subtokens->entry[2]));
+            }
+            else if ( subtokens->qty == 2 )
+            {
+                int index = str2int(bdata(subtokens->entry[0]));
+                if (index >= numberOfStreams)
+                {
+                    fprintf(stderr, "Error: Stream Index %d out of range.\n", index);
+                    exit(EXIT_FAILURE);
+                }
+                group->streams[index].domain = bstrcpy(subtokens->entry[1]);
+                group->streams[index].offset = 0;
+            }
+            else
+            {
+                fprintf(stderr, "Error in parsing event string\n");
+                exit(EXIT_FAILURE);
+            }
+
+            bstrListDestroy(subtokens);
+        }
+
+        bstrListDestroy(tokens);
+        bdestroy(str);
+    }
+    else
+    {
+        group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
+
+        for (i=0; i<numberOfStreams; i++)
+        {
+            group->streams[i].domain = domain->tag;
+            group->streams[i].offset = 0;
+        }
+    }
+
+    group->size /= numberOfStreams;
+}
+
 
 #define INIT_SECURE_INPUT_LENGTH 256
 

@@ -189,7 +189,7 @@ cpuFeatures_print(int cpu)
         PRINT_VALUE(GREEN,enabled);
     }
 
-    printf("Limit CPUID Maxval: \t");
+    printf("Limit CPUID Maxval: \t\t");
     if (flags & (1ULL<<22)) 
     {
         PRINT_VALUE(RED,enabled);

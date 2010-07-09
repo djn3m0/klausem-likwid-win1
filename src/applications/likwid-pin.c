@@ -40,6 +40,7 @@
 
 #include <types.h>
 #include <bstrlib.h>
+#include <affinity.h>
 #include <strUtil.h>
 
 #ifdef COLOR
@@ -57,8 +58,8 @@ printf("Example usage: likwid-pin -c 0,4-6 ./myApp\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-c\t comma separated processor ids\n"); \
-printf("-s\t bitmask with threads to skip\n\n"); \
-printf("-t\t Threading implementation type (at the moment only intel)\n\n"); \
+printf("-s\t bitmask with threads to skip\n"); \
+printf("-t\t Threading implementation type (at the moment only intel)\n"); \
 printf("\t No special type necessary for gcc OpenMP\n\n")
 
 #define VERSION_MSG \
@@ -108,6 +109,8 @@ int main (int argc, char** argv)
         HELP_MSG; 
         exit (EXIT_SUCCESS);    
     }
+
+    affinity_init();
 
     while ((c = getopt (argc, argv, "+c:s:t:hv")) != -1)
     {

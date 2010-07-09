@@ -1,17 +1,17 @@
 /*
  * ===========================================================================
  *
- *      Filename:  strUtil.h
+ *       Filename:  allocator.h
  *
- *      Description:  Header File strUtil Module. 
- *                    Helper routines for bstrlib and command line parsing
+ *    Description:  Header File allocator Module. 
  *
- *      Version:  <VERSION>
- *      Created:  <DATE>
+ *        Version:  1.0
+ *        Created:  04/05/2010
+ *       Revision:  none
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *      Company:  RRZE Erlangen
- *      Project:  likwid
+ *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *        Company:  RRZE Erlangen
+ *        Project:  none
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -30,17 +30,20 @@
  * ===========================================================================
  */
 
-#ifndef STRUTIL_H
-#define STRUTIL_H
+#ifndef ALLOCATOR_H
+#define ALLOCATOR_H
 
-#include <bstrlib.h>
 #include <types.h>
+#include <bstrlib.h>
 
-extern int str2int(const char* str);
-extern int bstr_to_cpuset(int* threads,  bstring str);
-extern void bstr_to_eventset(StrUtilEventSet* set, bstring str);
-extern bstring bSecureInput (int maxlen, char* vgcCtx);
-extern int bJustifyCenter (bstring b, int width);
-extern void bstr_to_workgroup(Workgroup* threads,  bstring str, DataType type, int numberOfStreams);
+extern void allocator_init(int numVectors);
+extern void allocator_finalize();
+extern void allocator_allocateVector(void** ptr,
+        int alignment,
+        int size,
+        int offset,
+        DataType type,
+        bstring domain);
 
-#endif /*STRUTIL_H*/
+#endif /*ALLOCATOR_H*/
+
