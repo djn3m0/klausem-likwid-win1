@@ -1,17 +1,17 @@
 /*
  * ===========================================================================
  *
- *       Filename:  cpuid.c
+ *      Filename:  cpuid.c
  *
- *    Description:  Implementation of cpuid module.
+ *      Description:  Implementation of cpuid module.
  *                  Provides API to extract cpuid info on x86 processors.
  *
- *        Version:  <VERSION>
- *        Created:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  likwid
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify

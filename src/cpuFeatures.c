@@ -1,20 +1,20 @@
 /*
  * ===========================================================================
  *
- *       Filename:  cpuFeatures.c
+ *     Filename:  cpuFeatures.c
  *
- *    Description:  Implementation of cpuFeatures Module.
+ *     Description:  Implementation of cpuFeatures Module.
  *                  Provides an API to read out and print the IA32_MISC_ENABLE
  *                  model specific register on Intel x86 processors.
  *                  Allows to turn on and off the Hardware prefetcher
  *                  available.
  *
- *        Version:  <VERSION>
- *        Created:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  likwid
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
