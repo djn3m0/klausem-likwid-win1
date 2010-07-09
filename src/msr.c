@@ -1,9 +1,9 @@
 /*
  * ===========================================================================
  *
- *     Filename:  msr.c
+ *      Filename:  msr.c
  *
- *     Description:  Implementation of msr module.
+ *      Description:  Implementation of msr module.
  *                   Provides API to read and write values to the model
  *                   specific registers on x86 processors using the msr
  *                   sys interface of the Linux 2.6 kernel. This module 
@@ -15,7 +15,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Company:  RRZE Erlangen
  *      Project:  likwid
- *      Copyright:  Copyright (c) 2009, Jan Treibig
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
