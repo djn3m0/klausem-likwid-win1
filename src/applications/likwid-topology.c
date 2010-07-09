@@ -1,17 +1,17 @@
 /*
  * ===========================================================================
  *
- *       Filename:  likwid-topology.c
+ *      Filename:  likwid-topology.c
  *
- *    Description:  A application to determine the thread and cache topology
+ *      Description:  A application to determine the thread and cache topology
  *                  on x86 processors.
  *
- *        Version:  <VERSION>
- *        Created:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  likwid
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify

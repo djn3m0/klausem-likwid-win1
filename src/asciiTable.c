@@ -1,16 +1,16 @@
 /*
  * ===========================================================================
  *
- *       Filename:  asciiTable.c
+ *      Filename:  asciiTable.c
  *
- *    Description:  Module implementing output of ascii table.
+ *      Description:  Module implementing output of ascii table.
  *
- *        Version:  <VERSION>
- *        Created:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  likwid
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
