@@ -1,16 +1,16 @@
 /*
  * ===========================================================================
  *
- *       Filename:  asciiBoxes.c
+ *      Filename:  asciiBoxes.c
  *
- *    Description:  Module implementing output of nested ascii art boxes
+ *      Description:  Module implementing output of nested ascii art boxes
  *
- *        Version:  <VERSION>
- *        Created:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
- *         Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *        Company:  RRZE Erlangen
- *        Project:  likwid
+ *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
+ *      Project:  likwid
  *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
  *      This program is free software; you can redistribute it and/or modify
