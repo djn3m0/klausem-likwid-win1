@@ -65,7 +65,7 @@ str2int(const char* str)
 }
 
 int
-bstr_to_cpuset(int* threads,  bstring q)
+bstr_to_cpuset_physical(int* threads,  bstring q)
 {
     int i;
     unsigned int rangeBegin;
@@ -73,7 +73,6 @@ bstr_to_cpuset(int* threads,  bstring q)
     int numThreads=0;
     struct bstrList* tokens;
     struct bstrList* subtokens;
-//    bstring q = bfromcstr(str);
 
     tokens = bsplit(q,',');
 
@@ -121,6 +120,70 @@ bstr_to_cpuset(int* threads,  bstring q)
     bdestroy(q);
 
     return numThreads;
+}
+
+int
+bstr_to_cpuset_logical(int* threads,  bstring q)
+{
+    int i;
+    int j;
+    int tmpThreads[MAX_NUM_THREADS];
+    int globalNumThreads=0;
+    int numThreads=0;
+    struct bstrList* tokens;
+    struct bstrList* subtokens;
+    bstring limiter = bfromcstr("-S");
+    bstring domainTag;
+    bstring emptyString = bfromcstr("");
+    bstring sString = bfromcstr("S");
+    const AffinityDomain* domain;
+
+    tokens = bsplitstr(q,limiter);
+
+    for (i=0;i<tokens->qty;i++)
+    {
+        bfindreplace (tokens->entry[i], sString, emptyString , 0);
+
+        subtokens = bsplit(tokens->entry[i],':');
+
+        if ( subtokens->qty == 2 )
+        {
+            domainTag = bformat("S%s",subtokens->entry[0]);
+            domain =  affinity_getDomain(domainTag);
+
+            numThreads = bstr_to_cpuset(tmpThreads, subtokens->entry[1]);
+
+            for (j=0; j<numThreads; j++)
+            {
+                threads[globalNumThreads++] = domain->processorList[tmpThreads[j]];
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Parse Error\n");
+            exit(EXIT_FAILURE);
+        }
+        bstrListDestroy(subtokens);
+    }
+
+    bstrListDestroy(tokens);
+    bdestroy(q);
+
+    return numThreads;
+}
+
+
+int
+bstr_to_cpuset(int* threads,  bstring q)
+{
+    if (bstrchr (q, 'S') ==  BSTR_ERR)
+    {
+        return bstr_to_cpuset_physical(threads,q);
+    }
+    else
+    {
+        return bstr_to_cpuset_logical(threads,q);
+    }
 }
 
 

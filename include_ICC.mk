@@ -4,9 +4,13 @@ ANSI_CFLAGS  = -strict-ansi
 ANSI_CFLAGS += -std=c99
 
 CFLAGS   =  -O1 -Wno-format
+ASFLAGS  = -g -gstabs
 CPPFLAGS =
 LFLAGS   = -pthread 
 DEFINES  = -D_GNU_SOURCE
+DEFINES  += -DMAX_NUM_THREADS=128
+DEFINES  += -DPAGE_ALIGNMENT=4096
+#DEFINES  += -DPERFMON
 
 INCLUDES =
 LIBS     = 
