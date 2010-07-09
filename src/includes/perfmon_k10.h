@@ -54,8 +54,9 @@ static PerfmonCounterMap k10_counter_map[NUM_COUNTERS_K10] = {
 static PerfmonGroupMap k10_group_map[NUM_GROUPS_K10] = {
     {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s","SSE_RETIRED_ADD_DOUBLE_FLOPS:PMC0,SSE_RETIRED_MULT_DOUBLE_FLOPS:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
     {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","SSE_RETIRED_ADD_SINGLE_FLOPS:PMC0,SSE_RETIRED_MULT_SINGLE_FLOPS:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+    {"FLOPS_X87",FLOPS_X87,"X87 MFlops/s","X87_FLOPS_RETIRED_ADD:PMC0,X87_FLOPS_RETIRED_MULT:PMC1,X87_FLOPS_RETIRED_DIV:PMC2,CPU_CLOCKS_UNHALTED:PMC3"},
     {"L2",L2,"L2 cache bandwidth in MBytes/s","DATA_CACHE_REFILLS_L2_ALL:PMC0,DATA_CACHE_EVICTED_ALL:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
-    {"L3",L3,"L3 cache bandwidth in MBytes/s","L3_FILLS_ALL_ALL_CORES:PMC0,L3_READ_REQUEST_ALL_ALL_CORES:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},
+/*    {"L3",L3,"L3 cache bandwidth in MBytes/s","L3_FILLS_ALL_ALL_CORES:PMC0,L3_READ_REQUEST_ALL_ALL_CORES:PMC1,CPU_CLOCKS_UNHALTED:PMC2"},*/
     {"MEM",MEM,"Main memory bandwidth in MBytes/s","NORTHBRIDGE_READ_RESPONSE_ALL:PMC0,OCTWORDS_WRITE_TRANSFERS:PMC1,DRAM_ACCESSES_DCTO_ALL:PMC2,DRAM_ACCESSES_DCT1_ALL:PMC3"},
     {"CACHE",CACHE,"Data cache miss rate/ratio","INSTRUCTIONS_RETIRED:PMC0,DATA_CACHE_ACCESSES:PMC1,DATA_CACHE_REFILLS_L2_ALL:PMC2,DATA_CACHE_REFILLS_NORTHBRIDGE_ALL:PMC3"},
     {"ICACHE",ICACHE,"Instruction cache miss rate/ratio","INSTRUCTIONS_RETIRED:PMC0,ICACHE_FETCHES:PMC1,ICACHE_REFILLS_L2:PMC2,ICACHE_REFILLS_MEM:PMC3"},
@@ -237,6 +238,34 @@ void perfmon_printDerivedMetrics_k10(PerfmonGroup group)
             }
             break;
 
+        case FLOPS_X87:
+            numRows = 5;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,X87 MFlops/s);
+            bstrListAdd(3,X87 Add MFlops/s);
+            bstrListAdd(4,X87 Mult MFlops/s);
+            bstrListAdd(5,X87 Div MFlops/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"PMC3") * inverseClock;
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")+
+                             perfmon_getResult(threadId,"PMC1") +
+                             perfmon_getResult(threadId,"PMC2")) / time;
+                tableData.rows[2].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC0")) / time;
+                tableData.rows[3].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC1")) / time;
+                tableData.rows[4].value[threadId] =
+                     1.0E-06*(perfmon_getResult(threadId,"PMC2")) / time;
+            }
+            break;
+
+
         case L2:
             numRows = 4;
             INIT_BASIC;
@@ -259,6 +288,7 @@ void perfmon_printDerivedMetrics_k10(PerfmonGroup group)
             }
             break;
 
+#if 0
         case L3:
             numRows = 4;
             INIT_BASIC;
@@ -280,6 +310,7 @@ void perfmon_printDerivedMetrics_k10(PerfmonGroup group)
                      1.0E-06*(perfmon_getResult(threadId,"PMC1")*64.0) / time;
             }
             break;
+#endif
 
         case MEM:
             numRows = 4;
