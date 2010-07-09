@@ -198,7 +198,6 @@ likwid_markerStartRegion(int thread_id, int cpu_id)
     {
         case P6_FAMILY:
 
-
             switch ( cpuid_info.model ) 
             {
                 case PENTIUM_M_BANIAS:
@@ -266,8 +265,8 @@ likwid_markerStartRegion(int thread_id, int cpu_id)
             }
             break;
 
-        case NETBURST_FAMILY:
-            break;
+        case K8_FAMILY:
+
 
         case K10_FAMILY:
             switch ( cpuid_info.model ) 
@@ -302,6 +301,7 @@ likwid_markerStartRegion(int thread_id, int cpu_id)
                     exit(EXIT_FAILURE);
                     break;
             }
+            break;
 
         default:
             fprintf(stderr, "Unsupported Processor!\n");
@@ -359,7 +359,6 @@ likwid_markerStopRegion(int thread_id, int cpu_id, int regionId)
     switch ( cpuid_info.family ) 
     {
         case P6_FAMILY:
-
 
             switch ( cpuid_info.model ) 
             {

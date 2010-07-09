@@ -871,6 +871,7 @@ perfmon_init(int numThreads_local, int threads[])
             perfmon_numCounters = perfmon_numCountersK10;
 
             initThreadArch = perfmon_init_k10;
+            printDerivedMetrics = perfmon_printDerivedMetrics_k10;
             perfmon_startCountersThread = perfmon_startCountersThread_k10;
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
             perfmon_setupCounterThread = perfmon_setupCounterThread_k10;

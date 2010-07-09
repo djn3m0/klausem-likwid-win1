@@ -37,7 +37,7 @@
 #include <perfmon_core2_events.h>
 
 #define NUM_COUNTERS_CORE2 4
-#define NUM_GROUPS_CORE2 9
+#define NUM_GROUPS_CORE2 10
 #define NUM_SETS_CORE2 8
 
 static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
@@ -54,6 +54,7 @@ static PerfmonCounterMap core2_counter_map[NUM_COUNTERS_CORE2] = {
 static PerfmonGroupMap core2_group_map[NUM_GROUPS_CORE2] = {
     {"FLOPS_DP",FLOPS_DP,"Double Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_DOUBLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE:PMC1"},
     {"FLOPS_SP",FLOPS_SP,"Single Precision MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,SIMD_COMP_INST_RETIRED_PACKED_SINGLE:PMC0,SIMD_COMP_INST_RETIRED_SCALAR_SINGLE:PMC1"},
+    {"FLOPS_X87",FLOPS_X87,"X87 MFlops/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,X87_OPS_RETIRED_ANY:PMC0"},
     {"L2",L2,"L2 cache bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_M_EVICT:PMC1"},
     {"MEM",MEM,"Main memory bandwidth in MBytes/s","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,BUS_TRANS_MEM_THIS_CORE_THIS_A:PMC0"},
     {"CACHE",CACHE,"Data cache miss rate/ratio","INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,L1D_REPL:PMC0,L1D_ALL_CACHE_REF:PMC1"},
@@ -273,6 +274,26 @@ perfmon_printDerivedMetricsCore2(PerfmonGroup group)
                 tableData.rows[2].value[threadId] =
                    1.0E-06*(perfmon_getResult(threadId,"PMC0")*4.0+
                      perfmon_getResult(threadId,"PMC1")) / time;
+            }
+            break;
+
+        case FLOPS_X87:
+            numRows = 3;
+            INIT_BASIC;
+            bstrListAdd(1,Runtime [s]);
+            bstrListAdd(2,CPI);
+            bstrListAdd(3,X87 MFlops/s);
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                time = perfmon_getResult(threadId,"FIXC1") * inverseClock;
+                cpi  =  perfmon_getResult(threadId,"FIXC1")/
+                    perfmon_getResult(threadId,"FIXC0");
+                tableData.rows[0].value[threadId] = time;
+                tableData.rows[1].value[threadId] = cpi;
+                tableData.rows[2].value[threadId] =
+                    1.0E-06*(perfmon_getResult(threadId,"PMC0")) / time;
             }
             break;
 
