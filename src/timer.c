@@ -33,7 +33,7 @@
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
+#include <osdep/time.h>
 
 #include <types.h>
 #include <timer.h>
@@ -156,7 +156,7 @@ timer_print(TimerData* time)
 
     sec = time->after.tv_sec - time->before.tv_sec;
 
-    timeDuration = (((sec*1000000)+time->after.tv_usec)- time->before.tv_usec);
+    timeDuration = (float)(((sec*1000000)+time->after.tv_usec)- time->before.tv_usec);
 
 #ifdef VERBOSE
     printf("*******************************************\n");

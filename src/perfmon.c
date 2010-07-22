@@ -46,7 +46,7 @@
 #include <perfmon.h>
 #include <asciiTable.h>
 #include <registers.h>
-
+#include <osindep/isnan.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -231,10 +231,13 @@ static int lineCb (void* parm, int ofs, int len)
         ret = sscanf(bdata(strList->entry[1]), "%d", &threadId); CHECKERROR;
         ret = sscanf(bdata(strList->entry[2]), "%lf", &st->results[tagId].time[threadId]); CHECKERROR;
 
-        for (int i=0;i<NUM_PMC; i++)
-        {
-            ret = sscanf(bdata(strList->entry[3+i]), "%lf", &st->results[tagId].counters[threadId][i]); CHECKERROR;
-        }
+		{
+			int i;
+			for (i=0;i<NUM_PMC; i++)
+			{
+				ret = sscanf(bdata(strList->entry[3+i]), "%lf", &st->results[tagId].counters[threadId][i]); CHECKERROR;
+			}
+		}
     }
 
     bstrListDestroy(strList);
@@ -357,9 +360,10 @@ printResultTable(PerfmonResultTable* tableData)
 static int
 getGroupId(bstring groupStr,PerfmonGroup* group)
 {
+	int i;
     *group = NOGROUP;
 
-    for (int i=0; i<perfmon_numGroups; i++)
+    for (i=0; i<perfmon_numGroups; i++)
     {
         if (biseqcstr(groupStr,group_map[i].key)) 
         {

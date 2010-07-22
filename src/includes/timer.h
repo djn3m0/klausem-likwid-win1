@@ -37,26 +37,9 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include <sys/time.h>
 #include <timer_types.h>
 
-#define RDTSC2(cpu_c) \
-__asm__ volatile( "rdtsc\n\t"           \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax", "%edx")
-
-#define RDTSC(cpu_c) \
-__asm__ volatile("xor %%eax,%%eax\n\t"           \
-"cpuid\n\t"           \
-"rdtsc\n\t"           \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
-
-
+#include <osdep/rdtsc_asm.h>
 
 /**
  * @brief  Initialize timer module

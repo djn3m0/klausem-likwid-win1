@@ -73,7 +73,7 @@ void* runTest(void* arg)
 
     switch ( myData->test->type )
     {
-        case SINGLE:
+        case DataType_SINGLE:
             {
                 float* sptr;
                 for (i=0; i < (int) myData->test->streams; i++)
@@ -85,7 +85,7 @@ void* runTest(void* arg)
                 }
             }
             break;
-        case DOUBLE:
+        case DataType_DOUBLE:
             {
                 double* dptr;
                 for (i=0; i < (int) myData->test->streams; i++)

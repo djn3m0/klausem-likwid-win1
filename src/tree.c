@@ -51,8 +51,8 @@ tree_print(TreeNode* nodePtr)
 {
     if (nodePtr != NULL) 
     {
+		TreeNode* walker;
         printf("%d ", nodePtr->id);
-        TreeNode* walker;    
         walker = nodePtr->llink;
 
         while (walker != NULL)

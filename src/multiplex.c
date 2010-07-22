@@ -35,7 +35,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <signal.h>
-#include <sys/time.h>
+//#include <sys/time.h>
 
 #include <timer.h>
 #include <perfmon.h>
@@ -57,10 +57,11 @@ multiplex_swapEventSet ()
 
     for (threadId = 0; threadId < perfmon_numThreads; threadId++)
     {
+		int i;
         /* Stop counters */
         if (!multiplex_useMarker) perfmon_stopCountersThread(threadId);
         /* Accumulate counters */
-        for (int i=0; i<collection->numberOfEvents; i++)
+        for (i=0; i<collection->numberOfEvents; i++)
         {
 //            collection->events[i].result[threadId] += 
  //               (double) perfmon_threadData[threadId].counters[collection->events[i].index].counterData;
@@ -80,8 +81,9 @@ multiplex_swapEventSet ()
 
     for (threadId = 0; threadId < perfmon_numThreads; threadId++)
     {
+		int i;
         /* Reconfigure counters */
-        for (int i=0; i<collection->numberOfEvents; i++)
+        for (i=0; i<collection->numberOfEvents; i++)
         {
             perfmon_setupCounterThread(threadId,
                     collection->events[i].event.eventId,

@@ -36,10 +36,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 #include <sched.h>
 #include <time.h>
 #include <pthread.h>
@@ -64,19 +66,37 @@ static AffinityDomain*  domains;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
+#ifdef WIN32
 static int
-getProcessorID(cpu_set_t* cpu_set)
+getProcessorID(DWORD_PTR* processAffinityMask)
 {
     int processorId;
 
     for (processorId=0;processorId<24;processorId++){
-        if (CPU_ISSET(processorId,cpu_set))
+        if (*processAffinityMask & (1 << processorId))
         {
-            break;
+            return processorId;
         }
     }
-    return processorId;
+    fprintf(stderr, "Could not determine processor id from process affinity mask\n");
+	return 25;
 }
+#else
+static int
+getProcessorID(cpu_set_t* processAffinityMask)
+{
+    int processorId;
+
+    for (processorId=0;processorId<24;processorId++){
+        if (CPU_ISSET(processorId,processAffinityMask))
+        {
+            return processorId;
+        }
+    }
+    fprintf(stderr, "Could not determine processor id from process affinity mask\n");
+	return 25;
+}
+#endif
 
 static void
 treeFillNextEntries(int numberOfEntries, int* processorIds, TreeNode** tree)
@@ -102,6 +122,7 @@ void affinity_init()
     int i;
     int cacheDomain;
     int currentDomain;
+	int numberOfCoresPerCache;
     TreeNode* socketNode;
     TreeNode* coreNode;
 
@@ -109,7 +130,7 @@ void affinity_init()
     cpuid_initTopology();
     cpuid_initCacheTopology();
 
-    int numberOfCoresPerCache =
+    numberOfCoresPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/cpuid_topology.numThreadsPerCore;
 
     /* determine total number of domains */
@@ -185,26 +206,84 @@ void affinity_finalize()
 
 int  affinity_processGetProcessorId()
 {
-    cpu_set_t cpu_set;
-    CPU_ZERO(&cpu_set);
-    sched_getaffinity(getpid(),sizeof(cpu_set_t), &cpu_set);
+#ifdef WIN32
+	DWORD_PTR processAffinityMask;
+	DWORD_PTR systemAffinityMask;
 
-    return getProcessorID(&cpu_set);
+	BOOL res = GetProcessAffinityMask(
+	  GetCurrentProcess(),
+	  &processAffinityMask,
+	  &systemAffinityMask
+	);
+	if (res == 0) {
+		perror("GetCurrentProcess");
+		exit(1);
+	}
+	return getProcessorID(&processAffinityMask);
+#else
+    cpu_set_t processAffinityMask;
+    CPU_ZERO(&processAffinityMask);
+    sched_getaffinity(getpid(),sizeof(cpu_set_t), &processAffinityMask);
+
+    return getProcessorID(&processAffinityMask);
+#endif
 }
 
 
 int  affinity_threadGetProcessorId()
 {
+#ifdef WIN32
+	DWORD_PTR
+		tmpThreadAffinityMask = (1 << 0),
+		tmpThreadAffinityMask1 = -1;
+
+	// temporarily set the thread affinity mask and retrieve old affinity mask
+	DWORD_PTR origThreadAffinityMask = SetThreadAffinityMask(
+		GetCurrentThread(),
+		tmpThreadAffinityMask
+	);
+	if (origThreadAffinityMask == 0) {
+		perror("SetThreadAffinityMask, used to get the thread affinity mask (1)");
+		exit(1);
+	}
+	// reset the thread affinity mask to its original value
+	tmpThreadAffinityMask1 = SetThreadAffinityMask(
+		GetCurrentThread(),
+		origThreadAffinityMask
+	);
+	if (tmpThreadAffinityMask1 == 0) {
+		perror("SetThreadAffinityMask, used to get the thread affinity mask (2)");
+		exit(1);
+	}
+	// check whether the resetting succeeded
+	if (tmpThreadAffinityMask1 != tmpThreadAffinityMask) {
+		perror("SetThreadAffinityMask, failed to reset thread affinity mask");
+		exit(1);
+	}
+	return getProcessorID(&origThreadAffinityMask);
+#else
     cpu_set_t  cpu_set;
     CPU_ZERO(&cpu_set);
     sched_getaffinity(gettid(),sizeof(cpu_set_t), &cpu_set);
 
     return getProcessorID(&cpu_set);
+#endif
 }
 
 
 int  affinity_pinThread(int processorId)
 {
+#ifdef WIN32
+	DWORD_PTR origThreadAffinityMask = SetThreadAffinityMask(
+		GetCurrentThread(),
+		1 << processorId
+	);
+	if (origThreadAffinityMask == 0) {
+		perror("SetThreadAffinityMask");
+		return FALSE;
+	}
+	return TRUE;
+#else
 	cpu_set_t cpuset;
     pthread_t thread;
 
@@ -218,11 +297,23 @@ int  affinity_pinThread(int processorId)
     }
 
     return TRUE;
+#endif
 }
 
 
 int  affinity_pinProcess(int processorId)
 {
+#ifdef WIN32
+	BOOL r = SetProcessAffinityMask(
+		GetCurrentProcess(),
+		1 << processorId
+	);
+	if (r == 0) {
+		perror("SetProcessAffinityMask");
+		return FALSE;
+	}
+	return TRUE;
+#else
 	cpu_set_t cpuset;
 
 	CPU_ZERO(&cpuset);
@@ -230,10 +321,29 @@ int  affinity_pinProcess(int processorId)
 	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpuset) == -1) 
 	{
 		perror("sched_setaffinity failed");
+		/*
+		TODO: take this error treatment or the one above?
+		if (errno == EFAULT) 
+        {
+            fprintf(stderr, "A supplied memory address was invalid\n");
+            exit(EXIT_FAILURE);
+        }
+        else if (errno == EINVAL) 
+        {
+            fprintf(stderr, "Processor is not available\n");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            fprintf(stderr, "Unknown error\n");
+            exit(EXIT_FAILURE);
+        }
+		*/
         return FALSE;
 	}
 
     return TRUE;
+#endif
 }
 
 

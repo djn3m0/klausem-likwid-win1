@@ -76,16 +76,16 @@ void perfmon_init_k10(PerfmonThread *thread)
 
     thread->counters[PMC0].configRegister = MSR_AMD_PERFEVTSEL0;
     thread->counters[PMC0].counterRegister = MSR_AMD_PMC0;
-    thread->counters[PMC0].type = PMC;
+    thread->counters[PMC0].type = PerfmonType_PMC;
     thread->counters[PMC1].configRegister = MSR_AMD_PERFEVTSEL1;
     thread->counters[PMC1].counterRegister = MSR_AMD_PMC1;
-    thread->counters[PMC0].type = PMC;
+    thread->counters[PMC0].type = PerfmonType_PMC;
     thread->counters[PMC2].configRegister = MSR_AMD_PERFEVTSEL2;
     thread->counters[PMC2].counterRegister = MSR_AMD_PMC2;
-    thread->counters[PMC0].type = PMC;
+    thread->counters[PMC0].type = PerfmonType_PMC;
     thread->counters[PMC3].configRegister = MSR_AMD_PERFEVTSEL3;
     thread->counters[PMC3].counterRegister = MSR_AMD_PMC3;
-    thread->counters[PMC0].type = PMC;
+    thread->counters[PMC0].type = PerfmonType_PMC;
 
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL0, 0x0ULL);
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL1, 0x0ULL);

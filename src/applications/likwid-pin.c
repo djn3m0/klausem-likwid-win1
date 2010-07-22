@@ -42,6 +42,7 @@
 #include <bstrlib.h>
 #include <affinity.h>
 #include <strUtil.h>
+#include <affinity.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -70,15 +71,13 @@ printf("likwid-pin   %d.%d \n\n",VERSION,RELEASE)
 void
 pinPid(int cpuid)
 {
-	cpu_set_t cpuset;
 
 #ifdef COLOR
     color_on(BRIGHT, COLOR);
 #endif
-	CPU_ZERO(&cpuset);
-	CPU_SET(cpuid, &cpuset);
+	
 	printf("[likwid-pin] Main PID -> core %d - ",  cpuid);
-	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpuset) == -1) 
+	if (affinity_pinThread(cpuid) == FALSE)
 	{
 		printf("sched_setaffinity failed : %s \n",strerror(errno));
 	}

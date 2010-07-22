@@ -37,15 +37,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/time.h>
+/*#include <sys/time.h>
 #include <sys/wait.h>
-#include <unistd.h>
+#include <unistd.h> abc */
 #include <sched.h>
 #include <time.h>
 
 #include <timer.h>
 #include <cpuid.h>
 #include <tree.h>
+#include <affinity.h>
+#include <osdep/numOfProcessors.h>
+#include <osdep/bsr_asm.h>
+#include <osdep/cpuid_asm.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -58,16 +62,6 @@ CpuTopology cpuid_topology;
 static int largest_function=0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-/* this was taken from the linux kernel */
-#define CPUID                              \
-    __asm__ volatile ("cpuid"                             \
-        : "=a" (eax),     \
-          "=b" (ebx),     \
-          "=c" (ecx),     \
-          "=d" (edx)      \
-        : "0" (eax), "2" (ecx))
-
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -97,7 +91,6 @@ static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
 static int init = 0;
-static uint32_t eax, ebx, ecx, edx;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -132,9 +125,7 @@ getBitFieldWidth(uint32_t number)
         return 0;
     }
 
-    __asm__ volatile ( "bsr %%eax, %%ecx\n\t"
-            : "=c" (fieldWidth)
-            : "a"(number));
+    ASM_BSR(fieldWidth, number);
 
 
     return fieldWidth+1;  /* bsr returns the position, we want the width */
@@ -213,10 +204,10 @@ intelCpuidFunc_4(CacheLevel** cachePool)
 
 	while (valid)
 	{
-		eax = 0x04;
-		ecx = level;
+		cpuid_eax = 0x04;
+		cpuid_ecx = level;
 		CPUID;
-		valid = extractBitField(eax,5,0);
+		valid = extractBitField(cpuid_eax,5,0);
 		if (!valid)
 		{
 			break;
@@ -230,19 +221,19 @@ intelCpuidFunc_4(CacheLevel** cachePool)
 
 	for (i=0; i < maxNumLevels; i++) 
 	{
-		eax = 0x04;
-		ecx = i;
+		cpuid_eax = 0x04;
+		cpuid_ecx = i;
 		CPUID;
 
-		pool[i].level = extractBitField(eax,3,5);
-		pool[i].type = (CacheType) extractBitField(eax,5,0);
-		pool[i].associativity = extractBitField(ebx,8,22)+1;
-		pool[i].sets = ecx+1;
-		pool[i].lineSize = extractBitField(ebx,12,0)+1;
+		pool[i].level = extractBitField(cpuid_eax,3,5);
+		pool[i].type = (CacheType) extractBitField(cpuid_eax,5,0);
+		pool[i].associativity = extractBitField(cpuid_ebx,8,22)+1;
+		pool[i].sets = cpuid_ecx+1;
+		pool[i].lineSize = extractBitField(cpuid_ebx,12,0)+1;
 		pool[i].size = pool[i].sets *
 			pool[i].associativity *
 			pool[i].lineSize;
-		pool[i].threads = extractBitField(eax,10,14)+1;
+		pool[i].threads = extractBitField(cpuid_eax,10,14)+1;
 
 		/* WORKAROUND cpuid reports wrong number of threads on SMT processor with SMT
 		 * turned off */
@@ -271,7 +262,7 @@ intelCpuidFunc_4(CacheLevel** cachePool)
 			pool[i].threads = cpuid_topology.numCoresPerSocket*
 				cpuid_topology.numThreadsPerCore;
 		}
-		pool[i].inclusive = edx&0x2;
+		pool[i].inclusive = cpuid_edx&0x2;
 	}
 
     return maxNumLevels;
@@ -282,7 +273,7 @@ intelCpuidFunc_4(CacheLevel** cachePool)
 static int
 intelCpuidFunc_2(CacheLevel** cachePool)
 {
-    eax = 0x02;
+    cpuid_eax = 0x02;
     CPUID;
 
     return 0;
@@ -302,22 +293,22 @@ cpuid_init (void)
     if (init) return;
     init =1;
 
-    eax = 0x00;
+    cpuid_eax = 0x00;
     CPUID;
 
-//    printf("CPUID Largest supported basic function 0x%X \n",eax);
-    largest_function = eax;
-    if (ebx == 0x68747541U)
+//    printf("CPUID Largest supported basic function 0x%X \n",cpuid_eax);
+    largest_function = cpuid_eax;
+    if (cpuid_ebx == 0x68747541U)
     {
         isIntel = 0;
     }
 
-    eax = 0x01;
+    cpuid_eax = 0x01;
     CPUID;
-    cpuid_info.family = ((eax>>8)&0xFU) + ((eax>>20)&0xFFU);
-    cpuid_info.model = (((eax>>16)&0xFU)<<4) + ((eax>>4)&0xFU);
-    cpuid_info.stepping =  (eax&0xFU);
-    cpuid_info.clock =  timer_getCpuClock();
+    cpuid_info.family = ((cpuid_eax>>8)&0xFU) + ((cpuid_eax>>20)&0xFFU);
+    cpuid_info.model = (((cpuid_eax>>16)&0xFU)<<4) + ((cpuid_eax>>4)&0xFU);
+    cpuid_info.stepping =  (cpuid_eax&0xFU);
+    cpuid_info.clock = -1;// timer_getCpuClock();
 
     switch ( cpuid_info.family ) 
     {
@@ -455,21 +446,21 @@ cpuid_init (void)
     }
 
     cpuid_info.features = (char*) malloc(100*sizeof(char));
-    if (edx & (1<<25)) strcpy(cpuid_info.features, "SSE ");
-    if (edx & (1<<26)) strcat(cpuid_info.features, "SSE2 ");
-    if (ecx & (1<<0))  strcat(cpuid_info.features, "SSE3 ");
-    if (ecx & (1<<19)) strcat(cpuid_info.features, "SSE4.1 ");
-    if (ecx & (1<<20)) strcat(cpuid_info.features, "SSE4.2 ");
+    if (cpuid_edx & (1<<25)) strcpy(cpuid_info.features, "SSE ");
+    if (cpuid_edx & (1<<26)) strcat(cpuid_info.features, "SSE2 ");
+    if (cpuid_ecx & (1<<0))  strcat(cpuid_info.features, "SSE3 ");
+    if (cpuid_ecx & (1<<19)) strcat(cpuid_info.features, "SSE4.1 ");
+    if (cpuid_ecx & (1<<20)) strcat(cpuid_info.features, "SSE4.2 ");
 
     cpuid_info.perf_version   =  0;
     if( cpuid_info.family == P6_FAMILY && 0x0A <= largest_function) 
     {
-        eax = 0x0A;
+        cpuid_eax = 0x0A;
         CPUID;
-        cpuid_info.perf_version   =  (eax&0xFFU);
-        cpuid_info.perf_num_ctr   =   ((eax>>8)&0xFFU);
-        cpuid_info.perf_width_ctr =  ((eax>>16)&0xFFU);
-        cpuid_info.perf_num_fixed_ctr =  (edx&0xFU);
+        cpuid_info.perf_version   =  (cpuid_eax&0xFFU);
+        cpuid_info.perf_num_ctr   =   ((cpuid_eax>>8)&0xFFU);
+        cpuid_info.perf_width_ctr =  ((cpuid_eax>>16)&0xFFU);
+        cpuid_info.perf_num_fixed_ctr =  (cpuid_edx&0xFU);
     }
 }
 
@@ -482,8 +473,6 @@ cpuid_initTopology(void)
     int level;
     int prevOffset = 0;
     int currOffset = 0;
-    FILE* pipe;
-    cpu_set_t set;
     HWThread* hwThreadPool;
     int hasBLeaf = 0;
     int maxNumLogicalProcs;
@@ -492,23 +481,16 @@ cpuid_initTopology(void)
     TreeNode* currentNode;
     int width;
 
-
-    /* First determine the number of processors accessible */
-    pipe = popen("cat /proc/cpuinfo | grep ^processor | wc -l", "r");
-    if (fscanf(pipe, "%u\n", &cpuid_topology.numHWThreads) != 1)
-    {
-        fprintf(stderr, "Failed to fscanf cpuinfo!\n");
-        exit(EXIT_FAILURE);
-    }
+	cpuid_topology.numHWThreads = numOfProcessors();
 
     /* check if 0x0B cpuid leaf is supported */
     if (largest_function >= 0x0B)
     {
-        eax = 0x0B;
-        ecx = 0;
+        cpuid_eax = 0x0B;
+        cpuid_ecx = 0;
         CPUID;
 
-        if (ebx) 
+        if (cpuid_ebx) 
         {
             hasBLeaf = 1;
         }
@@ -527,39 +509,20 @@ cpuid_initTopology(void)
     {
         for (i=0; i < (int) cpuid_topology.numHWThreads; i++)
         {
-            CPU_ZERO(&set);
-            CPU_SET(i,&set);
-            if (sched_setaffinity(0, sizeof(cpu_set_t), &set))
-            {
-                if (errno == EFAULT) 
-                {
-                    fprintf(stderr, "A supplied memory address was invalid\n");
-                    exit(EXIT_FAILURE);
-                }
-                else if (errno == EINVAL) 
-                {
-                    fprintf(stderr, "Processor is not available\n");
-                    exit(EXIT_FAILURE);
-                }
-                else
-                {
-                    fprintf(stderr, "Unknown error\n");
-                    exit(EXIT_FAILURE);
-                }
-            }
+            affinity_pinProcess(i);
 
-            eax = 0x0B;
-            ecx = 0;
+            cpuid_eax = 0x0B;
+            cpuid_ecx = 0;
             CPUID;
-            apicId = edx;
+            apicId = cpuid_edx;
             hwThreadPool[i].apicId = apicId;
 
             for (level=0; level < 3; level++)
             {
-                eax = 0x0B;
-                ecx = level;
+                cpuid_eax = 0x0B;
+                cpuid_ecx = level;
                 CPUID;
-                currOffset = eax&0xFU;
+                currOffset = cpuid_eax&0xFU;
 
                 switch ( level ) {
                     case 0:  /* SMT thread */
@@ -594,45 +557,25 @@ cpuid_initTopology(void)
         {
 
             case P6_FAMILY:
-                eax = 0x01;
+                cpuid_eax = 0x01;
                 CPUID;
-                maxNumLogicalProcs = extractBitField(ebx,8,16);
+                maxNumLogicalProcs = extractBitField(cpuid_ebx,8,16);
 
                 /* Check number of cores per package */
-                eax = 0x04;
-                ecx = 0;
+                cpuid_eax = 0x04;
+                cpuid_ecx = 0;
                 CPUID;
-                maxNumCores = extractBitField(eax,6,26)+1;
+                maxNumCores = extractBitField(cpuid_eax,6,26)+1;
 
                 maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
 
                 for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
-                    CPU_ZERO(&set);
-                    CPU_SET(i,&set);
-                    if (sched_setaffinity(0, sizeof(cpu_set_t), &set))
-                    {
-                        if (errno == EFAULT) 
-                        {
-                            fprintf(stderr, 
-                                    "A supplied memory address was invalid\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        else if (errno == EINVAL) 
-                        {
-                            fprintf(stderr, "Processor is not available\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        else
-                        {
-                            fprintf(stderr, "Unknown error\n");
-                            exit(EXIT_FAILURE);
-                        }
-                    }
+					affinity_pinProcess(i);
 
-                    eax = 0x01;
+                    cpuid_eax = 0x01;
                     CPUID;
-                    hwThreadPool[i].apicId = extractBitField(ebx,8,24);
+                    hwThreadPool[i].apicId = extractBitField(cpuid_ebx,8,24);
 
                     /* ThreadId is extracted from th apicId using the bit width
                      * of the number of logical processors
@@ -665,38 +608,18 @@ cpuid_initTopology(void)
                 maxNumLogicalProcsPerCore = 1;
                 maxNumLogicalProcs = 1;
 
-                eax = 0x80000008;
+                cpuid_eax = 0x80000008;
                 CPUID;
 
-                maxNumCores =  extractBitField(ecx,8,0)+1;
+                maxNumCores =  extractBitField(cpuid_ecx,8,0)+1;
 
                 for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
-                    CPU_ZERO(&set);
-                    CPU_SET(i,&set);
-                    if (sched_setaffinity(0, sizeof(cpu_set_t), &set))
-                    {
-                        if (errno == EFAULT) 
-                        {
-                            fprintf(stderr, 
-                                    "A supplied memory address was invalid\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        else if (errno == EINVAL) 
-                        {
-                            fprintf(stderr, "Processor is not available\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        else
-                        {
-                            fprintf(stderr, "Unknown error\n");
-                            exit(EXIT_FAILURE);
-                        }
-                    }
+					affinity_pinProcess(i);
 
-                    eax = 0x01;
+                    cpuid_eax = 0x01;
                     CPUID;
-                    hwThreadPool[i].apicId = extractBitField(ebx,8,24);
+                    hwThreadPool[i].apicId = extractBitField(cpuid_ebx,8,24);
 
                     /* ThreadId is extracted from th apicId using the bit width
                      * of the number of logical processors
@@ -724,49 +647,29 @@ cpuid_initTopology(void)
             case K10_FAMILY:
                 /* AMD Bios manual Rev. 2.28 section 3.2
                  * Extended method */
-                eax = 0x80000008;
+                cpuid_eax = 0x80000008;
                 CPUID;
 
-                width =  extractBitField(ecx,4,12);
+                width =  extractBitField(cpuid_ecx,4,12);
 
                 if (width == 0)
                 {
-                    width =  extractBitField(ecx,8,0)+1;
+                    width =  extractBitField(cpuid_ecx,8,0)+1;
                 }
 
-                eax = 0x01;
+                cpuid_eax = 0x01;
                 CPUID;
-                maxNumLogicalProcs =  extractBitField(ebx,8,16);
-                maxNumCores = extractBitField(ecx,8,0)+1;
+                maxNumLogicalProcs =  extractBitField(cpuid_ebx,8,16);
+                maxNumCores = extractBitField(cpuid_ecx,8,0)+1;
 
 
                 for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
-                    CPU_ZERO(&set);
-                    CPU_SET(i,&set);
-                    if (sched_setaffinity(0, sizeof(cpu_set_t), &set))
-                    {
-                        if (errno == EFAULT) 
-                        {
-                            fprintf(stderr, 
-                                    "A supplied memory address was invalid\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        else if (errno == EINVAL) 
-                        {
-                            fprintf(stderr, "Processor is not available\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        else
-                        {
-                            fprintf(stderr, "Unknown error\n");
-                            exit(EXIT_FAILURE);
-                        }
-                    }
+					affinity_pinProcess(i);
 
-                    eax = 0x01;
+                    cpuid_eax = 0x01;
                     CPUID;
-                    hwThreadPool[i].apicId = extractBitField(ebx,8,24);
+                    hwThreadPool[i].apicId = extractBitField(cpuid_ebx,8,24);
                     /* AMD only knows cores */
                     hwThreadPool[i].threadId = 0;
 
@@ -817,11 +720,6 @@ cpuid_initTopology(void)
     cpuid_topology.numCoresPerSocket = tree_countChildren(currentNode);
     currentNode = tree_getNode(currentNode, 0);
     cpuid_topology.numThreadsPerCore = tree_countChildren(currentNode);
-
-    if (pclose(pipe) == -1) {
-        fprintf(stderr, "Failed to close pipe for cpuinfo!\n");
-        exit(EXIT_FAILURE);
-    }
 }
 
 void 
@@ -849,13 +747,13 @@ cpuid_initCacheTopology()
             maxNumLevels = 2;
             cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
 
-            eax = 0x80000005;
+            cpuid_eax = 0x80000005;
             CPUID;
             cachePool[0].level = 1;
             cachePool[0].type = DATACACHE;
-            cachePool[0].associativity = extractBitField(ecx,8,16);
-            cachePool[0].lineSize = extractBitField(ecx,8,0);
-            cachePool[0].size =  extractBitField(ecx,8,24) * 1024;
+            cachePool[0].associativity = extractBitField(cpuid_ecx,8,16);
+            cachePool[0].lineSize = extractBitField(cpuid_ecx,8,0);
+            cachePool[0].size =  extractBitField(cpuid_ecx,8,24) * 1024;
             if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
             {
                 cachePool[0].sets = cachePool[0].size/
@@ -864,14 +762,14 @@ cpuid_initCacheTopology()
             cachePool[0].threads = 1;
             cachePool[0].inclusive = 1;
 
-            eax = 0x80000006;
+            cpuid_eax = 0x80000006;
             CPUID;
             cachePool[1].level = 2;
             cachePool[1].type = UNIFIEDCACHE;
             cachePool[1].associativity = 
-                amdGetAssociativity(extractBitField(ecx,4,12));
-            cachePool[1].lineSize = extractBitField(ecx,8,0);
-            cachePool[1].size =  extractBitField(ecx,16,16) * 1024;
+                amdGetAssociativity(extractBitField(cpuid_ecx,4,12));
+            cachePool[1].lineSize = extractBitField(cpuid_ecx,8,0);
+            cachePool[1].size =  extractBitField(cpuid_ecx,16,16) * 1024;
             if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
             {
                 cachePool[1].sets = cachePool[1].size/
@@ -889,13 +787,13 @@ cpuid_initCacheTopology()
             maxNumLevels = 3;
             cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
 
-            eax = 0x80000005;
+            cpuid_eax = 0x80000005;
             CPUID;
             cachePool[0].level = 1;
             cachePool[0].type = DATACACHE;
-            cachePool[0].associativity = extractBitField(ecx,8,16);
-            cachePool[0].lineSize = extractBitField(ecx,8,0);
-            cachePool[0].size =  extractBitField(ecx,8,24) * 1024;
+            cachePool[0].associativity = extractBitField(cpuid_ecx,8,16);
+            cachePool[0].lineSize = extractBitField(cpuid_ecx,8,0);
+            cachePool[0].size =  extractBitField(cpuid_ecx,8,24) * 1024;
             if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
             {
                 cachePool[0].sets = cachePool[0].size/
@@ -904,14 +802,14 @@ cpuid_initCacheTopology()
             cachePool[0].threads = 1;
             cachePool[0].inclusive = 1;
 
-            eax = 0x80000006;
+            cpuid_eax = 0x80000006;
             CPUID;
             cachePool[1].level = 2;
             cachePool[1].type = UNIFIEDCACHE;
             cachePool[1].associativity = 
-                amdGetAssociativity(extractBitField(ecx,4,12));
-            cachePool[1].lineSize = extractBitField(ecx,8,0);
-            cachePool[1].size =  extractBitField(ecx,16,16) * 1024;
+                amdGetAssociativity(extractBitField(cpuid_ecx,4,12));
+            cachePool[1].lineSize = extractBitField(cpuid_ecx,8,0);
+            cachePool[1].size =  extractBitField(cpuid_ecx,16,16) * 1024;
             if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
             {
                 cachePool[1].sets = cachePool[1].size/
@@ -923,9 +821,9 @@ cpuid_initCacheTopology()
             cachePool[2].level = 3;
             cachePool[2].type = UNIFIEDCACHE;
             cachePool[2].associativity =
-                amdGetAssociativity(extractBitField(edx,4,12));
-            cachePool[2].lineSize = extractBitField(edx,8,0);
-            cachePool[2].size =  (extractBitField(edx,14,18)+1) * 524288;
+                amdGetAssociativity(extractBitField(cpuid_edx,4,12));
+            cachePool[2].lineSize = extractBitField(cpuid_edx,8,0);
+            cachePool[2].size =  (extractBitField(cpuid_edx,14,18)+1) * 524288;
             if ((cachePool[0].associativity * cachePool[0].lineSize) != 0)
             {
                 cachePool[2].sets = cachePool[1].size/

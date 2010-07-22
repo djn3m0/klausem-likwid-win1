@@ -47,7 +47,7 @@
 BoxContainer*
 asciiBoxes_allocateContainer(int numLines, int numColumns)
 {
-    int i;
+    int i,j;
     BoxContainer* container;
 
     container = (BoxContainer*) malloc(sizeof(BoxContainer));
@@ -61,7 +61,6 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
         container->boxes[i] = (Box*) malloc(numColumns * sizeof(Box));
     }
 
-#if 0
     for(i=0; i<numLines; i++)
     {
         for(j=0; j<numColumns; j++)
@@ -70,8 +69,6 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
             container->boxes[i][j].label = NULL;
         }
     }
-#endif
-
 
     return container;
 }
