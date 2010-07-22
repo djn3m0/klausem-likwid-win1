@@ -44,8 +44,8 @@ int
 str2int(const char* str)
 {
     char* endptr;
-    errno = 0;
     unsigned long val;
+    errno = 0;
     val = strtoul(str, &endptr, 10);
 
     if ((errno == ERANGE && val == LONG_MAX )
@@ -231,11 +231,11 @@ int bstr_to_doubleSize(bstring str, DataType type)
 
     switch (type)
     {
-        case SINGLE:
+        case DataType_SINGLE:
             bytesize = 4;
             break;
 
-        case DOUBLE:
+        case DataType_DOUBLE:
             bytesize = 8;
             break;
     }

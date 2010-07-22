@@ -32,9 +32,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sched.h>
+//abc #include <sched.h>
 #include <sys/types.h>
-#include <unistd.h>
+//abc #include <unistd.h>
 #include <ctype.h>
 
 #include <types.h>
@@ -43,6 +43,7 @@
 #include <cpuFeatures.h>
 #include <tree.h>
 #include <asciiBoxes.h>
+#include <osdep/getopt.h>
 
 #define HELP_MSG \
 printf("\nlikwid-topology --  Version %d.%d \n\n",VERSION,RELEASE); \
@@ -104,10 +105,9 @@ int main (int argc, char** argv)
         }
     }
 
-    timer_init();
     cpuid_init();
 
-    if( cpuid_info.family == P6_FAMILY )
+    /*if( cpuid_info.family == P6_FAMILY )
     {
         cpuFeatures_init(0);
 
@@ -116,7 +116,7 @@ int main (int argc, char** argv)
             fprintf (stderr, "Speedstep is enabled!\nThis produces inaccurate timing measurements.\n");
             fprintf (stderr, "For reliable clock measurements disable speedstep.\n");
         }
-    }
+    }*/
 
     printf(HLINE);
     printf("CPU type:\t%s \n",cpuid_info.name);

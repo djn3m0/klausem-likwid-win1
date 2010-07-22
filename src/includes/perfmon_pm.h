@@ -67,10 +67,10 @@ perfmon_init_pm(PerfmonThread *thread)
 
     thread->counters[PMC0].configRegister = MSR_PERFEVTSEL0;
     thread->counters[PMC0].counterRegister = MSR_PMC0;
-    thread->counters[PMC0].type = PMC;
+    thread->counters[PMC0].type = PerfmonType_PMC;
     thread->counters[PMC1].configRegister = MSR_PERFEVTSEL1;
     thread->counters[PMC1].counterRegister = MSR_PMC1;
-    thread->counters[PMC1].type = PMC;
+    thread->counters[PMC1].type = PerfmonType_PMC;
 
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
     msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
@@ -93,7 +93,7 @@ perfmon_setupCounterThread_pm(int thread_id,
     uint64_t reg = perfmon_threadData[thread_id].counters[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
 
-    if (perfmon_threadData[thread_id].counters[index].type == PMC)
+    if (perfmon_threadData[thread_id].counters[index].type == PerfmonType_PMC)
     {
 
         perfmon_threadData[thread_id].counters[index].init = TRUE;

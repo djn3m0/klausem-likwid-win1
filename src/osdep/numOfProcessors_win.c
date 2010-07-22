@@ -1,0 +1,88 @@
+// code taken from http://www.dalun.com/blogs/05.01.2007.htm
+
+#include <windows.h>
+#include <malloc.h>    
+#include <stdio.h>
+#include <tchar.h>
+#include <osdep/numOfProcessors.h>
+
+typedef BOOL (WINAPI *LPFN_GLPI)(
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, 
+    PDWORD);
+
+uint32_t numOfProcessors()
+{
+    BOOL done;
+    BOOL rc;
+    DWORD returnLength;
+    DWORD procCoreCount;
+    DWORD byteOffset;
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer, ptr;
+    LPFN_GLPI Glpi;
+
+    Glpi = (LPFN_GLPI) GetProcAddress(
+                            GetModuleHandle(TEXT("kernel32")),
+                            "GetLogicalProcessorInformation");
+    if (NULL == Glpi) 
+    {
+        _tprintf(
+            TEXT("GetLogicalProcessorInformation is not supported.\n"));
+        exit(1);
+    }
+
+    done = FALSE;
+    buffer = NULL;
+    returnLength = 0;
+
+    while (!done) 
+    {
+        rc = Glpi(buffer, &returnLength);
+
+        if (FALSE == rc) 
+        {
+            if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) 
+            {
+                if (buffer) 
+                    free(buffer);
+
+                buffer=(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(
+                        returnLength);
+
+                if (NULL == buffer) 
+                {
+                    _tprintf(TEXT("Allocation failure\n"));
+                    return (2);
+                }
+            } 
+            else 
+            {
+                _tprintf(TEXT("Error %d\n"), GetLastError());
+                return (3);
+            }
+        } 
+        else done = TRUE;
+    }
+
+    procCoreCount = 0;
+    byteOffset = 0;
+
+    ptr=buffer;
+    while (byteOffset < returnLength) 
+    {
+        switch (ptr->Relationship) 
+        {
+            case RelationProcessorCore:
+                procCoreCount++;
+                break;
+
+            default:
+                break;
+        }
+        byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+        ptr++;
+    }
+
+    free (buffer);
+
+	return procCoreCount;
+}

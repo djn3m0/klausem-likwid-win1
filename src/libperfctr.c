@@ -49,6 +49,7 @@
 #include <timer.h>
 #include <registers.h>
 #include <likwid.h>
+#include <affinity.h>
 
 static LikwidResults*  likwid_results;
 static CyclesData*  likwid_time;
@@ -451,58 +452,3 @@ likwid_markerStopRegion(int thread_id, int cpu_id, int regionId)
             break;
     }
 }
-
-int  likwid_processGetProcessorId()
-{
-    cpu_set_t cpu_set;
-    CPU_ZERO(&cpu_set);
-    sched_getaffinity(getpid(),sizeof(cpu_set_t), &cpu_set);
-
-    return getProcessorID(&cpu_set);
-}
-
-
-int  likwid_threadGetProcessorId()
-{
-    cpu_set_t  cpu_set;
-    CPU_ZERO(&cpu_set);
-    sched_getaffinity(gettid(),sizeof(cpu_set_t), &cpu_set);
-
-    return getProcessorID(&cpu_set);
-}
-
-
-int  likwid_pinThread(int processorId)
-{
-    cpu_set_t cpuset;
-    pthread_t thread;
-
-    thread = pthread_self();
-    CPU_ZERO(&cpuset);
-    CPU_SET(processorId, &cpuset);
-    if (pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset))
-    {   
-        perror("pthread_setaffinity_np failed");
-        return FALSE;
-    }   
-
-    return TRUE;
-}
-
-
-int  likwid_pinProcess(int processorId)
-{
-    cpu_set_t cpuset;
-
-    CPU_ZERO(&cpuset);
-    CPU_SET(processorId, &cpuset);
-    if (sched_setaffinity(0, sizeof(cpu_set_t), &cpuset) == -1)
-    {
-        perror("sched_setaffinity failed");
-        return FALSE;
-    }   
-
-    return TRUE;
-}
-
-

@@ -93,11 +93,11 @@ allocator_allocateVector(void** ptr,
  //   size += offset;
     switch (type)
     {
-        case SINGLE:
+        case DataType_SINGLE:
             bytesize = (size+offset) * sizeof(float);
             break;
 
-        case DOUBLE:
+        case DataType_DOUBLE:
             bytesize = (size+offset) * sizeof(double);
             break;
     }
@@ -132,7 +132,7 @@ allocator_allocateVector(void** ptr,
 
     switch ( type )
     {
-        case SINGLE:
+        case DataType_SINGLE:
             {
                 float* sptr = (float*) *ptr;
                 sptr += offset;
@@ -145,7 +145,7 @@ allocator_allocateVector(void** ptr,
             }
             break;
 
-        case DOUBLE:
+        case DataType_DOUBLE:
             {
                 double* dptr = (double*) *ptr;
                 dptr += offset;

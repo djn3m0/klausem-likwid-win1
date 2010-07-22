@@ -39,10 +39,10 @@ typedef enum {
     UNIFIEDCACHE} CacheType;
 
 typedef enum {
-    NODE=0,
-    SOCKET,
-    CORE,
-    THREAD} NodeLevel;
+    NodeLevel_NODE=0,
+    NodeLevel_SOCKET,
+    NodeLevel_CORE,
+    NodeLevel_THREAD} NodeLevel;
 
 typedef struct {
     uint32_t family;

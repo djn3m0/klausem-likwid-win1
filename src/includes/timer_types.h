@@ -33,8 +33,8 @@
 #define TIMER_TYPES_H
 
 #include <stdint.h>
-#include <sys/time.h>
 
+#include <osdep/time.h>
 
 /**
  * @brief Union for cycles measurements

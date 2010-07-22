@@ -7,8 +7,8 @@
 typedef void (*FuncPrototype)();
 
 typedef enum {
-    SINGLE = 0,
-    DOUBLE} DataType;
+    DataType_SINGLE = 0,
+    DataType_DOUBLE} DataType;
 
 typedef enum {
     STREAM_1 = 1,

@@ -92,8 +92,10 @@ perfmon_init_nehalem(PerfmonThread *thread)
     TreeNode* coreNode;
     TreeNode* threadNode;
     int socketId;
-
-    for(int i=0; i<MAX_NUM_SOCKETS; i++) nehalem_socket_lock[i] = 0;
+	{
+		int i;
+		for(i=0; i<MAX_NUM_SOCKETS; i++) nehalem_socket_lock[i] = 0;
+	}
 
     /* determine thread to socket mapping */
     cpuid_initTopology();
@@ -121,50 +123,50 @@ perfmon_init_nehalem(PerfmonThread *thread)
     /* Fixed Counters: instructions retired, cycles unhalted core */
     thread->counters[PMC0].configRegister = MSR_PERF_FIXED_CTR_CTRL;
     thread->counters[PMC0].counterRegister = MSR_PERF_FIXED_CTR0;
-    thread->counters[PMC0].type = FIXED;
+    thread->counters[PMC0].type = PerfmonType_FIXED;
     thread->counters[PMC1].configRegister = MSR_PERF_FIXED_CTR_CTRL;
     thread->counters[PMC1].counterRegister = MSR_PERF_FIXED_CTR1;
-    thread->counters[PMC1].type = FIXED;
+    thread->counters[PMC1].type = PerfmonType_FIXED;
 
     /* PMC Counters: 4 48bit wide */
     thread->counters[PMC2].configRegister = MSR_PERFEVTSEL0;
     thread->counters[PMC2].counterRegister = MSR_PMC0;
-    thread->counters[PMC2].type = PMC;
+    thread->counters[PMC2].type = PerfmonType_PMC;
     thread->counters[PMC3].configRegister = MSR_PERFEVTSEL1;
     thread->counters[PMC3].counterRegister = MSR_PMC1;
-    thread->counters[PMC3].type = PMC;
+    thread->counters[PMC3].type = PerfmonType_PMC;
     thread->counters[PMC4].configRegister = MSR_PERFEVTSEL2;
     thread->counters[PMC4].counterRegister = MSR_PMC2;
-    thread->counters[PMC4].type = PMC;
+    thread->counters[PMC4].type = PerfmonType_PMC;
     thread->counters[PMC5].configRegister = MSR_PERFEVTSEL3;
     thread->counters[PMC5].counterRegister = MSR_PMC3;
-    thread->counters[PMC5].type = PMC;
+    thread->counters[PMC5].type = PerfmonType_PMC;
 
     /* Uncore PMC Counters: 8 48bit wide */
     thread->counters[PMC6].configRegister = MSR_UNCORE_PERFEVTSEL0;
     thread->counters[PMC6].counterRegister = MSR_UNCORE_PMC0;
-    thread->counters[PMC6].type = UNCORE;
+    thread->counters[PMC6].type = PerfmonType_UNCORE;
     thread->counters[PMC7].configRegister = MSR_UNCORE_PERFEVTSEL1;
     thread->counters[PMC7].counterRegister = MSR_UNCORE_PMC1;
-    thread->counters[PMC7].type = UNCORE;
+    thread->counters[PMC7].type = PerfmonType_UNCORE;
     thread->counters[PMC8].configRegister = MSR_UNCORE_PERFEVTSEL2;
     thread->counters[PMC8].counterRegister = MSR_UNCORE_PMC2;
-    thread->counters[PMC8].type = UNCORE;
+    thread->counters[PMC8].type = PerfmonType_UNCORE;
     thread->counters[PMC9].configRegister = MSR_UNCORE_PERFEVTSEL3;
     thread->counters[PMC9].counterRegister = MSR_UNCORE_PMC3;
-    thread->counters[PMC9].type = UNCORE;
+    thread->counters[PMC9].type = PerfmonType_UNCORE;
     thread->counters[PMC10].configRegister = MSR_UNCORE_PERFEVTSEL4;
     thread->counters[PMC10].counterRegister = MSR_UNCORE_PMC4;
-    thread->counters[PMC10].type = UNCORE;
+    thread->counters[PMC10].type = PerfmonType_UNCORE;
     thread->counters[PMC11].configRegister = MSR_UNCORE_PERFEVTSEL5;
     thread->counters[PMC11].counterRegister = MSR_UNCORE_PMC5;
-    thread->counters[PMC11].type = UNCORE;
+    thread->counters[PMC11].type = PerfmonType_UNCORE;
     thread->counters[PMC12].configRegister = MSR_UNCORE_PERFEVTSEL6;
     thread->counters[PMC12].counterRegister = MSR_UNCORE_PMC6;
-    thread->counters[PMC12].type = UNCORE;
+    thread->counters[PMC12].type = PerfmonType_UNCORE;
     thread->counters[PMC13].configRegister = MSR_UNCORE_PERFEVTSEL7;
     thread->counters[PMC13].counterRegister = MSR_UNCORE_PMC7;
-    thread->counters[PMC13].type = UNCORE;
+    thread->counters[PMC13].type = PerfmonType_UNCORE;
 
     msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
@@ -241,7 +243,7 @@ perfmon_setupCounterThread_nehalem(int thread_id,
     uint64_t reg = perfmon_threadData[thread_id].counters[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
 
-    if ((perfmon_threadData[thread_id].counters[index].type == PMC) || perfmon_threadData[thread_id].counters[index].type == UNCORE)
+    if ((perfmon_threadData[thread_id].counters[index].type == PerfmonType_PMC) || perfmon_threadData[thread_id].counters[index].type == PerfmonType_UNCORE)
     {
 
         perfmon_threadData[thread_id].counters[index].init = TRUE;
@@ -261,7 +263,7 @@ perfmon_setupCounterThread_nehalem(int thread_id,
                     LLU_CAST flags);
         }
     }
-    else if (perfmon_threadData[thread_id].counters[index].type == FIXED)
+    else if (perfmon_threadData[thread_id].counters[index].type == PerfmonType_FIXED)
     {
         perfmon_threadData[thread_id].counters[index].init = TRUE;
     }
@@ -290,17 +292,17 @@ perfmon_startCountersThread_nehalem(int thread_id)
 
     for (i=0;i<NUM_PMC;i++) {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) {
-            if (perfmon_threadData[thread_id].counters[i].type == PMC)
+            if (perfmon_threadData[thread_id].counters[i].type == PerfmonType_PMC)
             {
                 msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
                 flags |= (1<<(i-2));  /* enable counter */
             }
-            else if (perfmon_threadData[thread_id].counters[i].type == FIXED)
+            else if (perfmon_threadData[thread_id].counters[i].type == PerfmonType_FIXED)
             {
                 msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
                 flags |= (1ULL<<(i+32));  /* enable fixed counter */
             }
-            else if (perfmon_threadData[thread_id].counters[i].type == UNCORE)
+            else if (perfmon_threadData[thread_id].counters[i].type == PerfmonType_UNCORE)
             {
                 if(haveLock)
                 {
@@ -344,7 +346,7 @@ perfmon_stopCountersThread_nehalem(int thread_id)
     {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            if (perfmon_threadData[thread_id].counters[i].type == UNCORE)
+            if (perfmon_threadData[thread_id].counters[i].type == PerfmonType_UNCORE)
             {
                 if(haveLock)
                 {

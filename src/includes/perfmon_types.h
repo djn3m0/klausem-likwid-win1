@@ -78,9 +78,9 @@ typedef enum {
     TLB} PerfmonGroup;
 
 typedef enum {
-    PMC = 0,
-    FIXED,
-    UNCORE} PerfmonType;
+    PerfmonType_PMC = 0,
+    PerfmonType_FIXED,
+    PerfmonType_UNCORE} PerfmonType;
 
 typedef struct {
     char* key;

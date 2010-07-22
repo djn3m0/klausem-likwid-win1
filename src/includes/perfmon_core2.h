@@ -85,18 +85,18 @@ perfmon_init_core2(PerfmonThread *thread)
     /* Fixed Counters: instructions retired, cycles unhalted core */
     thread->counters[PMC0].configRegister = MSR_PERF_FIXED_CTR_CTRL;
     thread->counters[PMC0].counterRegister = MSR_PERF_FIXED_CTR0;
-    thread->counters[PMC0].type = FIXED;
+    thread->counters[PMC0].type = PerfmonType_FIXED;
     thread->counters[PMC1].configRegister = MSR_PERF_FIXED_CTR_CTRL;
     thread->counters[PMC1].counterRegister = MSR_PERF_FIXED_CTR1;
-    thread->counters[PMC1].type = FIXED;
+    thread->counters[PMC1].type = PerfmonType_FIXED;
 
     /* PMC Counters: 2 40bit wide */
     thread->counters[PMC2].configRegister = MSR_PERFEVTSEL0;
     thread->counters[PMC2].counterRegister = MSR_PMC0;
-    thread->counters[PMC2].type = PMC;
+    thread->counters[PMC2].type = PerfmonType_PMC;
     thread->counters[PMC3].configRegister = MSR_PERFEVTSEL1;
     thread->counters[PMC3].counterRegister = MSR_PMC1;
-    thread->counters[PMC3].type = PMC;
+    thread->counters[PMC3].type = PerfmonType_PMC;
 
     /* Initialize registers */
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
@@ -131,7 +131,7 @@ perfmon_setupCounterThread_core2(int thread_id,
     uint64_t reg = perfmon_threadData[thread_id].counters[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
 
-    if (perfmon_threadData[thread_id].counters[index].type == PMC)
+    if (perfmon_threadData[thread_id].counters[index].type == PerfmonType_PMC)
     {
 
         perfmon_threadData[thread_id].counters[index].init = TRUE;
@@ -151,7 +151,7 @@ perfmon_setupCounterThread_core2(int thread_id,
                     LLU_CAST flags);
         }
     }
-    else if (perfmon_threadData[thread_id].counters[index].type == FIXED)
+    else if (perfmon_threadData[thread_id].counters[index].type == PerfmonType_FIXED)
     {
         perfmon_threadData[thread_id].counters[index].init = TRUE;
     }
@@ -170,11 +170,11 @@ perfmon_startCountersThread_core2(int thread_id)
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) {
             msr_write(cpu_id, perfmon_threadData[thread_id].counters[i].counterRegister , 0x0ULL);
 
-            if (perfmon_threadData[thread_id].counters[i].type == PMC)
+            if (perfmon_threadData[thread_id].counters[i].type == PerfmonType_PMC)
             {
                 flags |= (1<<(i-2));  /* enable counter */
             }
-            else if (perfmon_threadData[thread_id].counters[i].type == FIXED)
+            else if (perfmon_threadData[thread_id].counters[i].type == PerfmonType_FIXED)
             {
                 flags |= (1ULL<<(i+32));  /* enable fixed counter */
             }
