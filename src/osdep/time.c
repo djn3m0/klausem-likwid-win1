@@ -1,3 +1,5 @@
+#ifdef WIN32
+
 #include <time.h>
 #include <windows.h>
 #include <assert.h>
@@ -69,3 +71,5 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp) {
 
 	return 0;
 }
+
+#endif

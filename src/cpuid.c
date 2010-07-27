@@ -46,7 +46,7 @@
 #include <timer.h>
 #include <cpuid.h>
 #include <tree.h>
-#include <affinity.h>
+#include <osdep/pinning.h>
 #include <osdep/numOfProcessors.h>
 #include <osdep/bsr_asm.h>
 #include <osdep/cpuid_asm.h>
@@ -509,7 +509,7 @@ cpuid_initTopology(void)
     {
         for (i=0; i < (int) cpuid_topology.numHWThreads; i++)
         {
-            affinity_pinProcess(i);
+            pinning_pinProcess(i);
 
             cpuid_eax = 0x0B;
             cpuid_ecx = 0;
@@ -571,7 +571,7 @@ cpuid_initTopology(void)
 
                 for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
-					affinity_pinProcess(i);
+					pinning_pinProcess(i);
 
                     cpuid_eax = 0x01;
                     CPUID;
@@ -615,7 +615,7 @@ cpuid_initTopology(void)
 
                 for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
-					affinity_pinProcess(i);
+					pinning_pinProcess(i);
 
                     cpuid_eax = 0x01;
                     CPUID;
@@ -665,7 +665,7 @@ cpuid_initTopology(void)
 
                 for (i=0; i< (int) cpuid_topology.numHWThreads; i++)
                 {
-					affinity_pinProcess(i);
+					pinning_pinProcess(i);
 
                     cpuid_eax = 0x01;
                     CPUID;
