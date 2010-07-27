@@ -1,4 +1,6 @@
-#include <osdep/rdtsc_asm_win.h>
+#ifdef WIN32
+
+#include <osdep/rdtsc_asm.h>
 
 void RDTSC_func(TscCounter *cpu_c) {
 	LARGE_INTEGER lPerformanceCount;
@@ -9,3 +11,5 @@ void RDTSC_func(TscCounter *cpu_c) {
 	cpu_c->int32.lo = lPerformanceCount.LowPart;
 	cpu_c->int32.hi = lPerformanceCount.HighPart;
 }
+
+#endif

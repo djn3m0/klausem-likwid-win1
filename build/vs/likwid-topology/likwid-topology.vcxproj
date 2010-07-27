@@ -76,15 +76,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\affinity.c" />
     <ClCompile Include="..\..\..\src\applications\likwid-topology.c" />
     <ClCompile Include="..\..\..\src\asciiBoxes.c" />
     <ClCompile Include="..\..\..\src\bstrlib.c" />
     <ClCompile Include="..\..\..\src\cpuid.c" />
-    <ClCompile Include="..\..\..\src\osdep\affinity.c" />
     <ClCompile Include="..\..\..\src\osdep\getopt_win.c" />
-    <ClCompile Include="..\..\..\src\osdep\numOfProcessors_win.c" />
-    <ClCompile Include="..\..\..\src\osdep\rdtsc_win.c" />
-    <ClCompile Include="..\..\..\src\osdep\time_win.c" />
+    <ClCompile Include="..\..\..\src\osdep\numOfProcessors.c" />
+    <ClCompile Include="..\..\..\src\osdep\pinning.c" />
+    <ClCompile Include="..\..\..\src\osdep\rdtsc.c" />
+    <ClCompile Include="..\..\..\src\osdep\time.c" />
     <ClCompile Include="..\..\..\src\strUtil.c" />
     <ClCompile Include="..\..\..\src\timer.c" />
     <ClCompile Include="..\..\..\src\tree.c" />
@@ -115,8 +116,8 @@
     <ClInclude Include="..\..\..\src\includes\osdep\getopt_win.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\isnan.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\numOfProcessors.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\pinning.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\rdtsc_asm.h" />
-    <ClInclude Include="..\..\..\src\includes\osdep\rdtsc_asm_win.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\time.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\time_win.h" />
     <ClInclude Include="..\..\..\src\includes\perfmon.h" />

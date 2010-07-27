@@ -37,11 +37,7 @@
 
 extern void affinity_init();
 extern void affinity_finalize();
-extern int  affinity_processGetProcessorId();
-extern int  affinity_threadGetProcessorId();
-extern int  affinity_pinProcess(int processorId);
 
-extern int  affinity_pinThread(int processorId);
 extern const AffinityDomain* affinity_getDomain(bstring domain);
 extern void affinity_printDomains();
 
