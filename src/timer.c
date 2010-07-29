@@ -16,12 +16,12 @@
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
  *      published by the Free Software Foundation
- *     
+ *
  *      This program is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *     
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with this program; if not, write to the Free Software
  *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -37,7 +37,7 @@
 
 #include <types.h>
 #include <timer.h>
-
+#include <time.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -69,7 +69,7 @@ getCpuSpeed(void)
         result = MIN(result,(stop.int64 - start.int64 - cyclesForCpuid));
     }
 
-    return (result) * 1000000 / 
+    return (result) * 1000000 /
         (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
          ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
 }
@@ -107,7 +107,7 @@ timer_init(void )
 }
 
 void
-timer_startCycles(CyclesData* time) 
+timer_startCycles(CyclesData* time)
 {
     TscCounter start;
     TscCounter stop;
@@ -121,7 +121,7 @@ timer_startCycles(CyclesData* time)
 }
 
 void
-timer_stopCycles(CyclesData* time) 
+timer_stopCycles(CyclesData* time)
 {
     RDTSC(time->stop);
 }

@@ -12,14 +12,15 @@
 #include <affinity.h>
 #include <barrier.h>
 #include <likwid.h>
+#include <osdep/pinning.h>
 
 
-//#define BARRIER pthread_barrier_wait(&threads_barrier) 
+//#define BARRIER pthread_barrier_wait(&threads_barrier)
 #define BARRIER   barrier_synchronize(&barr)
 
 #ifdef PERFMON
-#define START_PERFMON likwid_markerStartRegion(threadId,affinity_threadGetProcessorId());
-#define STOP_PERFMON  likwid_markerStopRegion(threadId,affinity_threadGetProcessorId(),0);
+#define START_PERFMON likwid_markerStartRegion(threadId,pinning_threadGetProcessorId());
+#define STOP_PERFMON  likwid_markerStopRegion(threadId,pinning_threadGetProcessorId(),0);
 #else
 #define START_PERFMON
 #define STOP_PERFMON
@@ -100,7 +101,7 @@ void* runTest(void* arg)
     }
 
     /* pint the thread */
-    affinity_pinThread(myData->processors[threadId]);
+    pinning_pinThread(myData->processors[threadId]);
 
     sleep(1);
     BARRIER;
@@ -108,7 +109,7 @@ void* runTest(void* arg)
             data->groupId,
             threadId,
             data->globalThreadId,
-            affinity_threadGetProcessorId(),
+            pinning_threadGetProcessorId(),
             size,
             offset);
     BARRIER;

@@ -1,4 +1,18 @@
+#ifdef WIN32
 #include <Windows.h>
+#else
+#include <types.h>
+
+#include <sched.h>
+#include <pthread.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+
+#define gettid() syscall(SYS_gettid)
+
+#endif
+
 #include <stdio.h>
 
 #ifdef WIN32
@@ -119,7 +133,7 @@ int  pinning_pinThread(int processorId)
     thread = pthread_self();
     CPU_ZERO(&cpuset);
     CPU_SET(processorId, &cpuset);
-    if (pthread_setpinning_np(thread, sizeof(cpu_set_t), &cpuset)) 
+    if (pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset))
     {
         perror("pthread_setpinning_np failed");
         return FALSE;
@@ -147,17 +161,17 @@ int  pinning_pinProcess(int processorId)
 
 	CPU_ZERO(&cpuset);
 	CPU_SET(processorId, &cpuset);
-	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpuset) == -1) 
+	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpuset) == -1)
 	{
 		perror("sched_setaffinity failed");
 		/*
 		TODO: take this error treatment or the one above?
-		if (errno == EFAULT) 
+		if (errno == EFAULT)
         {
             fprintf(stderr, "A supplied memory address was invalid\n");
             exit(EXIT_FAILURE);
         }
-        else if (errno == EINVAL) 
+        else if (errno == EINVAL)
         {
             fprintf(stderr, "Processor is not available\n");
             exit(EXIT_FAILURE);

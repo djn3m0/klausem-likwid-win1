@@ -3,13 +3,13 @@
 // code taken from http://www.dalun.com/blogs/05.01.2007.htm
 
 #include <windows.h>
-#include <malloc.h>    
+#include <malloc.h>
 #include <stdio.h>
 #include <tchar.h>
 #include <osdep/numOfProcessors.h>
 
 typedef BOOL (WINAPI *LPFN_GLPI)(
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, 
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION,
     PDWORD);
 
 uint32_t numOfProcessors()
@@ -25,7 +25,7 @@ uint32_t numOfProcessors()
     Glpi = (LPFN_GLPI) GetProcAddress(
                             GetModuleHandle(TEXT("kernel32")),
                             "GetLogicalProcessorInformation");
-    if (NULL == Glpi) 
+    if (NULL == Glpi)
     {
         _tprintf(
             TEXT("GetLogicalProcessorInformation is not supported.\n"));
@@ -36,32 +36,32 @@ uint32_t numOfProcessors()
     buffer = NULL;
     returnLength = 0;
 
-    while (!done) 
+    while (!done)
     {
         rc = Glpi(buffer, &returnLength);
 
-        if (FALSE == rc) 
+        if (FALSE == rc)
         {
-            if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) 
+            if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
             {
-                if (buffer) 
+                if (buffer)
                     free(buffer);
 
                 buffer=(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(
                         returnLength);
 
-                if (NULL == buffer) 
+                if (NULL == buffer)
                 {
                     _tprintf(TEXT("Allocation failure\n"));
                     return (2);
                 }
-            } 
-            else 
+            }
+            else
             {
                 _tprintf(TEXT("Error %d\n"), GetLastError());
                 return (3);
             }
-        } 
+        }
         else done = TRUE;
     }
 
@@ -69,9 +69,9 @@ uint32_t numOfProcessors()
     byteOffset = 0;
 
     ptr=buffer;
-    while (byteOffset < returnLength) 
+    while (byteOffset < returnLength)
     {
-        switch (ptr->Relationship) 
+        switch (ptr->Relationship)
         {
             case RelationProcessorCore:
                 procCoreCount++;
@@ -92,6 +92,8 @@ uint32_t numOfProcessors()
 #else
 
 #include <osdep/numOfProcessors.h>
+#include <stdio.h> //popen
+#include <stdlib.h> //exit
 
 uint32_t numOfProcessors() {
 	FILE* pipe;
@@ -105,7 +107,7 @@ uint32_t numOfProcessors() {
 		fprintf(stderr, "Failed to fscanf cpuinfo!\n");
 		exit(EXIT_FAILURE);
 	}
-	
+
 	if (pclose(pipe) == -1) {
 		fprintf(stderr, "Failed to close pipe for cpuinfo!\n");
 		exit(EXIT_FAILURE);

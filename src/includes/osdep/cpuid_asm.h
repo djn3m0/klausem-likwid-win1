@@ -9,7 +9,7 @@ static uint32_t cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx;
 
 #define CPUID CPUID_func()
 
-void CPUID_func() {
+static void CPUID_func() {
 	__asm {
 		// store old eax and ecx values
 		push eax

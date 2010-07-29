@@ -16,12 +16,12 @@
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
  *      published by the Free Software Foundation
- *     
+ *
  *      This program is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *     
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with this program; if not, write to the Free Software
  *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -42,7 +42,7 @@
 #include <bstrlib.h>
 #include <affinity.h>
 #include <strUtil.h>
-#include <affinity.h>
+#include <osdep/pinning.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -65,7 +65,7 @@ printf("\t No special type necessary for gcc OpenMP\n\n")
 
 #define VERSION_MSG \
 printf("likwid-pin   %d.%d \n\n",VERSION,RELEASE)
-    
+
 
 
 void
@@ -75,13 +75,13 @@ pinPid(int cpuid)
 #ifdef COLOR
     color_on(BRIGHT, COLOR);
 #endif
-	
+
 	printf("[likwid-pin] Main PID -> core %d - ",  cpuid);
-	if (affinity_pinThread(cpuid) == FALSE)
+	if (pinning_pinThread(cpuid) == FALSE)
 	{
 		printf("sched_setaffinity failed : %s \n",strerror(errno));
 	}
-	else 
+	else
 	{
 		printf("OK\n");
 	}
@@ -92,7 +92,7 @@ pinPid(int cpuid)
 
 
 int main (int argc, char** argv)
-{ 
+{
     int i;
     int c;
 	int skipMask = 0;
@@ -104,9 +104,9 @@ int main (int argc, char** argv)
     int threads[MAX_NUM_THREADS];
     threads[0] = 0;
 
-    if (argc ==  1) { 
-        HELP_MSG; 
-        exit (EXIT_SUCCESS);    
+    if (argc ==  1) {
+        HELP_MSG;
+        exit (EXIT_SUCCESS);
     }
 
     affinity_init();
@@ -117,10 +117,10 @@ int main (int argc, char** argv)
         {
             case 'h':
                 HELP_MSG;
-                exit (EXIT_SUCCESS);    
+                exit (EXIT_SUCCESS);
             case 'v':
                 VERSION_MSG;
-                exit (EXIT_SUCCESS);    
+                exit (EXIT_SUCCESS);
             case 'c':
                 if (! (argString = bSecureInput(200,optarg)))
                 {
@@ -172,7 +172,7 @@ int main (int argc, char** argv)
 	 * gcc openmp: pin main pid + all thread tids (one less)
 	 */
 
-    if (biseqcstr(typeString,"intel")) 
+    if (biseqcstr(typeString,"intel"))
     {
 		skipMask = 0x1;
         setenv("KMP_AFFINITY", "disabled", 1);

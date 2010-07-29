@@ -16,12 +16,12 @@
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
  *      published by the Free Software Foundation
- *     
+ *
  *      This program is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *     
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with this program; if not, write to the Free Software
  *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -46,7 +46,7 @@
 #include <perfmon.h>
 #include <asciiTable.h>
 #include <registers.h>
-#include <osindep/isnan.h>
+#include <osdep/isnan.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -100,7 +100,7 @@ static void initThread(int , int );
     for (i=0; i<numRows; i++) \
     { \
         fc->entry[1+i] = \
-           bfromcstr(perfmon_set.events[i].event.name); } 
+           bfromcstr(perfmon_set.events[i].event.name); }
 
 #define INIT_BASIC  \
     fc = bstrListCreate(); \
@@ -246,9 +246,9 @@ static int lineCb (void* parm, int ofs, int len)
     return 1;
 }
 
- /* :TODO:04/09/10 09:15:38:jt: 
+ /* :TODO:04/09/10 09:15:38:jt:
  *  the current provisorical solution is to read the file in as LikwidResults
- * and then fill the results into a PerfmonEventSet. Later this should be directly 
+ * and then fill the results into a PerfmonEventSet. Later this should be directly
  * put into a perfmonEventSet from the beginning */
 static void
 readMarkerFile(char* filename, LikwidResults** resultsRef)
@@ -260,7 +260,7 @@ readMarkerFile(char* filename, LikwidResults** resultsRef)
 	FILE * fp;
     LikwidResults* results = *resultsRef;
 
-	if (NULL != (fp = fopen (filename, "r"))) 
+	if (NULL != (fp = fopen (filename, "r")))
 	{
 		bstring src = bread ((bNread) fread, fp);
 
@@ -365,7 +365,7 @@ getGroupId(bstring groupStr,PerfmonGroup* group)
 
     for (i=0; i<perfmon_numGroups; i++)
     {
-        if (biseqcstr(groupStr,group_map[i].key)) 
+        if (biseqcstr(groupStr,group_map[i].key))
         {
             *group = group_map[i].index;
             return i;
@@ -419,7 +419,7 @@ freeResultTable(PerfmonResultTable* tableData)
     free(tableData->rows);
 }
 
-static void 
+static void
 initResultTable(PerfmonResultTable* tableData,
         bstrList* firstColumn,
         int numRows,
@@ -536,7 +536,7 @@ perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
                     bdata(eventSetConfig->events[i].eventName));
             exit (EXIT_FAILURE);
         }
-        
+
         /* is counter allowed for event */
         if (!checkCounter(eventSetConfig->events[i].counterName,
                     set->events[i].event.limit))
@@ -549,7 +549,7 @@ perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
     }
 }
 
-void 
+void
 perfmon_printMarkerResults()
 {
     int i;
@@ -604,7 +604,7 @@ perfmon_printMarkerResults()
     freeResultTable(&tableData);
 }
 
-void 
+void
 perfmon_printCounterResults()
 {
     int i;
@@ -744,11 +744,11 @@ perfmon_init(int numThreads_local, int threads[])
     perfmon_threadData = (PerfmonThread*) malloc(perfmon_numThreads * sizeof(PerfmonThread));
     cpuid_init();
 
-    switch ( cpuid_info.family ) 
+    switch ( cpuid_info.family )
     {
         case P6_FAMILY:
 
-            switch ( cpuid_info.model ) 
+            switch ( cpuid_info.model )
             {
                 case PENTIUM_M_BANIAS:
 
@@ -838,7 +838,7 @@ perfmon_init(int numThreads_local, int threads[])
                     break;
 
                 case NEHALEM_WESTMERE_M:
-                    
+
                 case NEHALEM_WESTMERE:
 
                     eventHash = westmere_arch_events;
@@ -905,7 +905,7 @@ perfmon_init(int numThreads_local, int threads[])
     }
 
 
-    for (i=0; i<perfmon_numThreads; i++) 
+    for (i=0; i<perfmon_numThreads; i++)
     {
         initThread(i,threads[i]);
     }

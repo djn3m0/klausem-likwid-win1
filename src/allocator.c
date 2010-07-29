@@ -17,12 +17,12 @@
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
  *      published by the Free Software Foundation
- *     
+ *
  *      This program is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *     
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with this program; if not, write to the Free Software
  *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -39,6 +39,7 @@
 
 #include <types.h>
 #include <allocator.h>
+#include <osdep/pinning.h>
 #include <affinity.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
@@ -101,18 +102,18 @@ allocator_allocateVector(void** ptr,
             bytesize = (size+offset) * sizeof(double);
             break;
     }
-    
+
     errorCode = posix_memalign(ptr, alignment, bytesize);
 
     if (errorCode)
     {
-        if (errorCode == EINVAL) 
+        if (errorCode == EINVAL)
         {
             fprintf(stderr,
                     "posix_memalign: Alignment parameter is not a power of two\n");
             exit(EXIT_FAILURE);
         }
-        if (errorCode == ENOMEM) 
+        if (errorCode == ENOMEM)
         {
             fprintf(stderr,
                     "posix_memalign: Insufficient memory to fulfill the request\n");
@@ -123,9 +124,9 @@ allocator_allocateVector(void** ptr,
     allocations[numberOfAllocatedVectors] = *ptr;
     numberOfAllocatedVectors++;
     domain = affinity_getDomain(domainString);
-    affinity_pinProcess(domain->processorList[0]);
+    pinning_pinProcess(domain->processorList[0]);
     printf("Allocate: Process running on core %d - Vector length %d Offset %d\n",
-            affinity_processGetProcessorId(),
+            pinning_processGetProcessorId(),
             size,
             offset);
 
