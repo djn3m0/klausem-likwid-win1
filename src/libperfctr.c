@@ -16,12 +16,12 @@
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License, v2, as
  *      published by the Free Software Foundation
- *     
+ *
  *      This program is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *     
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with this program; if not, write to the Free Software
  *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -61,23 +61,7 @@ static int nehalem_processor_lookup[MAX_NUM_THREADS];
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define gettid() syscall(SYS_gettid)
-
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
-static int
-getProcessorID(cpu_set_t* cpu_set)
-{
-    int processorId;
-
-    for (processorId=0;processorId<24;processorId++){
-        if (CPU_ISSET(processorId,cpu_set))
-        {  
-            break;
-        }
-    }
-    return processorId;
-}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 void
@@ -94,7 +78,7 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
     cpuid_init();
     timer_init();
 
-    switch ( cpuid_info.model ) 
+    switch ( cpuid_info.model )
     {
         case NEHALEM_WESTMERE_M:
         case NEHALEM_WESTMERE:
@@ -126,7 +110,7 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
             break;
     }
 
-              
+
 	likwid_numberOfThreads = numberOfThreads;
 	likwid_numberOfRegions = numberOfRegions;
 
@@ -151,7 +135,7 @@ likwid_markerInit(int numberOfThreads, int numberOfRegions)
     }
 }
 
-/* File format 
+/* File format
  * 1 numberOfThreads numberOfRegions
  * 2 regionID:regionTag0
  * 3 regionID:regionTag1
@@ -195,11 +179,11 @@ likwid_markerStartRegion(int thread_id, int cpu_id)
 {
     uint64_t flags = 0x0ULL;
 
-    switch ( cpuid_info.family ) 
+    switch ( cpuid_info.family )
     {
         case P6_FAMILY:
 
-            switch ( cpuid_info.model ) 
+            switch ( cpuid_info.model )
             {
                 case PENTIUM_M_BANIAS:
                     break;
@@ -270,7 +254,7 @@ likwid_markerStartRegion(int thread_id, int cpu_id)
 
 
         case K10_FAMILY:
-            switch ( cpuid_info.model ) 
+            switch ( cpuid_info.model )
             {
                 case BARCELONA:
 
@@ -357,11 +341,11 @@ likwid_markerStopRegion(int thread_id, int cpu_id, int regionId)
     timer_stopCycles(&likwid_time[thread_id]);
     likwid_results[regionId].time[thread_id] += timer_printCyclesTime(&likwid_time[thread_id]);
 
-    switch ( cpuid_info.family ) 
+    switch ( cpuid_info.family )
     {
         case P6_FAMILY:
 
-            switch ( cpuid_info.model ) 
+            switch ( cpuid_info.model )
             {
                 case PENTIUM_M_BANIAS:
                     break;

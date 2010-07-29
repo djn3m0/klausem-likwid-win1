@@ -29,6 +29,7 @@ PINLIB  = liblikwidpin.so
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+OBJ      += $(patsubst $(SRC_DIR)/osdep/%.c, $(BUILD_DIR)/osdep/%.o,$(wildcard $(SRC_DIR)/osdep/*.c))
 ifeq ($(MAKECMDGOALS),likwid-bench)
 OBJ      += $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
 endif
@@ -38,9 +39,9 @@ APPS      = likwid-perfCtr  \
 			likwid-pin \
             likwid-bench
 
-CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
+CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(OBJ) $(filter-out likwid-bench,$(APPS)) $(TARGET_LIB)  $(PINLIB) 
+all: $(BUILD_DIR) $(OBJ) $(filter-out likwid-bench,$(APPS)) $(TARGET_LIB)  $(PINLIB)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
@@ -57,9 +58,9 @@ $(TARGET_LIB): $(OBJ)
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
-$(PINLIB): 
+$(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"
-	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB) 
+	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
@@ -114,12 +115,12 @@ install:
 	@cp -f liblikwid*  $(PREFIX)/lib
 	@chmod 755 $(PREFIX)/lib/$(PINLIB)
 
-	
+
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
-	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS)) 
+	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS))
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
-	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(APPS))) 
+	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(APPS)))
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
 	@rm -f $(PREFIX)/lib/$(TARGET_LIB) $(PREFIX)/lib/$(PINLIB)
 

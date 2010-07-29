@@ -16,22 +16,22 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
   FILETIME ft;
   unsigned __int64 tmpres = 0;
   static int tzflag;
- 
+
   if (NULL != tv)
   {
     GetSystemTimeAsFileTime(&ft);
- 
+
     tmpres |= ft.dwHighDateTime;
     tmpres <<= 32;
     tmpres |= ft.dwLowDateTime;
- 
+
     /*converting file time to unix epoch*/
     tmpres /= 10;  /*convert into microseconds*/
-    tmpres -= DELTA_EPOCH_IN_MICROSECS; 
+    tmpres -= DELTA_EPOCH_IN_MICROSECS;
     tv->tv_sec = (long)(tmpres / 1000000UL);
     tv->tv_usec = (long)(tmpres % 1000000UL);
   }
- 
+
   if (NULL != tz)
   {
     if (!tzflag)
@@ -54,7 +54,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 		tz->tz_dsttime = daylight;
 	}
   }
- 
+
   return 0;
 }
 
@@ -71,5 +71,9 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp) {
 
 	return 0;
 }
+
+#else // #ifdef WIN32
+
+#include <time.h>
 
 #endif

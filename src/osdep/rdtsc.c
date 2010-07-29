@@ -12,4 +12,10 @@ void RDTSC_func(TscCounter *cpu_c) {
 	cpu_c->int32.hi = lPerformanceCount.HighPart;
 }
 
+#else
+
+//avoid "empty translation unit" warning
+void rdtsc_someFunc() {}
+
 #endif
+
