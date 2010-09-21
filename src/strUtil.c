@@ -38,7 +38,7 @@
 #include <types.h>
 #include <bstrlib.h>
 #include <strUtil.h>
-#include <affinity.h>
+#include <domains.h>
 
 int
 str2int(const char* str)
@@ -149,7 +149,7 @@ bstr_to_cpuset_logical(int* threads,  bstring q)
         if ( subtokens->qty == 2 )
         {
             domainTag = bformat("S%s",subtokens->entry[0]);
-            domain =  affinity_getDomain(domainTag);
+            domain =  domains_getDomain(domainTag);
 
             numThreads = bstr_to_cpuset(tmpThreads, subtokens->entry[1]);
 
@@ -288,7 +288,7 @@ void bstr_to_workgroup(Workgroup* group,
 
     if (tokens->qty == 3)
     {
-        domain = affinity_getDomain(tokens->entry[0]);
+        domain = domains_getDomain(tokens->entry[0]);
         group->size = bstr_to_doubleSize(tokens->entry[1], type);
         group->numberOfThreads = str2int(bdata(tokens->entry[2]));
 
@@ -308,7 +308,7 @@ void bstr_to_workgroup(Workgroup* group,
     } 
     else if (tokens->qty == 2)
     {
-        domain = affinity_getDomain(tokens->entry[0]);
+        domain = domains_getDomain(tokens->entry[0]);
         group->size = bstr_to_doubleSize(tokens->entry[1], type);
         group->numberOfThreads = domain->numberOfProcessors;
 

@@ -40,7 +40,7 @@
 #include <time.h>
 
 #include <types.h>
-#include <affinity.h>
+#include <domains.h>
 #include <cpuid.h>
 #include <tree.h>
 
@@ -75,7 +75,7 @@ treeFillNextEntries(int numberOfEntries, int* processorIds, TreeNode** tree)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void affinity_init()
+void domains_init()
 {
     int i;
     int cacheDomain;
@@ -151,7 +151,7 @@ void affinity_init()
 }
 
 
-void affinity_finalize()
+void domains_finalize()
 {
     int i;
 
@@ -161,7 +161,7 @@ void affinity_finalize()
     free(domains);
 }
 
-const AffinityDomain* affinity_getDomain(bstring domain)
+const AffinityDomain* domains_getDomain(bstring domain)
 {
     int i;
 
@@ -176,7 +176,7 @@ const AffinityDomain* affinity_getDomain(bstring domain)
     return NULL;
 }
 
-void affinity_printDomains()
+void domains_printDomains()
 {
     int i;
     int j;

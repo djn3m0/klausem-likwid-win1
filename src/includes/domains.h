@@ -1,9 +1,9 @@
 /*
  * ===========================================================================
  *
- *       Filename:  affinity.h
+ *       Filename:  domains.h
  *
- *    Description:  Header File affinity Module. 
+ *    Description:  Header File domains Module. 
  *
  *        Version:  1.0
  *        Created:  30/04/2010
@@ -30,16 +30,16 @@
  * ===========================================================================
  */
 
-#ifndef AFFINITY_H
-#define AFFINITY_H
+#ifndef DOMAINS_H
+#define DOMAINS_H
 
 #include <types.h>
 
-extern void affinity_init();
-extern void affinity_finalize();
+extern void domains_init();
+extern void domains_finalize();
 
-extern const AffinityDomain* affinity_getDomain(bstring domain);
-extern void affinity_printDomains();
+extern const AffinityDomain* domains_getDomain(bstring domain);
+extern void domains_printDomains();
 
-#endif /*AFFINITY_H*/
+#endif /*DOMAINS_H*/
 

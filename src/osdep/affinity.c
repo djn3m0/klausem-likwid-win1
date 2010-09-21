@@ -1,5 +1,8 @@
 #ifdef WIN32
 #include <Windows.h>
+#include <tchar.h>
+#include <errno.h>
+#include <osdep/windowsError_win.h>
 #else
 #include <types.h>
 
@@ -14,15 +17,16 @@
 #endif
 
 #include <stdio.h>
+#include <osdep/affinity.h>
+#include <osdep/numOfProcessors.h>
 
-#ifdef WIN32
 static int
-getProcessorID(DWORD_PTR* processAffinityMask)
+getProcessorID(AffinityMask *processAffinityMask)
 {
     int processorId;
 
     for (processorId=0;processorId<24;processorId++){
-        if (*processAffinityMask & (1 << processorId))
+        if (AffinityMask_contains(processAffinityMask, processorId))
         {
             return processorId;
         }
@@ -30,24 +34,8 @@ getProcessorID(DWORD_PTR* processAffinityMask)
     fprintf(stderr, "Could not determine processor id from process affinity mask\n");
 	return 25;
 }
-#else
-static int
-getProcessorID(cpu_set_t* processAffinityMask)
-{
-    int processorId;
 
-    for (processorId=0;processorId<24;processorId++){
-        if (CPU_ISSET(processorId,processAffinityMask))
-        {
-            return processorId;
-        }
-    }
-    fprintf(stderr, "Could not determine processor id from process affinity mask\n");
-	return 25;
-}
-#endif
-
-int  pinning_processGetProcessorId()
+int  affinity_processGetProcessorId()
 {
 #ifdef WIN32
 	DWORD_PTR processAffinityMask;
@@ -73,7 +61,7 @@ int  pinning_processGetProcessorId()
 }
 
 
-int  pinning_threadGetProcessorId()
+int  affinity_threadGetProcessorId()
 {
 #ifdef WIN32
 	DWORD_PTR
@@ -113,55 +101,36 @@ int  pinning_threadGetProcessorId()
 #endif
 }
 
-
-int  pinning_pinThread(int processorId)
+int  affinity_pinProcess(int processorId)
 {
-#ifdef WIN32
-	DWORD_PTR origThreadAffinityMask = SetThreadAffinityMask(
-		GetCurrentThread(),
-		1 << processorId
-	);
-	if (origThreadAffinityMask == 0) {
-		perror("SetThreadAffinityMask");
-		return FALSE;
-	}
-	return TRUE;
-#else
-	cpu_set_t cpuset;
-    pthread_t thread;
-
-    thread = pthread_self();
-    CPU_ZERO(&cpuset);
-    CPU_SET(processorId, &cpuset);
-    if (pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset))
-    {
-        perror("pthread_setpinning_np failed");
-        return FALSE;
-    }
-
-    return TRUE;
-#endif
+	AffinityMask mask;
+	AffinityMask_clear(&mask);
+	AffinityMask_insert(&mask, processorId);
+	return affinity_setProcessAffinityMask(mask);
 }
 
+int  affinity_pinThread(int processorId)
+{
+	AffinityMask mask;
+	AffinityMask_clear(&mask);
+	AffinityMask_insert(&mask, processorId);
+	return affinity_setThreadAffinityMask(mask);
+}
 
-int  pinning_pinProcess(int processorId)
+int affinity_setProcessAffinityMask(AffinityMask affinityMask)
 {
 #ifdef WIN32
 	BOOL r = SetProcessAffinityMask(
 		GetCurrentProcess(),
-		1 << processorId
+		affinityMask
 	);
 	if (r == 0) {
-		perror("SetProcessAffinityMask");
+		setErrnoFromLastWindowsError();
 		return FALSE;
 	}
 	return TRUE;
 #else
-	cpu_set_t cpuset;
-
-	CPU_ZERO(&cpuset);
-	CPU_SET(processorId, &cpuset);
-	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpuset) == -1)
+	if (sched_setaffinity(0, sizeof(AffinityMask), &affinityMask) == -1)
 	{
 		perror("sched_setaffinity failed");
 		/*
@@ -187,4 +156,44 @@ int  pinning_pinProcess(int processorId)
 
     return TRUE;
 #endif
+}
+
+extern int affinity_setThreadAffinityMask(AffinityMask affinityMask)
+{
+#ifdef WIN32
+	DWORD_PTR origThreadAffinityMask = SetThreadAffinityMask(
+		GetCurrentThread(),
+		affinityMask
+	);
+	if (origThreadAffinityMask == 0) {
+		setErrnoFromLastWindowsError();
+		return FALSE;
+	}
+	return TRUE;
+#else
+    pthread_t thread;
+
+    thread = pthread_self();
+    if (pthread_setaffinity_np(thread, sizeof(AffinityMask), &affinityMask))
+    {
+        perror("pthread_setaffinity_np failed");
+        return FALSE;
+    }
+
+    return TRUE;
+#endif
+}
+
+AffinityMask affinity_getLargestProcessAffinityMask()
+{
+	int numProcs = numOfProcessors();
+	int processorId;
+
+	AffinityMask mask;
+	AffinityMask_clear(&mask);
+	
+	for(processorId=0; processorId<numProcs; processorId++) {
+		AffinityMask_insert(&mask, processorId);
+	}
+	return mask;
 }
