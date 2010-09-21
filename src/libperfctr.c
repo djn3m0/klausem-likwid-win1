@@ -49,7 +49,6 @@
 #include <timer.h>
 #include <registers.h>
 #include <likwid.h>
-#include <affinity.h>
 
 static LikwidResults*  likwid_results;
 static CyclesData*  likwid_time;

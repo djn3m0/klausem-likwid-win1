@@ -33,23 +33,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <sched.h>
-#include <errno.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <ctype.h>
 
 #include <types.h>
 #include <bstrlib.h>
-#include <affinity.h>
+#include <domains.h>
 #include <strUtil.h>
-#include <osdep/pinning.h>
-
-#ifdef COLOR
-#include <textcolor.h>
-#endif
-
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#include <osdep/setenv.h>
+#include <osdep/getopt.h>
+#include <osdep/executePinned.h>
 
 #define HELP_MSG \
 printf("likwid-pin --  Version %d.%d \n\n",VERSION,RELEASE); \
@@ -66,39 +59,11 @@ printf("\t No special type necessary for gcc OpenMP\n\n")
 #define VERSION_MSG \
 printf("likwid-pin   %d.%d \n\n",VERSION,RELEASE)
 
-
-
-void
-pinPid(int cpuid)
-{
-
-#ifdef COLOR
-    color_on(BRIGHT, COLOR);
-#endif
-
-	printf("[likwid-pin] Main PID -> core %d - ",  cpuid);
-	if (pinning_pinThread(cpuid) == FALSE)
-	{
-		printf("sched_setaffinity failed : %s \n",strerror(errno));
-	}
-	else
-	{
-		printf("OK\n");
-	}
-#ifdef COLOR
-    color_reset();
-#endif
-}
-
-
 int main (int argc, char** argv)
 {
-    int i;
     int c;
 	int skipMask = 0;
     bstring  typeString = bformat("NoType");
-    bstring  pinString;
-    bstring  skipString;
     bstring  argString;
     int numThreads=0;
     int threads[MAX_NUM_THREADS];
@@ -109,7 +74,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);
     }
 
-    affinity_init();
+    domains_init();
 
     while ((c = getopt (argc, argv, "+c:s:t:hv")) != -1)
     {
@@ -178,29 +143,5 @@ int main (int argc, char** argv)
         setenv("KMP_AFFINITY", "disabled", 1);
     }
 
-	if (numThreads > 1)
-	{
-		pinString = bformat("%d",threads[1]);
-
-		for (i=2; i < numThreads;i++)
-		{
-			bformata(pinString,",%d",threads[i]);
-		}
-
-        skipString = bformat("%d",skipMask);
-        setenv("LIKWID_PIN",(char*) pinString->data , 1);
-        setenv("LIKWID_SKIP",(char*) skipString->data , 1);
-        setenv("LD_PRELOAD",TOSTRING(LIBLIKWIDPIN), 1);
-	}
-
-	pinPid(threads[0]);
-    fflush(stdout);
-
-	argv +=  optind;
-	execvp(argv[0], argv);
-	perror("execvp");
-	fprintf(stderr,"failed to execute %s\n", argv[0]);
-
-    return EXIT_SUCCESS;
+	return executePinned_launch(argv+optind, threads, numThreads, skipMask);
 }
-

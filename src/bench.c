@@ -9,10 +9,9 @@
 
 #include <timer.h>
 #include <threads.h>
-#include <affinity.h>
 #include <barrier.h>
 #include <likwid.h>
-#include <osdep/pinning.h>
+#include <osdep/affinity.h>
 
 
 //#define BARRIER pthread_barrier_wait(&threads_barrier)
@@ -101,7 +100,7 @@ void* runTest(void* arg)
     }
 
     /* pint the thread */
-    pinning_pinThread(myData->processors[threadId]);
+    affinity_pinThread(myData->processors[threadId]);
 
     sleep(1);
     BARRIER;
@@ -109,7 +108,7 @@ void* runTest(void* arg)
             data->groupId,
             threadId,
             data->globalThreadId,
-            pinning_threadGetProcessorId(),
+            affinity_threadGetProcessorId(),
             size,
             offset);
     BARRIER;

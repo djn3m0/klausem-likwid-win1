@@ -57,6 +57,7 @@ $(TARGET_LIB): $(OBJ)
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
+	@mkdir $(BUILD_DIR)/osdep
 
 $(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"

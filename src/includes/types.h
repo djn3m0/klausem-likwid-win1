@@ -44,7 +44,7 @@
 #include <timer_types.h>
 #include <tree_types.h>
 #include <cpuid_types.h>
-#include <affinity_types.h>
+#include <domains_types.h>
 #include <threads_types.h>
 #include <cpuFeatures_types.h>
 #include <asciiBoxes_types.h>

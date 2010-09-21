@@ -39,8 +39,8 @@
 
 #include <types.h>
 #include <allocator.h>
-#include <osdep/pinning.h>
-#include <affinity.h>
+#include <osdep/affinity.h>
+#include <domains.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -123,10 +123,10 @@ allocator_allocateVector(void** ptr,
 
     allocations[numberOfAllocatedVectors] = *ptr;
     numberOfAllocatedVectors++;
-    domain = affinity_getDomain(domainString);
-    pinning_pinProcess(domain->processorList[0]);
+    domain = domains_getDomain(domainString);
+    affinity_pinProcess(domain->processorList[0]);
     printf("Allocate: Process running on core %d - Vector length %d Offset %d\n",
-            pinning_processGetProcessorId(),
+            affinity_processGetProcessorId(),
             size,
             offset);
 
