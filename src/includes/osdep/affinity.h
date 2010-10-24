@@ -4,17 +4,21 @@
 #include <stdint.h>
 
 #include <osdep/affinitymask.h>
+#include <osdep/threadid.h>
+
+// helpers
+extern ThreadId affinity_getCurrentThreadId();
 
 // pinning
 extern int affinity_processGetProcessorId();
-extern int affinity_threadGetProcessorId();
+extern int affinity_threadGetProcessorId(ThreadId threadId);
 
 extern int affinity_pinProcess(int processorId);
-extern int affinity_pinThread(int processorId);
+extern int affinity_pinThread(ThreadId threadId, int processorId);
 
 // set affinity mask
 extern int affinity_setProcessAffinityMask(AffinityMask affinityMask);
-extern int affinity_setThreadAffinityMask(AffinityMask affinityMask);
+extern int affinity_setThreadAffinityMask(ThreadId threadId, AffinityMask affinityMask);
 
 /** Can be used to reset the process affinity mask.
   * Example:

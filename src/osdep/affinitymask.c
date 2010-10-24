@@ -1,11 +1,12 @@
 #include <osdep/affinitymask.h>
+#include <stdio.h>
 
 void AffinityMask_clear(AffinityMask *mask)
 {
 #ifdef WIN32
 	*mask = 0;
 #else
-	CPU_ZERO(&mask);
+	CPU_ZERO(mask);
 #endif
 }
 
@@ -27,11 +28,16 @@ int AffinityMask_contains(const AffinityMask *mask, int processorId)
 #endif
 }
 
-void AffinityMask_insertProcessorId(AffinityMask *mask, int processorId)
+void AffinityMask_print(AffinityMask *mask)
 {
-#ifdef WIN32
-	*mask |= (1 << processorId);
-#else
-	CPU_SET(processorId, mask);
-#endif
+	int procId=0;
+	fprintf(stderr, "\n");
+	for(procId=25; procId>=0; procId--) {
+		if (AffinityMask_contains(mask, procId)) {
+			fprintf(stderr, "1");
+		} else {
+			fprintf(stderr, "0");
+		}
+	}
+	fprintf(stderr, "\n");
 }

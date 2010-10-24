@@ -32,9 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-//abc #include <sched.h>
 #include <sys/types.h>
-//abc #include <unistd.h>
 #include <ctype.h>
 
 #include <types.h>

@@ -79,6 +79,8 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\includes\osdep\affinity.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\affinitymask.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\strtok_r.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>

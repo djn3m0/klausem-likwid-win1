@@ -9,7 +9,7 @@
 
 static int executePinned_ncalled = 0;
 
-int executePinned_pinNextThread() {
+int executePinned_pinNextThread(ThreadId threadId) {
 	static int pin_ids[MAX_NUM_THREADS];
 	static int skipMask = 0;
 	static int npinned = 0;
@@ -67,17 +67,17 @@ int executePinned_pinNextThread() {
 	 /* pin the thread */
     
     {
-		int threadId = executePinned_ncalled+1;
+		int internalThreadId = executePinned_ncalled+1;
 
         if (skipMask&(1<<(executePinned_ncalled))) 
         {
-            printf("\tthreadid %lu -> SKIP \n", threadId);
+            printf("\tthreadid %lu -> SKIP \n", internalThreadId);
         }
         else 
         {
-            printf("\tthreadid %lu -> core %d - ", threadId, pin_ids[npinned]);
+            printf("\tthreadid %lu -> core %d - ", internalThreadId, pin_ids[npinned]);
 
-			if (affinity_pinThread(pin_ids[npinned]) == FALSE)
+			if (affinity_pinThread(threadId, pin_ids[npinned]) == FALSE)
             {
                 perror("pthread_setaffinity_np failed");
             }

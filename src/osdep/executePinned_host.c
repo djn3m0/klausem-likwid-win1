@@ -35,7 +35,7 @@ int pinPid(int cpuid)
 		result = -1;
 	}
 	// set thread affinity mask
-	if (result == 0 && affinity_pinThread(cpuid) == FALSE) {
+	if (result == 0 && affinity_pinThread(affinity_getCurrentThreadId(), cpuid) == FALSE) {
 		printf("affinity_pinThread failed : %s \n",strerror(errno));
 		result = -1;
 	}
