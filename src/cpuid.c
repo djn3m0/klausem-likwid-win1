@@ -40,7 +40,6 @@
 /*#include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h> abc */
-#include <sched.h>
 #include <time.h>
 
 #include <timer.h>

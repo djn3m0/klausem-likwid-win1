@@ -25,8 +25,9 @@ CreateThread_detour(
     )
 {
 	//fprintf(stderr, "CreateThread_detour\n");
-	executePinned_pinNextThread();
-	return CreateThread_orig(lpThreadAttributes, dwStackSize, lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
+	HANDLE threadId = CreateThread_orig(lpThreadAttributes, dwStackSize, lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
+	executePinned_pinNextThread(threadId);
+	return threadId;
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved)

@@ -21,12 +21,12 @@
 #include <osdep/numOfProcessors.h>
 
 static int
-getProcessorID(AffinityMask *processAffinityMask)
+getProcessorID(AffinityMask *affinityMask)
 {
     int processorId;
 
     for (processorId=0;processorId<24;processorId++){
-        if (AffinityMask_contains(processAffinityMask, processorId))
+        if (AffinityMask_contains(affinityMask, processorId))
         {
             return processorId;
         }
@@ -61,7 +61,7 @@ int  affinity_processGetProcessorId()
 }
 
 
-int  affinity_threadGetProcessorId()
+int  affinity_threadGetProcessorId(ThreadId threadId)
 {
 #ifdef WIN32
 	DWORD_PTR
@@ -70,7 +70,7 @@ int  affinity_threadGetProcessorId()
 
 	// temporarily set the thread affinity mask and retrieve old affinity mask
 	DWORD_PTR origThreadAffinityMask = SetThreadAffinityMask(
-		GetCurrentThread(),
+		threadId,
 		tmpThreadAffinityMask
 	);
 	if (origThreadAffinityMask == 0) {
@@ -79,7 +79,7 @@ int  affinity_threadGetProcessorId()
 	}
 	// reset the thread affinity mask to its original value
 	tmpThreadAffinityMask1 = SetThreadAffinityMask(
-		GetCurrentThread(),
+		threadId,
 		origThreadAffinityMask
 	);
 	if (tmpThreadAffinityMask1 == 0) {
@@ -93,11 +93,22 @@ int  affinity_threadGetProcessorId()
 	}
 	return getProcessorID(&origThreadAffinityMask);
 #else
-    cpu_set_t  cpu_set;
-    CPU_ZERO(&cpu_set);
-    sched_getaffinity(gettid(),sizeof(cpu_set_t), &cpu_set);
+	AffinityMask affinityMask;
+	if (pthread_getaffinity_np(threadId, sizeof(AffinityMask), &affinityMask))
+    {
+        perror("pthread_getaffinity_np failed");
+        return FALSE;
+    }
+    return getProcessorID(&affinityMask);
+#endif
+}
 
-    return getProcessorID(&cpu_set);
+ThreadId affinity_getCurrentThreadId()
+{
+#ifdef WIN32
+	return GetCurrentThread();
+#else
+	return pthread_self();
 #endif
 }
 
@@ -109,12 +120,12 @@ int  affinity_pinProcess(int processorId)
 	return affinity_setProcessAffinityMask(mask);
 }
 
-int  affinity_pinThread(int processorId)
+int  affinity_pinThread(ThreadId threadId, int processorId)
 {
 	AffinityMask mask;
 	AffinityMask_clear(&mask);
 	AffinityMask_insert(&mask, processorId);
-	return affinity_setThreadAffinityMask(mask);
+	return affinity_setThreadAffinityMask(threadId, mask);
 }
 
 int affinity_setProcessAffinityMask(AffinityMask affinityMask)
@@ -132,7 +143,7 @@ int affinity_setProcessAffinityMask(AffinityMask affinityMask)
 #else
 	if (sched_setaffinity(0, sizeof(AffinityMask), &affinityMask) == -1)
 	{
-		perror("sched_setaffinity failed");
+		//perror("sched_setaffinity failed");
 		/*
 		TODO: take this error treatment or the one above?
 		if (errno == EFAULT)
@@ -158,11 +169,11 @@ int affinity_setProcessAffinityMask(AffinityMask affinityMask)
 #endif
 }
 
-extern int affinity_setThreadAffinityMask(AffinityMask affinityMask)
+extern int affinity_setThreadAffinityMask(ThreadId threadId, AffinityMask affinityMask)
 {
 #ifdef WIN32
 	DWORD_PTR origThreadAffinityMask = SetThreadAffinityMask(
-		GetCurrentThread(),
+		threadId,
 		affinityMask
 	);
 	if (origThreadAffinityMask == 0) {
@@ -171,10 +182,7 @@ extern int affinity_setThreadAffinityMask(AffinityMask affinityMask)
 	}
 	return TRUE;
 #else
-    pthread_t thread;
-
-    thread = pthread_self();
-    if (pthread_setaffinity_np(thread, sizeof(AffinityMask), &affinityMask))
+    if (pthread_setaffinity_np(threadId, sizeof(AffinityMask), &affinityMask))
     {
         perror("pthread_setaffinity_np failed");
         return FALSE;

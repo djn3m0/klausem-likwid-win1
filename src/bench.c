@@ -100,7 +100,7 @@ void* runTest(void* arg)
     }
 
     /* pint the thread */
-    affinity_pinThread(myData->processors[threadId]);
+    affinity_pinThread(affinity_getCurrentThreadId(), myData->processors[threadId]);
 
     sleep(1);
     BARRIER;
@@ -108,7 +108,7 @@ void* runTest(void* arg)
             data->groupId,
             threadId,
             data->globalThreadId,
-            affinity_threadGetProcessorId(),
+            affinity_threadGetProcessorId(affinity_getCurrentThreadId()),
             size,
             offset);
     BARRIER;

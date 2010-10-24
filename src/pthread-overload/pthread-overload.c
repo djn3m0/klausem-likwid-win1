@@ -113,7 +113,7 @@ pthread_create(pthread_t* thread,
 
 	/* On first entry: Get Evironment Variable and initialize pin_ids */
 	if (ret == 0) {
-		executePinned_pinNextThread();
+		executePinned_pinNextThread(*thread);
 	}
 #ifdef COLOR
     color_reset();

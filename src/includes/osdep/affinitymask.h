@@ -17,4 +17,6 @@ void AffinityMask_clear(AffinityMask *mask);
 void AffinityMask_insert(AffinityMask *mask, int processorId);
 int AffinityMask_contains(const AffinityMask *mask, int processorId);
 
+void AffinityMask_print(AffinityMask *mask);
+
 #endif

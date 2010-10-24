@@ -32,13 +32,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sched.h>
 #include <sys/types.h>
 #include <ctype.h>
 
 #include <types.h>
 #include <bstrlib.h>
-#include <domains.h>
 #include <strUtil.h>
 #include <osdep/setenv.h>
 #include <osdep/getopt.h>
@@ -73,8 +71,6 @@ int main (int argc, char** argv)
         HELP_MSG;
         exit (EXIT_SUCCESS);
     }
-
-    domains_init();
 
     while ((c = getopt (argc, argv, "+c:s:t:hv")) != -1)
     {
