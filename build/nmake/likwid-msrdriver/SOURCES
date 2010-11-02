@@ -1,0 +1,5 @@
+TARGETNAME=likwid-msrdriver
+TARGETPATH=.
+TARGETTYPE=DRIVER
+
+SOURCES=perf.c
