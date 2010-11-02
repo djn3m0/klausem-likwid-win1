@@ -33,13 +33,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sched.h>
+//#include <sched.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <ctype.h>
 
 #include <types.h>
-#include <msr.h>
 #include <timer.h>
 #include <cpuid.h>
 #include <cpuFeatures.h>
@@ -47,6 +45,8 @@
 #include <bstrlib.h>
 #include <strUtil.h>
 
+#include <osdep/msr.h>
+#include <osdep/getopt.h>
 
 #define HELP_MSG \
 printf("likwid-perfCtr --  Version  %d.%d \n\n",VERSION,RELEASE); \
@@ -80,6 +80,7 @@ int main (int argc, char** argv)
     int numThreads=0;
     int threads[MAX_NUM_THREADS];
     int i,j;
+	bstring exeString;
 
     if (argc ==  1) 
     {
@@ -185,7 +186,7 @@ int main (int argc, char** argv)
         }
     }
 
-    msr_check();
+    msr_init();
     timer_init();
     perfmon_init(numThreads, threads);
 
@@ -248,7 +249,7 @@ int main (int argc, char** argv)
     printf(HLINE);
 
 	argv +=  optind;
-    bstring exeString = bfromcstr(argv[0]);
+    exeString = bfromcstr(argv[0]);
 
     for (i=1; i<(argc-optind); i++)
     {

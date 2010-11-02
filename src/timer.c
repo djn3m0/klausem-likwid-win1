@@ -44,6 +44,8 @@
 static uint64_t cpuClock = 0;
 static uint64_t cyclesForCpuid = 0;
 
+static int isInitialized = 0;
+
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static uint64_t
@@ -99,6 +101,9 @@ getCpuidCycles(void)
 void
 timer_init(void )
 {
+	if (isInitialized) return;
+	isInitialized = 1;
+
     getCpuidCycles();
     getCpuSpeed();
 
@@ -194,12 +199,16 @@ timer_printCyclesTime(CyclesData* time)
 uint64_t
 timer_getCpuClock(void)
 {
+	timer_init();
+
     return cpuClock;
 }
 
 uint64_t
 timer_getCpuidCycles(void)
 {
+	timer_init();
+
     return cyclesForCpuid;
 }
 

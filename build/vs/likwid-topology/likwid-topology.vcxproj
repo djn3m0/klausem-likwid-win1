@@ -57,6 +57,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)/Debug/liblikwid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -75,24 +76,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>$(SolutionDir)/Release/liblikwid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\applications\likwid-topology.c" />
-    <ClCompile Include="..\..\..\src\asciiBoxes.c" />
-    <ClCompile Include="..\..\..\src\bstrlib.c" />
-    <ClCompile Include="..\..\..\src\cpuid.c" />
-    <ClCompile Include="..\..\..\src\domains.c" />
-    <ClCompile Include="..\..\..\src\osdep\affinity.c" />
-    <ClCompile Include="..\..\..\src\osdep\affinitymask.c" />
-    <ClCompile Include="..\..\..\src\osdep\getopt_win.c" />
-    <ClCompile Include="..\..\..\src\osdep\numOfProcessors.c" />
-    <ClCompile Include="..\..\..\src\osdep\rdtsc.c" />
-    <ClCompile Include="..\..\..\src\osdep\time.c" />
-    <ClCompile Include="..\..\..\src\osdep\windowsError_win.c" />
-    <ClCompile Include="..\..\..\src\strUtil.c" />
-    <ClCompile Include="..\..\..\src\timer.c" />
-    <ClCompile Include="..\..\..\src\tree.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\includes\allocator.h" />

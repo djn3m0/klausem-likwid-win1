@@ -41,10 +41,10 @@
 #include <stdint.h>
 
 #include <types.h>
-#include <msr.h>
 #include <textcolor.h>
 #include <cpuFeatures.h>
 
+#include <osdep/msr.h>
 
 CpuFeatureFlags cpuFeatureFlags;
 

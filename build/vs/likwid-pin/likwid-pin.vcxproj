@@ -46,12 +46,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)../../src/includes/;$(SolutionDir)../../../pthreads/;$(SolutionDir)../../../detours/include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)../../src/includes/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;HAVE_STRUCT_TIMESPEC;_DEBUG;_CONSOLE;VERSION=0.1;RELEASE=42;MAX_NUM_THREADS=30;MAX_NUM_SOCKETS=10;LIBLIKWIDPIN=whatsThis;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)../../../detours/lib/detoured.lib;$(SolutionDir)../../../detours/lib/detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)/Debug/liblikwid.lib;$(SolutionDir)../../../detours/lib/detoured.lib;$(SolutionDir)../../../detours/lib/detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
@@ -62,34 +62,18 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SolutionDir)../../src/includes/;$(SolutionDir)../../../pthreads/;$(SolutionDir)../../../detours/include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)../../src/includes/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;HAVE_STRUCT_TIMESPEC;NDEBUG;_CONSOLE;VERSION=0.1;RELEASE=42;MAX_NUM_THREADS=30;MAX_NUM_SOCKETS=10;LIBLIKWIDPIN=whatsThis;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(SolutionDir)../../../detours/lib/detoured.lib;$(SolutionDir)../../../detours/lib/detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)/Release/liblikwid.lib;$(SolutionDir)../../../detours/lib/detoured.lib;$(SolutionDir)../../../detours/lib/detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\src\applications\likwid-pin.c" />
-    <ClCompile Include="..\..\..\src\bstrlib.c" />
-    <ClCompile Include="..\..\..\src\cpuid.c" />
-    <ClCompile Include="..\..\..\src\domains.c" />
-    <ClCompile Include="..\..\..\src\osdep\affinitymask.c" />
-    <ClCompile Include="..\..\..\src\osdep\likCreateProcessWithDll_win.c" />
-    <ClCompile Include="..\..\..\src\osdep\executePinned_host.c" />
-    <ClCompile Include="..\..\..\src\osdep\windowsError_win.c" />
-    <ClCompile Include="..\..\..\src\osdep\getopt_win.c" />
-    <ClCompile Include="..\..\..\src\osdep\numOfProcessors.c" />
-    <ClCompile Include="..\..\..\src\osdep\affinity.c" />
-    <ClCompile Include="..\..\..\src\osdep\setenv_win.c" />
-    <ClCompile Include="..\..\..\src\strUtil.c" />
-    <ClCompile Include="..\..\..\src\tree.c" />
-  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\includes\domains.h" />
     <ClInclude Include="..\..\..\src\includes\domains_types.h" />
@@ -97,9 +81,11 @@
     <ClInclude Include="..\..\..\src\includes\cpuid.h" />
     <ClInclude Include="..\..\..\src\includes\cpuid_types.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\cpuid_asm.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\getFullLibraryFilename_win.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\likCreateProcessWithDll_win.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\executePinned.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\execvp.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\msr.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\numOfProcessors.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\affinity.h" />
     <ClInclude Include="..\..\..\src\includes\osdep\threadid.h" />
@@ -108,6 +94,9 @@
     <ClInclude Include="..\..\..\src\includes\strUtil_types.h" />
     <ClInclude Include="..\..\..\src\includes\tree.h" />
     <ClInclude Include="..\..\..\src\includes\tree_types.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\applications\likwid-pin.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
