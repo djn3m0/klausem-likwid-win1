@@ -41,11 +41,11 @@
 #include <strUtil.h>
 #include <types.h>
 #include <timer.h>
-#include <msr.h>
 #include <cpuid.h>
 #include <perfmon.h>
 #include <asciiTable.h>
 #include <registers.h>
+#include <osdep/msr.h>
 #include <osdep/isnan.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */

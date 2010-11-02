@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <detours.h>
 #include <osdep/windowsError_win.h>
+#include <osdep/getFullLibraryFilename_win.h>
 
 #define arrayLength(x)      (sizeof(x)/sizeof(x[0]))
 
@@ -42,23 +43,6 @@ BOOL DoesDllExportOrdinal1(LPCTSTR pszDllPath)
 		DetourEnumerateExports(hDll, &validFlag, ExportCallback);
 		FreeLibrary(hDll);
 		return validFlag;
-	}
-}
-
-BOOL getFullDllFilename(LPCTSTR pszDllPath, PCHAR absDllFilename, int absDllFilenameLength) {
-	HMODULE hDll = LoadLibraryEx(pszDllPath, NULL, DONT_RESOLVE_DLL_REFERENCES);
-    if (hDll == NULL) {
-        printf("LoadLibraryEx(%s) failed with error %d.\n",
-               pszDllPath,
-               GetLastError());
-		printLastWinError("Error Message");
-        return FALSE;
-    }
-
-	{
-		GetModuleFileName((HINSTANCE)hDll, absDllFilename, _MAX_PATH);
-		FreeLibrary(hDll);
-		return TRUE;
 	}
 }
 

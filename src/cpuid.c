@@ -307,7 +307,7 @@ cpuid_init (void)
     cpuid_info.family = ((cpuid_eax>>8)&0xFU) + ((cpuid_eax>>20)&0xFFU);
     cpuid_info.model = (((cpuid_eax>>16)&0xFU)<<4) + ((cpuid_eax>>4)&0xFU);
     cpuid_info.stepping =  (cpuid_eax&0xFU);
-    cpuid_info.clock = -1;// timer_getCpuClock();
+    cpuid_info.clock = timer_getCpuClock();
 
     switch ( cpuid_info.family ) 
     {

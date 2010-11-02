@@ -62,8 +62,10 @@
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #endif
 
-#define TRUE  1
-#define FALSE 0
+#ifndef TRUE
+    #define TRUE  1
+    #define FALSE 0
+#endif
 
 #define HLINE "-------------------------------------------------------------\n"
 #define SLINE "*************************************************************\n"
