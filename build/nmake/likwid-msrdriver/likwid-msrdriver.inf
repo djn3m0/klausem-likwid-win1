@@ -1,0 +1,6 @@
+[Version]
+Signature = "$Windows NT$"       ; NT, 2000, XP
+
+[SourceDisksFiles]
+likwid-msrdriver.sys = 1      ; on disk #1
+

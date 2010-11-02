@@ -42,16 +42,19 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <msr.h>
 
+static bool msr_initialized = false;
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 void
-msr_check()
+msr_init()
 {
     int  fd;
     char* msr_file_name = "/dev/cpu/0/msr";
+
+	if (msr_initialized) return;
 
     fd = open(msr_file_name, O_RDWR);
 
@@ -73,6 +76,8 @@ msr_read(const int cpu, uint32_t reg)
     int  fd;
     uint64_t data;
     char msr_file_name[64];
+
+	msr_init();
 
     sprintf(msr_file_name, "/dev/cpu/%d/msr", cpu);
     fd = open(msr_file_name, O_RDONLY);
@@ -118,6 +123,8 @@ msr_write(const int cpu, uint32_t reg, uint64_t data)
 {
     int  fd;
     char msr_file_name[64];
+
+	msr_init();
 
     sprintf(msr_file_name, "/dev/cpu/%d/msr", cpu);
     fd = open(msr_file_name, O_WRONLY);
